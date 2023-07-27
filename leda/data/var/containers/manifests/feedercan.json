@@ -1,0 +1,56 @@
+{
+    "container_id": "feedercan",
+    "container_name": "feedercan",
+    "image": {
+        "name": "docker.io/sophokles73/dbc-feeder:0.9"
+    },
+    "mount_points": [
+        {
+            "source": "/data/usr/fms",
+            "destination": "/tmp/fms",
+            "propagation_mode": "rprivate"
+        }
+    ],
+    "host_config": {
+        "devices": [],
+        "network_mode": "bridge",
+        "privileged": false,
+        "restart_policy": {
+            "maximum_retry_count": 0,
+            "retry_timeout": 0,
+            "type": "unless-stopped"
+        },
+        "runtime": "io.containerd.runc.v2",
+        "extra_hosts": [
+            "databroker:container_databroker-host"
+        ],
+        "log_config": {
+            "driver_config": {
+                "type": "json-file",
+                "max_files": 2,
+                "max_size": "1M",
+                "root_dir": ""
+            },
+            "mode_config": {
+                "mode": "blocking",
+                "max_buffer_size": ""
+            }
+        },
+        "resources": null
+    },
+    "io_config": {
+        "open_stdin": false,
+        "tty": false
+    },
+    "config": {
+        "env": [
+            "DBC_FILE=/tmp/fms/dbc/j1939_REMODUL_v5.dbc",
+            "CANDUMP_FILE=/tmp/fms/dbc/220421_MAN_Si_RIO_CAN_converted.log",
+            "USE_J1939=1",
+            "MAPPING_FILE=/tmp/fms/databroker/vss.json",
+            "KUKSA_ADDRESS=databroker",
+            "LOG_LEVEL=INFO,dbcfeederlib.databrokerclientwrapper=INFO"
+        ],
+        "cmd": []
+    }
+}

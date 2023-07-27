@@ -1,0 +1,60 @@
+{
+    "container_id": "databroker",
+    "container_name": "databroker",
+    "image": {
+        "name": "ghcr.io/eclipse/kuksa.val/databroker:0.3"
+    },
+    "mount_points": [
+        {
+            "source": "/data/usr/fms/databroker",
+            "destination": "/etc/databroker",
+            "propagation_mode": "rprivate"
+        }
+    ],
+    "host_config": {
+        "devices": [],
+        "network_mode": "bridge",
+        "privileged": false,
+        "restart_policy": {
+            "maximum_retry_count": 0,
+            "retry_timeout": 0,
+            "type": "unless-stopped"
+        },
+        "runtime": "io.containerd.runc.v2",
+        "extra_hosts": [],
+        "port_mappings": [
+            {
+              "protocol": "tcp",
+              "container_port": 55555,
+              "host_ip": "localhost",
+              "host_port": 30555,
+              "host_port_end": 30555
+            }
+        ],
+        "log_config": {
+            "driver_config": {
+                "type": "json-file",
+                "max_files": 2,
+                "max_size": "1M",
+                "root_dir": ""
+            },
+            "mode_config": {
+                "mode": "blocking",
+                "max_buffer_size": ""
+            }
+        },
+        "resources": null
+    },
+    "io_config": {
+        "open_stdin": false,
+        "tty": false
+    },
+    "config": {
+        "env": [
+            "RUST_LOG=info",
+            "KUKSA_DATA_BROKER_METADATA_FILE=/etc/databroker/vss.json",
+            "vehicle_data_broker=debug"
+        ],
+        "cmd": []
+    }
+}

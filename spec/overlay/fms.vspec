@@ -1,0 +1,540 @@
+# SPDX-FileCopyrightText: 2023 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Overlay to provide [FMS Standard labels](http://www.fms-standard.com/Truck/index.htm) in VSS 3.0
+# Dependencies to other overlays: None
+# Known conflicts with other overlays: None
+#
+# The Data Entries are sorted lexicographically
+#
+
+Vehicle.ADAS.CruiseControl.IsActive:
+  datatype: boolean
+  type: sensor
+  description: |
+    Indicates if cruise control is switched on. It is not ensured that the engine is controlled by cruise control,
+    as in the case of a large driver's demand the engine is controlled by the driver while cruise control is active
+    (maximum selection of cruise control and driver's demand). The cruise control is set to false if a switch-off
+    condition occurs.
+
+Vehicle.ADAS.CruiseControl.IsBrakePressed:
+  datatype: boolean
+  type: sensor
+  description: |
+    Switch signal which indicates that the driver operated brake foot pedal is being pressed.
+    This brake foot pedal is controlling the vehicles' service brake (total vehicle braking application,
+    not park brakes).  It is necessary for safe drivetrain behavior that the switch activates before the
+    physical braking components are activated (i.e. Disengage the cruise control function prior to the
+    activation of friction brakes)
+
+Vehicle.ADAS.CruiseControl.IsClutchPressed:
+  datatype: boolean
+  type: sensor
+  description: |
+    Switch signal which indicates that the clutch pedal is being pressed
+
+Vehicle.ADAS.CruiseControl.IsPowerTakeOffOn:
+  datatype: boolean
+  type: sensor
+  description: |
+    This parameter is used to indicate the current state or mode of operation by the power takeoff (PTO) device
+
+Vehicle.ADAS.CruiseControl.Status:
+  datatype: string
+  type: sensor
+  description: |
+    This parameter is used to indicate the current state, or mode, of operation by the cruise control device.
+  allowed:
+  - "OFF"
+  - "HOLD"
+  - "ACCELERATE"
+  - "DECELERATE"
+  - "RESUME"
+  - "SET"
+  - "ACCEL_OVERRIDE"
+  - "NOT_AVAILABLE"
+
+Vehicle.Cabin.Telltale:
+  type: branch
+  instances: ["ECT", "Engine", "EngineOil", "FuelLevel", "ParkingBrake"]
+  description: A set of telltale status values.
+
+Vehicle.Cabin.Telltale.Status:
+  type: sensor
+  datatype: string
+  description: The current status of a telltale.
+  allowed:
+  - "OFF"
+  - "RED"
+  - "YELLOW"
+  - "INFO"
+  - "NOT_AVAILABLE"
+
+Vehicle.Cabin.Telltale.ECT.Status:
+  datatype: string
+  type: sensor
+  description: |
+    The telltale indicating the status of the engine coolant temperature.
+
+Vehicle.Cabin.Telltale.Engine.Status:
+  datatype: string
+  type: sensor
+  description: |
+    The telltale indicating the status of the engine.
+
+Vehicle.Cabin.Telltale.EngineOil.Status:
+  datatype: string
+  type: sensor
+  description: |
+    The telltale indicating the status of the engine oil level.
+
+Vehicle.Cabin.Telltale.FuelLevel.Status:
+  datatype: string
+  type: sensor
+  description: |
+    The telltale indicating the status of the fuel level.
+
+Vehicle.Cabin.Telltale.ParkingBrake.Status:
+  datatype: string
+  type: sensor
+  description: |
+    The telltale indicating the status of the parking brake.
+
+#
+# Attempt to override core Axle definition, to allow for more Axles
+#
+Vehicle.Chassis.Axle:
+  instances:
+  - Row[1,6]
+  type: branch
+  description: Axle signals
+
+Vehicle.Chassis.Brake:
+  type: branch
+  instances: Circuit[1, 2]
+
+Vehicle.Chassis.Brake.AirPressure:
+  type: sensor
+  datatype: uint32
+  unit: kPa
+  description: The current air pressure in the brake circuit.
+
+Vehicle.Chassis.Brake.Circuit1.AirPressure:
+  type: sensor
+  datatype: uint32
+  description: |
+    The pneumatic pressure in the primary service brake circuit or reservoir, supplying the rear axle.
+
+Vehicle.Chassis.Brake.Circuit2.AirPressure:
+  type: sensor
+  datatype: uint32
+  description: |
+    The pneumatic pressure in the secondary service brake circuit or reservoir, supplying the front axle.
+
+Vehicle.Chassis.ParkingBrake.IsEngaged:
+  datatype: boolean
+  type: sensor
+
+
+Vehicle.CurrentLocation.Latitude:
+  datatype: double
+  type: sensor
+
+Vehicle.CurrentLocation.Longitude:
+  datatype: double
+  type: sensor
+
+Vehicle.CurrentLocation.Speed:
+  datatype: double
+  type: sensor
+  unit: km/h
+  description: |
+    The vehicle's current speed as as measured by the GNSS receiver antenna.
+
+Vehicle.CurrentOverallWeight:
+  type: sensor
+  # expand to uint32 in order to support typical (large) weight of commercial verhicles
+  datatype: uint32
+
+Vehicle.Exterior.AirTemperature:
+  datatype: float
+  type: sensor
+
+Vehicle.IsMoving:
+  datatype: boolean
+  type: sensor
+   
+Vehicle.Powertrain.Brake:
+  type: branch
+  description: Recuperation data. 
+
+Vehicle.Powertrain.Brake.ActualRetarderPercentage:
+  datatype: uint8
+  type: sensor
+  unit: percent
+  min: 0
+  max: 100
+  description: Actual braking torque of the retarder
+
+Vehicle.Powertrain.CombustionEngine.ActualEnginePercentTorque:
+  datatype: uint8
+  type: sensor
+  unit: percent
+  min: 0
+  max: 100
+  description: The calculated output torque of the engine; the data is transmitted in indicated torque as a percent of reference engine
+
+Vehicle.Powertrain.CombustionEngine.DieselExhaustFluid.Level:
+  datatype: uint8
+  type: sensor
+
+Vehicle.Powertrain.CombustionEngine.ECT:
+  datatype: int16
+  type: sensor
+
+Vehicle.Powertrain.CombustionEngine.EngineHours:
+  datatype: float
+  type: sensor
+
+Vehicle.Powertrain.CombustionEngine.Speed:
+  datatype: uint16
+  type: sensor
+
+Vehicle.Powertrain.CurrentFuelType:
+  datatype: string
+  type: sensor
+  description: Type of fuel currently being utilized by the vehicle.
+  allowed:
+  - "NONE"
+  - "GAS"
+  - "METH"
+  - "ETH"
+  - "DSL"
+  - "LPG"
+  - "CNG"
+  - "PROP"
+  - "ELEC"
+  - "BI_GAS"
+  - "BI_METH"
+  - "BI_ETH"
+  - "BI_LPG"
+  - "BI_CNG"
+  - "BI_PROP"
+  - "BI_ELEC"
+  - "BI_MIX"
+  - "HYB_GAS"
+  - "HYB_ETH"
+  - "HYB_DSL"
+  - "HYB_ELEC"
+  - "HYB_MIX"
+  - "HYB_REG"
+  - "NG"
+  - "BI_NG"
+  - "BI_DSL"
+  - "ERROR"
+  - "NOT_AVAILABLE"
+
+Vehicle.Powertrain.Eec2AcceleratorPedalPosition:
+  datatype: double
+  type: sensor
+  unit: percent
+  min: 0
+  description: |
+    The ratio of actual position of the analogue engine speed/torque request input device
+    (such as an accelerator pedal or throttle lever) to the maximum position of the input device
+
+Vehicle.Powertrain.Eec2EnginePercentLoad:
+  datatype: uint8
+  type: sensor
+  unit: percent
+  min: 0
+  max: 125
+  description: |
+    The ratio of actual engine percent torque (indicated) to maximum indicated torque available at
+    the current engine speed, clipped to zero torque during engine braking
+
+Vehicle.Powertrain.ElectricMotor.MotorHours:
+  datatype: float
+  type: sensor
+  unit: h
+  min: 0.0
+  description: Accumulated time during motor lifetime with 'motor speed (rpm) > 0'.
+
+Vehicle.Powertrain.FuelSystem.AccumulatedConsumption:
+  datatype: uint64
+  type: sensor
+  unit: ml
+  description: Accumulated amount of fuel used during vehicle operation.
+    
+Vehicle.Powertrain.FuelSystem.Range:
+  datatype: uint32
+  type: sensor
+
+Vehicle.Powertrain.FuelSystem.Tank:
+  type: branch
+  instances: ["First","Second"]
+  description: Information about the first and (optional) second fuel tank.
+
+Vehicle.Powertrain.FuelSystem.Tank.RelativeLevel:
+  datatype: float
+  type: sensor
+  unit: percent
+  min: 0.0
+  max: 100.0
+  description: Level in fuel tank as percent of capacity. 0 = empty. 100 = full.
+
+Vehicle.Powertrain.FuelSystem.Tank.First.RelativeLevel:
+  datatype: float
+  type: sensor
+
+Vehicle.Powertrain.FuelSystem.Tank.Second.RelativeLevel:
+  datatype: float
+  type: sensor
+
+Vehicle.Powertrain.FuelSystem.Tank.Fuel:
+  datatype: string
+  type: sensor
+  allowed: ['GASOLINE', 'DIESEL', 'E85', 'LPG', 'CNG', 'LNG', 'H2', 'OTHER']
+  description: |
+    Detailed information on fuel in tank. Identifiers originating from DIN EN 16942:2021-08,
+    appendix B, with additional suffix for octane (RON) where relevant.
+
+# Vehicle.Powertrain.Range:
+#  datatype: uint32
+#  type: sensor
+
+Vehicle.Powertrain.TractionBattery.CoolantTemperature:
+  datatype: uint8
+  type: sensor
+  unit: celsius
+  description: |
+    The temperature of the battery pack coolant.
+
+# We do not have a DBC mapping entry for this PGN (yet)
+#Vehicle.Powertrain.TractionBattery.Range:
+# datatype: uint32
+# type: sensor
+
+Vehicle.Powertrain.TractionBattery.StateOfCharge.Current:
+  datatype: float
+  type: sensor
+
+
+Vehicle.Service.DistanceToService:
+  datatype: float
+  type: sensor
+
+
+Vehicle.Speed:
+  type: sensor
+  datatype: float
+
+
+Vehicle.Tachograph:
+  type: branch
+  description: Tachograph related data.
+
+Vehicle.Tachograph.DirectionIndicator:
+  datatype: string
+  type: sensor
+  description: |
+    Indicates the direction of the vehicle
+
+Vehicle.Tachograph.Driver:
+  type: branch
+  instances:
+  - Driver[1,2]
+  description: Information about the driver(s) of a (commercial) vehicle.
+
+Vehicle.Tachograph.Driver.Identification:
+  datatype: string
+  type: attribute
+  description: The unique identification of a driver in a Member State.
+  comment: |
+    This field is formatted according the definition for driverIdentification
+    in COMMISSION REGULATION (EC) No 1360/2002 Annex 1b.
+
+Vehicle.Tachograph.Driver.CardIssuingMemberState:
+  datatype: string
+  type: attribute
+  description: The country alpha code of the Member State having issued the card.
+  comment: |
+    This field is formatted according the definition for NationAlpha
+    in COMMISSION REGULATION (EC) No 1360/2002 Annex 1b.
+
+Vehicle.Tachograph.Driver.AuthenticationEquipment:
+  datatype: string
+  type: attribute
+  description: Code to distinguish different types of equipment for the tachograph application.
+  comment: |
+    See description of the field 'DriverAuthenticationEquipment'
+    in COMMISSION REGULATION (EC) No 1360/2002 Annex 1b.
+  allowed:
+  - RESERVED
+  - DRIVER_CARD
+  - CONTROL_CARD
+  - COMPANY_CARD
+  - MANUFACTURING_CARD
+  - VEHICLE_UNIT
+  - MOTION_SENSOR
+
+Vehicle.Tachograph.Driver.CardReplacementIndex:
+  datatype: string
+  type: attribute
+  description: A card replacement index.
+  comment: |
+    This field is formatted according the definition for CardReplacementIndex
+    (chap 2.26) in: COMMISSION REGULATION (EC) No 1360/2002 Annex 1b.
+
+Vehicle.Tachograph.Driver.CardRenewalIndex:
+  datatype: string
+  type: attribute
+  description: A card renewal index.
+  comment: |
+    This field is formatted according the definition for CardRenewalIndex
+    (chap 2.25) in: COMMISSION REGULATION (EC) No 1360/2002 Annex 1b.
+
+Vehicle.Tachograph.Driver.IsCardPresent:
+  datatype: boolean
+  type: sensor
+  description: Indicates the presence of a driver card
+
+Vehicle.Tachograph.Driver.Driver1.IsCardPresent:
+  datatype: boolean
+  type: sensor
+
+Vehicle.Tachograph.Driver.Driver2.IsCardPresent:
+  datatype: boolean
+  type: sensor
+
+# TODO maybe we do not need this flag but can instead simply rely on the fact
+# that the Identification attribute has a (non-empty) value or not.
+Vehicle.Tachograph.Driver.IsLoggedIn:
+  datatype: boolean
+  type: attribute
+  description: Indicates if the driver is currently logged in.
+
+Vehicle.Tachograph.Driver.OemIdentification:
+  datatype: string
+  type: attribute
+  description: An OEM specific driver id.
+
+Vehicle.Tachograph.Driver.OemIdentificationType:
+  datatype: string
+  type: attribute
+  description: Contains an optional id type (e.g. pin, USB, encrypted EU id).
+
+Vehicle.Tachograph.Driver.TimeRelatedStatus:
+  datatype: string
+  type: sensor
+  description: |
+    Indicates if the driver approaches or exceeds working time limits (or other limits).
+  allowed:
+  - "NORMAL"
+  - "LIMIT_1"
+  - "LIMIT_2"
+  - "LIMIT_3"
+  - "LIMIT_4"
+  - "LIMIT_5"
+  - "LIMIT_6"
+  - "OTHER"
+  - "ERROR"
+  - "NOT_AVAILABLE"
+
+Vehicle.Tachograph.Driver.Driver1.TimeRelatedStatus:
+  datatype: string
+  type: sensor
+
+Vehicle.Tachograph.Driver.Driver2.TimeRelatedStatus:
+  datatype: string
+  type: sensor
+
+Vehicle.Tachograph.Driver.WorkingState:
+  datatype: string
+  type: attribute
+  description: |
+    The current working state of the driver.
+    0 - rest
+    1 - driver available
+    2 - work
+    3 - drive
+    6 - error
+    7 - not available
+  allowed:
+  - "DRIVE"
+  - "WORK"
+  - "DRIVER_AVAILABLE"
+  - "REST"
+  - "ERROR"
+  - "NOT_AVAILABLE"
+
+Vehicle.Tachograph.Driver.Driver1.WorkingState:
+  datatype: string
+  type: attribute
+
+Vehicle.Tachograph.Driver.Driver2.WorkingState:
+  datatype: string
+  type: attribute
+
+Vehicle.Tachograph.IsAnalyzingPerformance:
+  datatype: boolean
+  type: sensor
+  description: |
+    Indicates whether the tachograph is currently analyzing its performance;
+    including electronic or mechanical analysis, instrument analysis, speed sensor analysis,
+    mass storage analysis, and printer analysis
+
+Vehicle.Tachograph.IsHandlingInformationPresent:
+  datatype: boolean
+  type: sensor
+  description: |
+    Indicates that handling information is present. Information could include 'no printer paper', 'no driver card', etc
+
+Vehicle.Tachograph.IsOverspeed:
+  datatype: boolean
+  type: sensor
+  description: |
+    Indicates whether the vehicle is exceeding the legal speed limit set in the tachograph.
+
+Vehicle.Tachograph.IsSystemEventAvailable:
+  datatype: boolean
+  type: sensor
+  description: |
+    Indicates that a tachograph event has occurred. This may include power supply interruption,
+    interruption of the speed sensor, incorrect data on the driver card, driving without a driver
+    card, illegal removal of a driver card, insertion of a driver card during driving, and time adjustment
+
+Vehicle.Tachograph.VehicleSpeed:
+  datatype: double
+  type: sensor
+  unit: km/h
+  min: 0.0
+  description: Speed of the vehicle registered by the tachograph.
+
+
+Vehicle.TraveledDistanceHighRes:
+  datatype: uint64
+  type: sensor
+  unit: "m"
+  description: Accumulated distance travelled by the vehicle during its operation.
+
+
+Vehicle.VehicleIdentification.VIN:
+  datatype: string
+  type: attribute
