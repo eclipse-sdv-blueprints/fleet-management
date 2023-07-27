@@ -1,0 +1,49 @@
+{
+    "container_id": "fms-forwarder",
+    "container_name": "fms-forwarder",
+    "image": {
+        "name": "ghcr.io/softwaredefinedvehicle/oss-tech-scouting-demo/fms-forwarder:main"
+    },
+    "host_config": {
+        "devices": [],
+        "network_mode": "bridge",
+        "privileged": false,
+        "restart_policy": {
+            "maximum_retry_count": 0,
+            "retry_timeout": 0,
+            "type": "unless-stopped"
+        },
+        "runtime": "io.containerd.runc.v2",
+        "extra_hosts": [
+            "databroker:container_databroker-host"
+        ],
+        "port_mappings": [
+        ],
+        "log_config": {
+            "driver_config": {
+                "type": "json-file",
+                "max_files": 2,
+                "max_size": "1M",
+                "root_dir": ""
+            },
+            "mode_config": {
+                "mode": "blocking",
+                "max_buffer_size": ""
+            }
+        },
+        "resources": null
+    },
+    "io_config": {
+        "open_stdin": false,
+        "tty": false
+    },
+    "config": {
+        "env": [
+            "RUST_LOG=info,fms_forwarder=debug",
+            "KUKSA_DATA_BROKER_URI=http://databroker:55555",
+            "INFLUXDB_URI=http://10.0.2.2:8086",
+            "INFLUXDB_API_TOKEN="
+        ],
+        "cmd": []
+    }
+}

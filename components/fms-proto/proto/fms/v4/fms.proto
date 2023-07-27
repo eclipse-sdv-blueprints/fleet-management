@@ -1,0 +1,325 @@
+// SPDX-FileCopyrightText: 2023 Contributors to the Eclipse Foundation
+//
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// SPDX-License-Identifier: Apache-2.0
+
+// This file contains message descriptions reflecting the data used by the FMS Standard v4.0
+
+syntax = "proto3";
+
+package fms.v4;
+
+import "google/protobuf/timestamp.proto";
+
+message AccumulatedData {
+  // TBD
+}
+
+// The status of an alternator.
+message AlternatorInfo {
+  // The alternator's identifier.
+  uint32 id = 1;
+  string status = 2;
+}
+
+message AxleLoad {
+  // Axle position from 1 to 15, 1 being in the front of the truck.
+  uint32 position = 1;
+  // The static vertical load of a vehicle axle in kilograms.
+  float load = 2;
+}
+
+message ChargingStatusInfo {
+  // The event that caused the status to change:
+  // STARTED, COMPLETED, INTERRUPTED, COMPLETION_TIME_CHANGED, TIMER, CHARGIN_LEVEL, ERROR
+  string event = 1;
+  // Details regarding the event. Content is OEM specific.
+  string event_detail = 2;
+}
+
+message ChargingConnectionStatusInfo {
+  // The event that caused the status to change:
+  // NOT_AVAILABLE, CONNECTING, CONNECTED, DISCONNECTING, DISCONNECTED, ERROR
+  string event = 1;
+  // Details regarding the event. Content is OEM specific.
+  string event_detail = 2;
+}
+
+message DistanceToEmpty {
+  // Estimated distance to empty, summarizing fuel, gas and battery in meters.
+  optional uint64 total = 1;
+  // Estimated distance to empty, fuel tank, in meters.
+  optional uint64 fuel = 2;
+  // Estimated distance to empty, gas tank, in meters.
+  optional uint64 gas = 3;
+  // Estimated distance to empty, battery pack, in meters.
+  optional uint64 battery_pack = 4;
+}
+
+// Status of a bus door.
+message DoorStatus {
+  uint32 number = 1;
+  // allowed values: NOT_AVAILABLE, ENABLED, DISABLED, ERROR
+  string enabled_status = 2;
+  // allowed values: NOT_AVAILABLE, CLOSED, OPEN, ERROR
+  string open_status = 3;
+  // allowed values: NOT_AVAILABLE, UNLOCKED, LOCKED, ERROR
+  string lock_status = 4;
+}
+
+message DriverId {
+  TachoDriverId tacho_driver_identification = 1;
+  OemDriverId oem_driver_identification = 2;
+}
+
+message GnssPosition {
+  // Latitude (WGS84 based)
+  double latitude = 1;
+  // Longitude (WGS84 based)
+  double longitude = 2;
+  // The direction of the vehicle (0-359)
+  optional uint32 heading = 3;
+  // The altitude of the vehicle. Where 0 is sea level, negative
+  // values below sealevel and positive above sealevel. Unit in meters.
+  optional int32 altitude = 4;
+  // The GNSS(e.g. GPS)-speed in km/h.
+  optional double speed = 5;
+  // The time of the position data.
+  google.protobuf.Timestamp instant = 6;
+}
+
+message OemDriverId {
+  // An OEM specific driver id.
+  optional string id = 1;
+  // An optional id type (e.g. pin, USB, encrypted EU id etc).
+  optional string type = 2;
+}
+
+message SnapshotData {
+  GnssPosition gnss_position = 1;
+  // The vehicle wheelbased speed.
+  optional double wheel_based_speed = 2;
+  // The Tacho speed.
+  optional double tachograph_speed = 3;
+  // The engine (Diesel/gaseous) speed in rev/min.
+  optional double engine_speed = 4;
+  // The electric motor speed in rev/min.
+  optional double electric_motor_speed = 5;
+  // Type of fuel currently being utilized by the vehicle acc. j1939's SPN 5837.
+  optional string fuel_type = 6;
+  // The fuel level percentage.
+  optional double fuel_level1 = 7;
+  // Ratio of volume of fuel to the total volume of fuel storage container, in percent.
+  // When Fuel Level 2 is not used, Fuel Level 1 represents the total fuel in all fuel
+  // storage containers. When Fuel Level 2 is used, Fuel Level 1 represents the fuel
+  // level in the primary or left-side fuel storage container.
+  optional double fuel_level2 = 8;
+  // The adblue level percentage.
+  optional double catalyst_fuel_level = 9;
+  // Tachograph Working state of the first driver.
+  optional string driver1_working_state = 10;
+  // The identity of the second driver.
+  DriverId driver2_id = 11;
+  // Tachograph Working state of the second driver.
+  optional string driver2_working_state = 12;
+  // The Ambient air temperature in Celsius.
+  optional double ambient_air_temperature = 13;
+  // Switch signal which indicates when the parking brake is set.
+  // In general the switch actuated by the operator's park brake control, whether
+  // a pedal, lever or other control mechanism.
+  optional bool parking_brake_engaged = 14;
+  // Indicates the hybrid battery pack remaining charge.
+  // 0% means no charge remaining,
+  // 100% means full charge remaining.
+  // Is used as well for full electrical vehicles.
+  optional double hybrid_battery_pack_remaining_charge = 15;
+  // Indicates the charging status of the battery pack. Recuperation is excluded.
+  // NOT_AVAILABLE, NOT_CHARGING, CHARGING, CHARGING_AC, CHARGING_DC, ERROR
+  optional string battery_pack_charging_status = 16;
+  // Indicates the charging connection status of the battery pack.
+  // NOT_AVAILABLE, CONNECTING, CONNECTED, DISCONNECTING, DISCONNECTED, ERROR
+  optional string battery_pack_charging_connection_status = 17;
+  // Device used to charge the battery pack. Standard rFMS values
+  // taken from ISO 15118 (OEM can have additional values):
+  // ACD - Automatic Connection Device
+  // WPT - Wireless Power Transfer
+  // VEHICLE_COUPLER - manual connection of a flexible cable to an EV
+  // NONE - No device connected
+  // NOT_AVAILABLE - Unknown
+  optional string battery_pack_charging_device = 18;
+  // Charging power in watts.
+  optional double battery_pack_charging_power = 19;
+  // Estimated time when charging has reached the target level.
+  google.protobuf.Timestamp estimated_time_battery_pack_charging_completed = 20;
+  // Estimated distance to empty (tanks and/or battery packs) in meters.
+  DistanceToEmpty estimated_distance_to_empty = 21;
+  // The vehicle's axles and their current load.
+  repeated AxleLoad vehicle_axles = 22;
+  // List of trailers connected to the truck.
+  repeated Trailer trailers = 23;
+}
+
+message TachoDriverId {
+  // The unique identification of a driver in a Member State.
+  // This field is formatted according the definition for driverIdentification
+  // in COMMISSION REGULATION (EC) No 1360/2002 Annex 1b
+  string driver_identification = 1;
+  // The country alpha code of the Member State having issued the card.
+  // This fieldd is formatted according the definition for NationAlpha
+  // in COMMISSION REGULATION (EC) No 1360/2002 Annex 1b
+  string card_issuing_memberState = 2;
+  // The type of equipment used to authenticate the driver.
+  optional string driver_authentication_equipment = 3;
+  // A card replacement index. This fields is formatted according the
+  // definition for CardReplacementIndex (chap 2.26) in:
+  // COMMISSION REGULATION (EC) No 1360/2002 Annex 1b
+  optional string card_replacement_index = 4;
+  // A card renewal index. This fields is formatted according the
+  // definition for CardRenewalIndex (chap 2.25) in:
+  // COMMISSION REGULATION (EC) No 1360/2002 Annex 1b
+  optional string card_renewal_index = 5;
+}
+
+message TellTaleInfo {
+  string tell_tale = 1;
+  string status = 2;
+  // This is only set when tell_tale == OEM_SPECIFIC.
+  // This is an OEM specific string defining a tell tale in the OEM context.
+  optional string oem_tell_tale = 3;
+}
+
+message Trailer {
+  // Trailer number from 1 to 5, 1 being closest to the truck, according to ISO 11992-2.
+  uint32 position = 1;
+  // The identification data sent by the trailer to the truck in the RGE23 message of ISO 11992-2.
+  // An alternative source is the DID (Data identifier definition) record VIN, as specified in
+  // ISO 11992-4. Even though both ISO 11992-2 and ISO 11992-4 specifies this as a VIN, the
+  // actual data sent from a trailer is not always the true VIN of the trailer.
+  string identification_data = 2;
+  // The vehicle identification number of the trailer.
+  // See ISO 3779 (17 characters) If the trailerIdentificationData is reporting
+  // a true VIN, trailerVin will have the same value. If it is possible to map the
+  // identification_data to a true VIN using other sources, the value can be provided here.
+  string vin = 3;
+  // The customer's name for the trailer
+  string custom_name = 4;
+  string type = 5;
+  // The sum of the static vertical loads of the trailer axles in kilograms.
+  // The load is sent in the EBS22 message of ISO 11992-2.
+  uint64 axle_load_sum = 6;
+  // The trailer's axles and their current load.
+  repeated AxleLoad axles = 7;
+}
+
+message Trigger {
+  // If the trigger is based on one of the events defined by rFMS then this property MUST be set to "RFMS"
+  // and the "type" property MUST be set to the corresponding trigger type.
+  // Otherwise, this property MUST be set to a value indicating the (OEM specific) context in which the
+  // event occurred.
+  // rFMS standard values are "VOLVO TRUCKS", "SCANIA", "DAIMLER", "IVECO", "DAF", "MAN",
+  // "RENAULT TRUCKS", "VDL", "VOLVO BUSES", "IVECO BUS", "IRISBUS"
+  string context = 1;
+  string type = 2;
+  // Additional TriggerInfo content for OEM specific triggers, e.g. TRAILER_ATTACHED_TRIGGER [id of trailer]
+  repeated string info_items = 3;
+  // The id of the driver. This is only set if the trigger type is one of
+  // DRIVER_LOGIN, DRIVER_LOGOUT, DRIVER_1_WORKING_STATE_CHANGED, DRIVER_2_WORKING_STATE_CHANGED
+  DriverId driver = 4;
+  // The id of a PTO. This is only set if the trigger type is PTO_ENABLED or PTO_DISABLED
+  optional string pto_id = 5;
+  // Additional information which can be provide if the trigger type is TELL_TALE
+  TellTaleInfo tell_tale_info = 6;
+  // Additional information which can be provided if the trigger type is BATTERY_PACK_CHARGING_STATUS_CHANGE.
+  ChargingStatusInfo charging_status_info = 7;
+  // Additional information which can be provided if the trigger type is BATTERY_PACK_CHARGING_CONNECTION_STATUS_CHANGE.
+  // allowed values: NOT_AVAILABLE, CONNECTING, CONNECTED, DISCONNECTING, DISCONNECTED, ERROR
+  optional string charging_connection_status_info = 8;
+}
+
+message UptimeData {
+  // List of tell tales with the actual status for each tell tale.
+  repeated TellTaleInfo tell_tales = 1;
+  // The distance in meter to the next service.
+  optional uint64 service_distance = 2;
+  // The temperature of the engine's coolant liquid in Celsius.
+  optional double engine_coolant_temperature = 3;
+  // The temperature of the battery pack coolant in Celsius.
+  // HVESS: High Voltage Energy Storage System
+  optional double hvess_outlet_coolant_temperature = 4;
+  // The temperature of the battery pack in Celsius.
+  // HVESS: High Voltage Energy Storage System
+  optional double hvess_temperature = 5;
+  // The air pressure in circuit 1 in Pascal.
+  optional uint64 service_brake_air_pressure_circuit1 = 6;
+  // The air pressure in circuit 2 in Pascal.
+  optional uint64 service_brake_air_pressure_circuit2 = 7;
+  // The total amount of time (seconds) that at least one door has been opened in the bus.
+  // Used mainly for buses.
+  optional uint64 duration_at_least_one_door_open = 8;
+  // The alternator status of the up to 4 alternators. Used mainly for buses.
+  AlternatorInfo alternator_info = 9;
+  // The bellow pressure in the front axle left side in Pascal. Used mainly for buses.
+  optional uint64 bellow_pressure_front_axle_left = 10;
+  // The bellow pressure in the front axle right side in Pascal. Used mainly for buses.
+  optional uint64 bellow_pressure_front_axle_right = 11;
+  // The bellow pressure in the rear axle left side in Pascal. Used mainly for buses.
+  optional uint64 bellow_pressure_rear_axle_left = 12;
+  // The bellow pressure in the rear axle right side in Pascal. Used mainly for buses.
+  optional uint64 bellow_pressure_rear_axle_right = 13;
+}
+
+message VehicleStatus {
+  string vin = 1;
+  Trigger trigger = 2;
+  google.protobuf.Timestamp created = 3;
+  // Accumulated distance travelled by the vehicle during its operation in meter.
+  optional uint64 hr_total_vehicle_distance = 4;
+  // The total hours of operation for the vehicle combustion engine.
+  // At least one of total_engine_hours or total_electric_motor_hours is mandatory.
+  optional double total_engine_hours = 5;
+  // The total hours the electric motor is ready for propulsion (i.e. crank mode).
+  // At least one of total_engine_hours or total_electric_motor_hours is mandatory.
+  optional double total_electric_motor_hours = 6;
+  // The identity of the first driver.
+  DriverId driver1_id = 7;
+  // The full vehicle weight in kg.
+  optional uint32 gross_combination_vehicle_weight = 8;
+  // The total amount of fuel the vehicle has used during its lifetime in MilliLitres.
+  // At least one of engine_total_fuel_used, total_fuel_used_gaseous
+  // or total_electric_energy_used is mandatory.
+  optional uint64 engine_total_fuel_used = 9;
+  // The total amount of fuel consumed in kg (trip drive fuel + trip PTO governor
+  // moving fuel + trip PTO governor non-moving fuel + trip idle fuel) over the
+  // life of the engine.
+  // At least one of engine_total_fuel_used, total_fuel_used_gaseous
+  // or total_electric_energy_used is mandatory.
+  optional uint64 total_fuel_used_gaseous = 10;
+  // The total amount of electric energy consumed by the vehicle, excluding when
+  // plugged in (vehicle coupler) for charging, (incl. motor, PTO, cooling,
+  // etc.) in watt hours. Recuperation is subtracted from the value.
+  // At least one of engine_total_fuel_used, total_fuel_used_gaseous
+  // or total_electric_energy_used is mandatory.
+  optional uint64 total_electric_energy_used = 11;
+  // Composite indication of all bus door statuses. Bus specific parameter.
+  // allowed values: NOT_AVAILABLE, ALL_DOORS_DISABLED, AT_LEAST_ONE_DOOR_ENABLED, ERROR
+  optional string status2_of_doors = 12;
+  // Individual status for each bus door. Bus specific parameter.
+  repeated DoorStatus door_status = 13;
+  AccumulatedData accumulated_data = 14;
+  SnapshotData snapshot_data = 15;
+  UptimeData uptime_data = 16;
+}
