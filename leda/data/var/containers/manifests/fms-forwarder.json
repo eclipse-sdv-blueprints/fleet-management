@@ -2,7 +2,7 @@
     "container_id": "fms-forwarder",
     "container_name": "fms-forwarder",
     "image": {
-        "name": "ghcr.io/softwaredefinedvehicle/oss-tech-scouting-demo/fms-forwarder:main"
+        "name": "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-forwarder:main"
     },
     "host_config": {
         "devices": [],

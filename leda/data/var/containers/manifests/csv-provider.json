@@ -1,13 +1,13 @@
 {
-    "container_id": "feedercan",
-    "container_name": "feedercan",
+    "container_id": "csv-provider",
+    "container_name": "csv-provider",
     "image": {
-        "name": "docker.io/sophokles73/dbc-feeder:0.9"
+        "name": "ghcr.io/eclipse/kuksa.val.feeders/csv-provider:0.4"
     },
     "mount_points": [
         {
-            "source": "/data/usr/fms",
-            "destination": "/tmp/fms",
+            "source": "/data/usr/fms/csv",
+            "destination": "/tmp/fms/csv",
             "propagation_mode": "rprivate"
         }
     ],
@@ -44,12 +44,10 @@
     },
     "config": {
         "env": [
-            "DBC_FILE=/tmp/fms/dbc/j1939_REMODUL_v5.dbc",
-            "CANDUMP_FILE=/tmp/fms/dbc/220421_MAN_Si_RIO_CAN_converted.log",
-            "USE_J1939=1",
-            "MAPPING_FILE=/tmp/fms/databroker/vss.json",
-            "KUKSA_ADDRESS=databroker",
-            "LOG_LEVEL=INFO,dbcfeederlib.databrokerclientwrapper=INFO"
+            "PROVIDER_SIGNALS_FILE=/tmp/fms/csv/signalsFmsRecording.csv",
+            "PROVIDER_INFINITE=1",
+            "KUKSA_DATA_BROKER_ADDR=databroker",
+            "PROVIDER_LOG_LEVEL=INFO"
         ],
         "cmd": []
     }

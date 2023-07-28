@@ -52,8 +52,7 @@
     "config": {
         "env": [
             "RUST_LOG=info",
-            "KUKSA_DATA_BROKER_METADATA_FILE=/etc/databroker/vss.json",
-            "vehicle_data_broker=debug"
+            "KUKSA_DATA_BROKER_METADATA_FILE=/etc/databroker/vss.json"
         ],
         "cmd": []
     }
