@@ -40,8 +40,9 @@ docker compose -f fms-blueprint-compose.yaml up influxdb grafana fms-server --de
 # Start In-Vehicle Coponents
 
 The containers for the in-vehicle components are deployed to a Leda instance running on the
-local host. The *FMS Forwarder* running in Leda will then connect to the *influxdb* server running
-on the local host.
+same (local) host that the back end components have been started on.
+The *FMS Forwarder* running in Leda will then directly connect to the *influxdb* server managed
+by Docker Compose.
 
 Please refer to [Leda's Getting Started](https://eclipse-leda.github.io/leda/docs/general-usage/)
 guide for setting up a Leda instance.
@@ -87,8 +88,13 @@ docker exec -it influxDB cat /tmp/out/fms-demo.token > /tmp/influxdb.token
 
 ```sh
 # in this repository's root folder
+# The CSV Provider needs acces to the recording of the signals to play back.
 scp -P 2222 csv-provider/signalsFmsRecording.csv root@127.0.0.1:/data/usr/fms/csv
+# The kuksa.val Databroker needs to be configured with the VSS definition that also contains
+# the fleet management specific signals. The default definition file that comes with Leda does
+# not contain these.
 scp -P 2222 spec/overlay/vss.json root@127.0.0.1:/data/usr/fms/databroker
+# The FMS Forwarder needs to read the token required for authenticating to influxdb.
 scp -P 2222 /tmp/influxdb.token root@127.0.0.1:/data/usr/fms/forwarder
 ```
 
