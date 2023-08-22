@@ -26,9 +26,14 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+    # Pushing images based on PRs to the main repository should be prevented from
+    # a security point of view.
+    # Pushing images for PRs to ttl.sh might make some sense but for that we would need
+    # to distinguish between the possible triggers. Until we do so, we therefore
+    # disable the building and pushing of PR based images to GHCR.
+    #pull_request:
+    #  branches:
+    #  - main
     paths:
       - "components/Dockerfile.fms-forwarder"
       - "components/fms-forwarder/src/**"
