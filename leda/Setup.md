@@ -18,7 +18,10 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 -->
-The components of the Fleet Management blueprint fall into two categories: the *kuksa.val Databroker*,
+
+# Setup with Eclipse Leda
+
+The components of the Fleet Management blueprint fall into two categories: the *KUKSA.val Databroker*,
 *CSV Provider* and *FMS Forwarder* components are supposed to run in the vehicle, whereas the remaining
 components are supposed to run in a (cloud) back end to which the vehicle is connected via (public internet)
 networking infrastructure.
@@ -39,17 +42,18 @@ docker compose -f fms-blueprint-compose.yaml up influxdb grafana fms-server --de
 
 # Start In-Vehicle Coponents
 
-The containers for the in-vehicle components are deployed to a Leda instance running on the
-same (local) host that the back end components have been started on.
-The *FMS Forwarder* running in Leda will then directly connect to the *influxdb* server managed
-by Docker Compose.
+In the setup described here, the containers for the in-vehicle components
+are deployed to a Leda instance running on the
+same (local) host as the back-end components.
+The *FMS Forwarder* running in Leda then connects to the *influxdb* server managed
+by Docker Compose. See below for more details on how to deploy the components to different devices.
 
 Please refer to [Leda's Getting Started](https://eclipse-leda.github.io/leda/docs/general-usage/)
 guide for setting up a Leda instance.
 
 ## Stop default Containers
 
-Leda comes with a set of default containers (including kuksa.val Databroker) that are managed using
+Leda comes with a set of default containers (including KUKSA.val Databroker) that are managed using
 Eclipse Kanto's *container-manager*. These containers are defined by means of JSON manifest files in
 Leda's `/data/var/containers/mainfests` folder.
 
@@ -90,7 +94,7 @@ docker exec -it influxDB cat /tmp/out/fms-demo.token > /tmp/influxdb.token
 # in this repository's root folder
 # The CSV Provider needs acces to the recording of the signals to play back.
 scp -P 2222 csv-provider/signalsFmsRecording.csv root@127.0.0.1:/data/usr/fms/csv
-# The kuksa.val Databroker needs to be configured with the VSS definition that also contains
+# The KUKSA.val Databroker needs to be configured with the VSS definition that also contains
 # the fleet management specific signals. The default definition file that comes with Leda does
 # not contain these.
 scp -P 2222 spec/overlay/vss.json root@127.0.0.1:/data/usr/fms/databroker
@@ -104,3 +108,10 @@ Finally, copy the manifest files to Leda, triggering the execution of the in-veh
 # in this repository's root folder
 scp -P 2222 leda/data/var/containers/manifests/*.json root@127.0.0.1:/data/var/containers/manifests
 ```
+
+If you want to deploy the in-vehicle and the back-end components to different devices,
+for example, a RaspberryPi 4 and a developer machine,
+you need to replace the network address `127.0.0.1` in the scp-commands
+with the respective IP address of the in-vehicle device. You also need to
+adapt the IP address of the influx database in the container manifest for
+the *FMS-Forwarder* (`config.env.INFLUXDB_URI` in `data/var/containers/manifests/fms-forwarder.json`)
