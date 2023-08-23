@@ -4,6 +4,13 @@
     "image": {
         "name": "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-forwarder:main"
     },
+    "mount_points": [
+        {
+            "source": "/data/usr/fms/forwarder",
+            "destination": "/etc/forwarder",
+            "propagation_mode": "rprivate"
+        }
+    ],
     "host_config": {
         "devices": [],
         "network_mode": "bridge",
@@ -42,8 +49,8 @@
             "RUST_LOG=info,fms_forwarder=debug",
             "KUKSA_DATA_BROKER_URI=http://databroker:55555",
             "INFLUXDB_URI=http://10.0.2.2:8086",
-            "INFLUXDB_API_TOKEN="
+            "INFLUXDB_TOKEN_FILE=/etc/forwarder/influxdb.token"
         ],
-        "cmd": []
+        "cmd": [ "influx" ]
     }
 }

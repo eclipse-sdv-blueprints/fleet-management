@@ -32,13 +32,13 @@ const PARAM_INFLUXDB_TOKEN_FILE: &str = "influxdb-token-file";
 /// 
 /// The following arguments are being added:
 /// 
-/// | long name           | environment variable | default value |
-/// |---------------------|----------------------|---------------|
-/// | influxdb-bucket     | INFLUXDB_BUCKET      | `demo`        |
-/// | influxdb-org        | INFLUXDB_ORG         | `sdv`         |
-/// | influxdb-uri        | INFLUXDB_URI         | -             |
-/// | influxdb-token      | INFLUXDB_TOKEN       | -             |
-/// | influxdb-token-file | INFLUXDB_TOKEN_FILE  | -             |
+/// | long name           | environment variable    | default value |
+/// |---------------------|-------------------------|---------------|
+/// | influxdb-bucket     | INFLUXDB_BUCKET         | `demo`        |
+/// | influxdb-org        | INFLUXDB_ORG            | `sdv`         |
+/// | influxdb-uri        | INFLUXDB_URI            | -             |
+/// | influxdb-token      | INFLUXDB_TOKEN          | -             |
+/// | influxdb-token-file | INFLUXDB_TOKEN_FILE     | -             |
 /// 
 pub fn add_command_line_args(command_line: Command) -> Command {
     command_line
@@ -61,7 +61,7 @@ pub fn add_command_line_args(command_line: Command) -> Command {
                 .help("The API token to use for authenticating to the InfluxDB server.")
                 .group("influxdb-auth-token")
                 .value_name("TOKEN")
-                .env("INFLUXDB_API_TOKEN"),
+                .env("INFLUXDB_TOKEN"),
         )
         .arg(
             Arg::new(PARAM_INFLUXDB_TOKEN_FILE)
@@ -72,7 +72,7 @@ pub fn add_command_line_args(command_line: Command) -> Command {
                 .group("influxdb-auth-token")
                 .value_name("FILE")
                 .conflicts_with("influxdb-token")
-                .env("INFLUXDB_API_TOKEN_FILE"),
+                .env("INFLUXDB_TOKEN_FILE"),
         )
         .arg(
             Arg::new(PARAM_INFLUXDB_ORG)

@@ -18,69 +18,89 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 -->
-# Setting Up a Leda Image
+The components of the Fleet Management blueprint fall into two categories: the *kuksa.val Databroker*,
+*CSV Provider* and *FMS Forwarder* components are supposed to run in the vehicle, whereas the remaining
+components are supposed to run in a (cloud) back end to which the vehicle is connected via (public internet)
+networking infrastructure.
 
-The setup for this FMS scenario assumes a split into components running in the vehicles and components
-running in a (cloud) backend. The following page describes how to configure a Leda instance to become part
-of this FMS setup. More precisely, we deploy the containers for the feedercan, the fms-forwarder,
-and the Kuksa.val databroker with an FMS-specific vehicle model.
+All of the components can be run on a single Docker host as described in the [top level README](../README.md). However, the following sections describe a more realistic deployment scenario in which
+[Eclipse Leda](https://eclipse-leda.github.io/leda/) is used as the vehicle runtime environment.
 
-## Run Leda
-The following steps assume a running instance of Eclipse Leda. For more details see the
-[Eclipse Leda Getting Started](https://eclipse-leda.github.io/leda/docs/general-usage/)
-This guide was tested with release v0.1.0-M1 of Eclipse Leda.
+This guide was tested with release v0.1.0-M2 of Eclipse Leda.
 
-## Backup existing manifestes
-In Leda, there are manifests to manage the execution of containers by Eclipse Kanto. During the next steps we
-will overwrite some of the default manifests (`databroker.json`, `feedercan.json`). Because of that,
-we recommend to backup the existing manifests from `/data/var/containers/mainfests`.
+# Start Back End Components
 
-## Copy manifests to Leda
-To trigger the execution of the required containers for the FMS setup, copy the manifest files from
-`leda/data/var/containers/manifests` in the host to `/data/var/containers/manifests` in Leda:
+The containers for the back end components are run on the local host using Docker Compose:
 
-```
-manifests % scp -P 2222 *.json root@127.0.0.1:/data/var/containers/manifests
-```
-
-## Create folders in Leda mounted in mainfests
-The containers described within the manifests require files that are not present in Leda like the FMS-specific vehicle model. 
-Therefore, we need to create the paths (e.g,. `mkdir`) in Leda from which the containers try to mount these files which are:
-
-- `mkdir -p /data/usr/fms/dbc`
-- `mkdir -p /data/usr/fms/databroker`
-
-## Copy required files to leda folders:
-Now you can copy the files required by the containers to Leda. Execute in the root of this repository on the host: 
-```
-scp -P 2222 csv-provider/signalsFmsRecording.csv root@127.0.0.1:/data/usr/fms/csv
-scp -P 2222 spec/overlay/vss.json root@127.0.0.1:/data/usr/fms/databroker
-```
-
-## Start backend on host
-Besides the in-vehicle containers in Leda, we still need the backend for the full FMS setup.
-You can start the remaining containers on the host with: 
-
-```
+```sh
+# in this repository's root folder
 docker compose -f fms-blueprint-compose.yaml up influxdb grafana fms-server --detach
 ```
 
-## Configure InfluxDB token
-The fms-forwarder needs a token to write data into the InfluxDB which has been started on the host. 
-There are multiple ways to retrieve this token, e.g., through the web-interface of InfluxDB
-(localhost:8086). One approach through the command line is the following:
+# Start In-Vehicle Coponents
 
+The containers for the in-vehicle components are deployed to a Leda instance running on the
+same (local) host that the back end components have been started on.
+The *FMS Forwarder* running in Leda will then directly connect to the *influxdb* server managed
+by Docker Compose.
+
+Please refer to [Leda's Getting Started](https://eclipse-leda.github.io/leda/docs/general-usage/)
+guide for setting up a Leda instance.
+
+## Stop default Containers
+
+Leda comes with a set of default containers (including kuksa.val Databroker) that are managed using
+Eclipse Kanto's *container-manager*. These containers are defined by means of JSON manifest files in
+Leda's `/data/var/containers/mainfests` folder.
+
+We will stop and disable some of Leda's default containers, make some changes to the configuration of the
+Databroker container and also deploy additional containers.
+
+```sh
+# in Leda instance's /data/var/containers/mainfests folder
+tar cf manifests.orig.tar * 
+kanto-cm stop --force -n feedercan
+mv feedercan.json feedercan.json.disabled
+kanto-cm stop --force -n hvacservice-example
+mv hvac.json hvac.json.disabled
+kanto-cm stop --force -n seatservice-example
+mv seatservice.json seatservice.json.disabled
 ```
-docker exec -it influxDB cat /tmp/out/fms-demo.token 
+
+## Deploy in-vehicle Blueprint Components
+
+Some of the Fleet Management blueprint containers require access to configuration files that are not present
+in Leda, e.g. the FMS-specific VSS definitions.
+
+Create the folders in Leda from which the containers can mount these files:
+
+```sh
+# in Leda instance
+mkdir -p /data/usr/fms/csv /data/usr/fms/databroker /data/usr/fms/forwarder
 ```
 
-You can then insert the token in the `/data/var/containers/manifests/fms-forwarder.json` manifest
-in Leda at the bottom of the file as value for
+Now copy the files required by the containers to the Leda instance:
 
-```json
-"config": {
-     "env": [
-          "INFLUXDB_API_TOKEN="
-     ]
-}
+```sh
+# on the (local) host that you have started the back end components on
+docker exec -it influxDB cat /tmp/out/fms-demo.token > /tmp/influxdb.token
+```
+
+```sh
+# in this repository's root folder
+# The CSV Provider needs acces to the recording of the signals to play back.
+scp -P 2222 csv-provider/signalsFmsRecording.csv root@127.0.0.1:/data/usr/fms/csv
+# The kuksa.val Databroker needs to be configured with the VSS definition that also contains
+# the fleet management specific signals. The default definition file that comes with Leda does
+# not contain these.
+scp -P 2222 spec/overlay/vss.json root@127.0.0.1:/data/usr/fms/databroker
+# The FMS Forwarder needs to read the token required for authenticating to influxdb.
+scp -P 2222 /tmp/influxdb.token root@127.0.0.1:/data/usr/fms/forwarder
+```
+
+Finally, copy the manifest files to Leda, triggering the execution of the in-vehicle containers:
+
+```sh
+# in this repository's root folder
+scp -P 2222 leda/data/var/containers/manifests/*.json root@127.0.0.1:/data/var/containers/manifests
 ```
