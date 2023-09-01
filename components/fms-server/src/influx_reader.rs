@@ -26,7 +26,7 @@ use influxrs::InfluxError;
 use crate::models::{self, GnssPositionObject, TriggerObject, VehiclePositionObject};
 
 const FILTER_FIELDS_POSITION: &'static str = formatcp!(
-    r#"filter(fn: (r) => contains(set: ["{}","{}","{}","{}","{}","{}","{}","{}", "{}"], value: r._field)"#,
+    r#"filter(fn: (r) => contains(set: ["{}","{}","{}","{}","{}","{}","{}","{}", "{}"], value: r._field))"#,
     influx_client::FIELD_CREATED_DATE_TIME,
     influx_client::FIELD_LATITUDE,
     influx_client::FIELD_LONGITUDE,
