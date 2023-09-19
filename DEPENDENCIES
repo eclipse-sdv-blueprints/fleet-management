@@ -88,7 +88,7 @@ crate/cratesio/-/num_enum_derive/0.5.11, BSD-3-Clause OR (MIT OR Apache-2.0), ap
 crate/cratesio/-/num-traits/0.2.16, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/once_cell/1.18.0, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/openssl-probe/0.1.5, MIT OR Apache-2.0, approved, clearlydefined
-crate/cratesio/-/openssl-sys/0.9.90, MIT AND (Apache-2.0 AND MIT), approved, #9757
+crate/cratesio/-/openssl-sys/0.9.92, MIT AND (Apache-2.0 AND MIT), approved, #9757
 crate/cratesio/-/paho-mqtt/0.12.1, EPL-1.0 OR BSD-3-Clause, approved, #9785
 crate/cratesio/-/paho-mqtt-sys/0.8.1, (BSD-3-Clause OR EPL-1.0) AND (BSD-3-Clause OR EPL-2.0) AND GPL-2.0-only AND GPL-2.0-or-later AND MIT, approved, #9776
 crate/cratesio/-/parking/2.1.0, Apache-2.0 OR MIT, approved, clearlydefined
