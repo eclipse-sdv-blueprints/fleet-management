@@ -1,5 +1,5 @@
 crate/cratesio/-/aho-corasick/1.0.2, MIT AND Unlicense, approved, #9759
-crate/cratesio/-/anstream/0.3.2, MIT OR Apache-2.0, approved, clearlydefined
+crate/cratesio/-/anstream/0.5.0, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/anstyle/1.0.1, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/anstyle-parse/0.2.1, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/anstyle-query/1.0.0, MIT OR Apache-2.0, approved, clearlydefined
@@ -18,8 +18,8 @@ crate/cratesio/-/bytes/1.4.0, MIT, approved, clearlydefined
 crate/cratesio/-/castaway/0.1.2, MIT, approved, clearlydefined
 crate/cratesio/-/cfg-if/1.0.0, Apache-2.0 OR MIT, approved, clearlydefined
 crate/cratesio/-/chrono/0.4.26, MIT OR Apache-2.0, approved, clearlydefined
-crate/cratesio/-/clap/4.3.19, Apache-2.0 AND MIT AND Apache-2.0 AND MIT, approved, #10048
-crate/cratesio/-/clap_builder/4.3.19, Apache-2.0 AND MIT AND Apache-2.0 AND MIT, approved, #9774
+crate/cratesio/-/clap/4.4.4, MIT OR Apache-2.0, approved, clearlydefined
+crate/cratesio/-/clap_builder/4.4.4, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/clap_lex/0.5.0, Apache-2.0 AND MIT AND Apache-2.0 AND MIT, approved, #9773
 crate/cratesio/-/colorchoice/1.0.0, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/concurrent-queue/2.2.0, Apache-2.0 OR MIT, approved, clearlydefined
