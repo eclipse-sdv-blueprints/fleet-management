@@ -41,7 +41,7 @@ services:
     - "./influxdb/fms-demo.env"
     - "./hono-kafka.env"
     environment:
-      INFLUXDB_API_TOKEN_FILE: "/tmp/fms-demo.token"
+      INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
       KAFKA_PROPERTIES_FILE: "/app/config/kafka.properties"
       RUST_LOG: "info,fms_consumer=debug,influx_client=debug"
     volumes:
