@@ -35,6 +35,8 @@ on:
     #  branches:
     #  - main
     paths:
+      - "components/Cargo.lock"
+      - "components/Cargo.toml"
       - "components/Dockerfile.fms-forwarder"
       - "components/fms-forwarder/src/**"
       - "components/fms-forwarder/proto/**"
