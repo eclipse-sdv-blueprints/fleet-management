@@ -37,7 +37,7 @@ documentation = "https://eclipse-sdv-blueprints.github.io/blueprints-website/"
 async-trait = { version = "0.1" }
 chrono = { version = "0.4", default-features = false }
 clap = { version = "4.3", default-features = false }
-duration-str = { version = "0.5", default-features = false }
+duration-str = { version = "0.7.0", default-features = false }
 env_logger = { version = "0.10" }
 fms-proto = { path = "fms-proto" }
 influx-client = { path = "influx-client", default-features = false }
