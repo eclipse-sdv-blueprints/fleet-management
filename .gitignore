@@ -21,6 +21,5 @@
 *.drawio.bkp
 **/target
 
-*-mqtt.env
-*-kafka.env
+*.env
 *-kafka.properties
