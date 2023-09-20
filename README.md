@@ -28,7 +28,7 @@ This repository contains the **Fleet Management Blueprint** which is a close to 
 for truck fleet management where trucks run an SDV software stack so that logistics fleet operators can
 manage apps, data and services for a diverse set of vehicles.
 
-The use case showcases how one can customize the standard VSS model and use it to report data from a vehicle
+The use case illustrates how the standard VSS model can be customized and used to report data from a vehicle
 to a back end. The following diagram provides an overview of the current architecture:
 
 <img src="img/architecture.drawio.svg">
@@ -67,27 +67,33 @@ By default, the Docker Compose file starts the FMS Forwarder configured to write
 Influx DB running in the back end.
 
 However, in a real world scenario, this tight coupling between the vehicle and the Influx DB is not desirable.
-As an alternative, the Docker Compose file supports a profile which configures the FMS Forwarder to send vehicle data
-to the MQTT adapter of an Eclipse Hono instance.
+As an alternative, the blueprint supports configuring the FMS Forwarder to send vehicle data to the MQTT adapter
+of an Eclipse Hono instance as shown in the diagram below.
 
-1. Register the vehicle as a device in Hono using the [provision-vehicle-to.hono.sh script](./provision-vehicle-to.hono.sh):
+<img src="img/architecture-hono.drawio.svg">
+
+1. Register the vehicle as a device in Hono using the [create-config-hono.sh shell script](./create-config-hono.sh):
 
    ```sh
-   ./provision-vehicle-to-hono.sh --tenant=MY_TENANT_ID --device-id=MY_DEVICE_ID --device-pwd=MY_PWD
+   ./create-config-hono.sh --tenant MY_TENANT_ID --device-id MY_DEVICE_ID --device-pwd MY_PWD --provision
    ```
 
    Make sure to replace `MY_TENANT_ID`, `MY_DEVICE_ID` and `MY_PWD` with your own values.
-   The script registers the tenant and device in Hono's Sandbox installation at `hono.eclipseprojects.io` unless the
-   *--host* and/or *--kafka-brokers* command line arguments are used. Use the *--help* switch to print usage information.
 
-   The script will also create three property files (`hono-mqtt.env`, `hono-kafka.env` and `hono-kafka.properties`) that are
-   used to configure the FMS Forwarder and FMS Consumer components when started via Docker Compose in the next step.
+   The script registers the tenant and device in Hono's Sandbox installation at `hono.eclipseprojects.io` unless the
+   `--host` and/or `--kafka-brokers` command line arguments are used. Use the `--help` switch to print usage information.
+
+   The script also creates configuration files in the `OUT_DIR/config/hono` folder. The OUT_DIR can be specified using
+   the `--out-dir` option, default value is the current working directory. These files are used to configure the services
+   started via Docker Compose in the next step.
 
 2. Start up the vehicle and back end services using Docker Compose:
 
    ```sh
-   docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-hono.yaml up --detach
+   docker compose --env-file ./config/hono/hono.env -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-hono.yaml up --detach
    ```
+
+   The path set via the `--env-file` option needs to be adapted to the output folder specified in the previous step.
 
    The second compose file specified on the command line will also start the [FMS Consumer](./components/fms-consumer)
    back end component which receives vehicle data via Hono's north bound Kafka based Telemetry API and writes it to the

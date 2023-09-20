@@ -162,7 +162,8 @@ services:
     environment:
       INFLUXDB_TOKEN_FILE: "/etc/forwarder/fms-demo.token"
       KUKSA_DATA_BROKER_URI: "http://databroker:55556"
-      RUST_LOG: "info,fms_forwarder=info,influx_client=info"
+      RUST_LOG: "${FMS_FORWARDER_LOG_CONFIG:-info,fms_forwarder=info,influx_client=info}"
+      TRUST_STORE_PATH: "${FMS_FORWARDER_TRUST_STORE_PATH:-/etc/ssl/certs/ca-certificates.crt}"
     volumes:
     - type: "volume"
       source: "influxdb-auth"

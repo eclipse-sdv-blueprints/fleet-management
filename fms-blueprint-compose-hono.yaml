@@ -17,10 +17,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-secrets:
-  kafka.properties:
-    file: "${KAFKA_PROPERTIES_FILE:-hono-kafka.properties}"
-
 services:
   fms-consumer:
     image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-consumer:main"
@@ -39,19 +35,24 @@ services:
         condition: service_healthy
     env_file:
     - "./influxdb/fms-demo.env"
-    - "./hono-kafka.env"
     environment:
       INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
-      KAFKA_PROPERTIES_FILE: "/app/config/kafka.properties"
-      RUST_LOG: "info,fms_consumer=debug,influx_client=debug"
+      KAFKA_PROPERTIES_FILE: "/app/config/${FMS_CONSUMER_KAFKA_PROPERTIES_FILE:-kafka.properties}"
+      KAFKA_TOPIC_NAME: "${FMS_CONSUMER_KAFKA_TOPIC_NAME}"
+      RUST_LOG: "${FMS_CONSUMER_LOG_CONFIG:-info,fms_consumer=debug,influx_client=debug}"
     volumes:
     - type: "volume"
       source: "influxdb-auth"
       target: "/tmp"
       read_only: true
-    secrets:
-    - source: "kafka.properties"
-      target: "/app/config/kafka.properties"
+    - type: "bind"
+      source: "${FMS_CONSUMER_CONFIG_FOLDER}"
+      target: "/app/config"
   fms-forwarder:
     command: "hono"
-    env_file: "${FMS_FORWARDER_PROPERTIES_FILE:-./hono-mqtt.env}"
+    env_file:
+    - "${FMS_FORWARDER_MQTT_ENV_FILE}"
+    volumes:
+    - type: "bind"
+      source: "${FMS_FORWARDER_CONFIG_FOLDER}"
+      target: "/app/config"
