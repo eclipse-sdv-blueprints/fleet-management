@@ -19,7 +19,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-python3 recorder.py -a $1 -p $2 -s \
+python3 recorder.py -a "$1" -p "$2" -s \
 Vehicle.ADAS.ABS.IsEnabled \
 Vehicle.ADAS.ABS.IsEngaged \
 Vehicle.ADAS.ABS.IsError \
