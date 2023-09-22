@@ -368,7 +368,7 @@ impl KuksaValDatabroker {
 
     pub async fn get_vehicle_status(&mut self) -> Result<VehicleStatus, DatabrokerError> {
         let entry_requests: Vec<EntryRequest> = SNAPSHOT_VSS_PATHS
-            .into_iter()
+            .iter()
             .map(|path| EntryRequest {
                 path: path.to_string(),
                 view: View::CurrentValue as i32,
@@ -427,7 +427,7 @@ impl KuksaValDatabroker {
         sender: Sender<FmsTrigger>,
     ) -> Result<(), DatabrokerError> {
         let subscribe_entries: Vec<SubscribeEntry> = TRIGGER_VSS_PATHS
-            .into_iter()
+            .iter()
             .map(|path| SubscribeEntry {
                 path: path.to_string(),
                 view: View::CurrentValue as i32,

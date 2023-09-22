@@ -24,7 +24,6 @@ use axum::extract::{Query, State};
 use clap::Command;
 use log::{error, info};
 
-use serde_json;
 use serde_json::json;
 use std::collections::HashMap;
 use std::process;

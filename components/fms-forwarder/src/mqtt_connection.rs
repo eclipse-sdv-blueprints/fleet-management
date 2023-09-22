@@ -154,26 +154,24 @@ impl MqttConnection {
             .unwrap_or(&"".to_string())
             .to_owned();
         let mut ssl_options_builder = SslOptionsBuilder::new();
-        match args.get_one::<String>(PARAM_CA_PATH) {
-            Some(path) => match ssl_options_builder.ca_path(path) {
+        if let Some(path) = args.get_one::<String>(PARAM_CA_PATH) {
+            match ssl_options_builder.ca_path(path) {
                 Err(e) => {
                     error!("failed to set CA path on MQTT client: {e}");
                     return Err(Box::new(e));
                 }
                 Ok(_builder) => (),
-            },
-            None => (),
-        };
-        match args.get_one::<String>(PARAM_TRUST_STORE_PATH) {
-            Some(path) => match ssl_options_builder.trust_store(path) {
+            }
+        }
+        if let Some(path) = args.get_one::<String>(PARAM_TRUST_STORE_PATH) {
+            match ssl_options_builder.trust_store(path) {
                 Err(e) => {
                     error!("failed to set trust store path on MQTT client: {e}");
                     return Err(Box::new(e));
                 }
                 Ok(_builder) => (),
-            },
-            None => (),
-        };
+            }
+        }
 
         let mut connect_options_builder = ConnectOptionsBuilder::new_v3();
         connect_options_builder.connect_timeout(Duration::from_secs(10));

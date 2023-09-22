@@ -44,17 +44,16 @@ const PARAM_KAFKA_PROPERTIES_FILE: &str = "kafka-properties-file";
 const PARAM_KAFKA_TOPIC_NAME: &str = "kafka-topic";
 
 fn add_property_bag_to_map(property_bag: String, headers: &mut HashMap<String, String>) {
-    property_bag.split("&").for_each(|p| {
+    property_bag.split('&').for_each(|p| {
         trace!("processing property: {p}");
-        p.split_once('=')
-            .map(|(k,v)| {
-                if headers.contains_key(k) {
-                    trace!("skipping property [{k}] from property bag because header with same name exists");
-                } else {
-                    trace!("adding propery [k: {k}, v: {v}] to header map");
-                    headers.insert(k.to_string(), v.to_string());
-                }
-            });
+        if let Some((key, value)) = p.split_once('=') {
+            if headers.contains_key(key) {
+                trace!("skipping property [{key}] from property bag because header with same name exists");
+            } else {
+                trace!("adding propery [key: {key}, value: {value}] to header map");
+                headers.insert(key.to_string(), value.to_string());
+            }
+        }
     });
 }
 
@@ -65,13 +64,13 @@ fn get_headers_as_map(headers: &BorrowedHeaders) -> HashMap<String, String> {
             header.key,
             header
                 .value
-                .and_then(|v| String::from_utf8(v.to_vec()).map_or(None, Option::Some)),
+                .and_then(|v| String::from_utf8(v.to_vec()).ok()),
         ) {
             (HEADER_NAME_ORIG_ADDRESS, Some(value)) => {
-                value.rsplit_once("/?").map(|(_topic, props)| {
+                if let Some((_topic, props)) = value.rsplit_once("/?") {
                     debug!("found property bag in {HEADER_NAME_ORIG_ADDRESS} header: {props}");
                     add_property_bag_to_map(props.to_string(), &mut result);
-                });
+                }
             }
             (_, Some(value)) => {
                 result.insert(header.key.to_string(), value);
@@ -101,7 +100,7 @@ fn get_kafka_client_config(filename: &String) -> Result<ClientConfig, Box<dyn st
         let mut client_config = ClientConfig::new();
         for line in lines {
             match line {
-                Ok(property) => match property.split_once("=") {
+                Ok(property) => match property.split_once('=') {
                     Some((key, value)) => {
                         client_config.set(key, value);
                     }
@@ -141,9 +140,8 @@ async fn process_protobuf_message(
     match message_properties.get("device_id") {
         Some(device_id) => {
             debug!("received message from vehicle {}", device_id);
-            match deserialize_vehicle_status(payload) {
-                Some(vehicle_status) => influx_writer.write_vehicle_status(&vehicle_status).await,
-                None => {}
+            if let Some(vehicle_status) = deserialize_vehicle_status(payload) {
+                influx_writer.write_vehicle_status(&vehicle_status).await;
             }
         }
         None => debug!("discarding message from unknown device"),
@@ -170,7 +168,7 @@ async fn process_message(m: &BorrowedMessage<'_>, influx_writer: Arc<InfluxWrite
 }
 
 async fn run_async_processor(args: &ArgMatches) {
-    let influx_writer = InfluxWriter::new(&args).map_or_else(
+    let influx_writer = InfluxWriter::new(args).map_or_else(
         |e| {
             error!("failed to create InfluxDB writer: {e}");
             process::exit(1);
@@ -203,11 +201,11 @@ async fn run_async_processor(args: &ArgMatches) {
         }
         Ok(metadata) => match metadata
             .topics()
-            .into_iter()
+            .iter()
             .find(|topic| topic.name() == topic_name)
         {
             Some(topic) => {
-                if topic.partitions().len() == 0 {
+                if topic.partitions().is_empty() {
                     error!("topic [{topic_name}] does not exist (yet)");
                     process::exit(1);
                 }

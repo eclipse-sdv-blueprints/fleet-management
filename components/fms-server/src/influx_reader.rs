@@ -25,7 +25,7 @@ use influxrs::InfluxError;
 
 use crate::models::{self, GnssPositionObject, TriggerObject, VehiclePositionObject};
 
-const FILTER_FIELDS_POSITION: &'static str = formatcp!(
+const FILTER_FIELDS_POSITION: &str = formatcp!(
     r#"filter(fn: (r) => contains(set: ["{}","{}","{}","{}","{}","{}","{}","{}", "{}"], value: r._field))"#,
     influx_client::FIELD_CREATED_DATE_TIME,
     influx_client::FIELD_LATITUDE,
@@ -37,23 +37,23 @@ const FILTER_FIELDS_POSITION: &'static str = formatcp!(
     influx_client::FIELD_TACHOGRAPH_SPEED,
     influx_client::FIELD_WHEEL_BASED_SPEED,
 );
-const FILTER_MEASUREMENT_SNAPSHOT: &'static str = formatcp!(
+const FILTER_MEASUREMENT_SNAPSHOT: &str = formatcp!(
     r#"filter(fn: (r) => r._measurement == "{}")"#,
     influx_client::MEASUREMENT_SNAPSHOT,
 );
-const FILTER_TAG_ANY_VIN: &'static str = formatcp!(r#"filter(fn: (r) => r["{}"] =~ /.*/)"#, influx_client::TAG_VIN);
-const FILTER_TAG_ANY_TRIGGER: &'static str = formatcp!(r#"filter(fn: (r) => r["{}"] =~ /.*/)"#, influx_client::TAG_TRIGGER);
+const FILTER_TAG_ANY_VIN: &str = formatcp!(r#"filter(fn: (r) => r["{}"] =~ /.*/)"#, influx_client::TAG_VIN);
+const FILTER_TAG_ANY_TRIGGER: &str = formatcp!(r#"filter(fn: (r) => r["{}"] =~ /.*/)"#, influx_client::TAG_TRIGGER);
 
 fn unpack_value_i32(value: Option<&String>) -> Option<i32> {
-    value.and_then(|v| v.parse().map_or(None, Option::Some))
+    value.and_then(|v| v.parse().ok())
 }
 
 fn unpack_value_f64(value: Option<&String>) -> Option<f64> {
-    value.and_then(|v| v.parse().map_or(None, Option::Some))
+    value.and_then(|v| v.parse().ok())
 }
 
 fn unpack_time(value: Option<&String>) -> Option<DateTime<Utc>> {
-    value.and_then(|v| v.parse().map_or(None, Option::Some))
+    value.and_then(|v| v.parse().ok())
 }
 
 pub struct InfluxReader {
@@ -63,7 +63,7 @@ pub struct InfluxReader {
 impl InfluxReader {
 
     pub fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
-        InfluxConnection::new(&args).map(|con| InfluxReader { influx_con: con })
+        InfluxConnection::new(args).map(|con| InfluxReader { influx_con: con })
     }
 
     pub async fn get_vehicles(&self) -> Result<Vec<models::VehicleObject>, InfluxError> {

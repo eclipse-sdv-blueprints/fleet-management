@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let publisher: Box<dyn StatusPublisher> = match args.subcommand_name() {
         Some(SUBCOMMAND_HONO) => {
             let hono_args = args.subcommand_matches(SUBCOMMAND_HONO).unwrap();
-            match HonoPublisher::new(&hono_args).await {
+            match HonoPublisher::new(hono_args).await {
                 Ok(writer) => Box::new(writer),
                 Err(e) => {
                     error!("failed to create Hono publisher: {}", e);
@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
         Some(SUBCOMMAND_INFLUX) => {
             let influx_args = args.subcommand_matches(SUBCOMMAND_INFLUX).unwrap();
-            match InfluxWriter::new(&influx_args) {
+            match InfluxWriter::new(influx_args) {
                 Ok(writer) => Box::new(writer),
                 Err(e) => {
                     error!("failed to create InfluxDB writer: {e}");

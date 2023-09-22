@@ -168,7 +168,7 @@ impl TryFrom<Value> for Option<f64> {
             Value::Uint64(v) => Ok(Some(v as f64)),
             Value::Int32(v) => Ok(Some(v as f64)),
             Value::Int64(v) => Ok(Some(v as f64)),
-            Value::Double(v) => Ok(Some(v as f64)),
+            Value::Double(v) => Ok(Some(v)),
             Value::Float(v) => Ok(Some(v as f64)),
             _ => Err(UnsupportedValueTypeError{}),
         }

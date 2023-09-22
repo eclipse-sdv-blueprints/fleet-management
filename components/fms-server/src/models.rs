@@ -450,7 +450,7 @@ pub struct VehicleObject {
 impl VehicleObject {
     pub fn new(vin : String) -> VehicleObject {
         VehicleObject {
-                vin: vin, 
+                vin, 
                 customer_vehicle_name: None,
                 brand: None, 
                 production_date: None,

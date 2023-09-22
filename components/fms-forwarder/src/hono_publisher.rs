@@ -53,7 +53,7 @@ impl HonoPublisher {
     /// MQTT endpoint using a client certificate of username/password credentials. 
     pub async fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
 
-        MqttConnection::new(&args).await
+        MqttConnection::new(args).await
             .map(|con| {
                 HonoPublisher { mqtt_connection: con }
                 })

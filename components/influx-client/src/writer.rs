@@ -239,7 +239,7 @@ impl InfluxWriter {
     ///   | field | parkingBrakeSwitch | Switch signal which indicates when the parking brake is set. |
     /// 
     pub async fn write_vehicle_status(&self, vehicle_status: &VehicleStatus) {
-        if vehicle_status.vin.len() == 0 {
+        if vehicle_status.vin.is_empty() {
             debug!("ignoring vehicle status without VIN ...");
             return;
         }
@@ -275,7 +275,7 @@ impl InfluxWriter {
             vehicle_status.vin.as_str(),
             &trigger,
             created_timestamp,
-            &vehicle_status,
+            vehicle_status,
         ) {
             debug!("writing header measurement to influxdb");
             measurements.push(measurement);
@@ -284,7 +284,7 @@ impl InfluxWriter {
             vehicle_status.vin.as_str(),
             &trigger,
             created_timestamp,
-            &vehicle_status,
+            vehicle_status,
         ) {
             debug!("writing snapshot measurement to influxdb");
             measurements.push(measurement);
