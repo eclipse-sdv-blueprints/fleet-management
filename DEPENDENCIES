@@ -101,9 +101,9 @@ crate/cratesio/-/polling/2.8.0, Apache-2.0 OR MIT, approved, clearlydefined
 crate/cratesio/-/ppv-lite86/0.2.17, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/proc-macro2/1.0.66, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/proc-macro-crate/1.3.1, MIT OR Apache-2.0, approved, clearlydefined
-crate/cratesio/-/prost/0.11.9, Apache-2.0, approved, #7713
-crate/cratesio/-/prost-derive/0.11.9, Apache-2.0, approved, #7717
-crate/cratesio/-/prost-types/0.11.9, Apache-2.0 AND BSD-2-Clause, approved, #7714
+crate/cratesio/-/prost/0.12.1, Apache-2.0, approved, #10594
+crate/cratesio/-/prost-derive/0.12.1, Apache-2.0, approved, clearlydefined
+crate/cratesio/-/prost-types/0.12.1, Apache-2.0 AND BSD-3-Clause, approved, #10593
 crate/cratesio/-/protobuf/3.2.0, MIT, approved, clearlydefined
 crate/cratesio/-/protobuf-support/3.2.0, MIT, approved, clearlydefined
 crate/cratesio/-/quote/1.0.32, MIT OR Apache-2.0, approved, clearlydefined
@@ -151,7 +151,7 @@ crate/cratesio/-/tokio-stream/0.1.14, MIT, approved, clearlydefined
 crate/cratesio/-/tokio-util/0.7.8, MIT, approved, clearlydefined
 crate/cratesio/-/toml_datetime/0.6.3, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/toml_edit/0.19.14, MIT OR Apache-2.0, approved, clearlydefined
-crate/cratesio/-/tonic/0.9.2, MIT AND Apache-2.0, approved, #9772
+crate/cratesio/-/tonic/0.10.0, MIT, approved, clearlydefined
 crate/cratesio/-/tower/0.4.13, MIT AND Apache-2.0, approved, #6661
 crate/cratesio/-/tower-layer/0.3.2, MIT, approved, clearlydefined
 crate/cratesio/-/tower-service/0.3.2, MIT, approved, clearlydefined
