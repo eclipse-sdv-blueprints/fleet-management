@@ -38,4 +38,6 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
       with:
         components: clippy
-    - run: cargo clippy --manifest-path components/Cargo.toml --workspace --all-features -- -Dwarnings
+    - run: |-
+        cargo clippy --manifest-path components/Cargo.toml --workspace --all-features -- -Dwarnings
+        cargo test --manifest-path components/Cargo.toml --workspace --all-features

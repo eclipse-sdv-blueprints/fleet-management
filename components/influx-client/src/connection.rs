@@ -123,10 +123,10 @@ impl InfluxConnection {
     /// # Examples
     /// 
     /// ```
-    /// use clap::{ArgMatches, Arg, ArgGroup, Command};
+    /// use clap::Command;
     /// use influx_client::connection::InfluxConnection;
     /// 
-    /// let mut command = influx_client::add_command_line_args(Command::new("influx_client"));
+    /// let command = influx_client::connection::add_command_line_args(Command::new("influx_client"));
     /// let matches = command.get_matches_from(vec![
     ///     "influx_client",
     ///     "--influxdb-uri", "http://my-influx.io",
@@ -162,4 +162,62 @@ impl InfluxConnection {
             bucket: influx_bucket,
         })
     }
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn test_command_line_uses_defaults() {
+
+        let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
+        let matches = command.get_matches_from(vec![
+                "influx_client",
+                "--influxdb-uri", "http://influx.io",
+                "--influxdb-token", "the-token",
+                ]);
+        assert_eq!(matches.get_one::<String>(super::PARAM_INFLUXDB_URI).unwrap(), "http://influx.io");
+        assert_eq!(matches.get_one::<String>(super::PARAM_INFLUXDB_TOKEN).unwrap(), "the-token");
+        assert_eq!(matches.get_one::<String>(super::PARAM_INFLUXDB_ORG).unwrap(), "sdv");
+        assert_eq!(matches.get_one::<String>(super::PARAM_INFLUXDB_BUCKET).unwrap(), "demo");
+    }
+
+    #[test]
+    fn test_command_line_requires_uri() {
+
+        let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
+        let matches = command.try_get_matches_from(vec![
+                "influx_client",
+                "--influxdb-token", "the-token",
+            ]);
+        assert!(matches.is_err_and(|e| e.kind() == clap::error::ErrorKind::MissingRequiredArgument));
+    }
+
+    #[test]
+    fn test_command_line_requires_token_or_token_file() {
+
+        let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
+        let no_token_matches = command.try_get_matches_from(vec![
+                "influx_client",
+                "--influxdb-uri", "http://influx.io",
+            ]);
+        assert!(no_token_matches.is_err_and(|e| e.kind() == clap::error::ErrorKind::MissingRequiredArgument));
+
+        let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
+        let with_token_matches = command.get_matches_from(vec![
+            "influx_client",
+            "--influxdb-uri", "http://influx.io",
+            "--influxdb-token", "the-token",
+        ]);
+        assert_eq!(with_token_matches.get_one::<String>(super::PARAM_INFLUXDB_TOKEN).unwrap(), "the-token");
+
+        let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
+        let with_token_file_matches = command.get_matches_from(vec![
+            "influx_client",
+            "--influxdb-uri", "http://influx.io",
+            "--influxdb-token-file", "/path/to/token-file",
+        ]);
+        assert_eq!(with_token_file_matches.get_one::<String>(super::PARAM_INFLUXDB_TOKEN_FILE).unwrap(), "/path/to/token-file");
+    }
+
 }
