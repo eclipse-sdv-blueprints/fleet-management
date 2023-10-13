@@ -196,20 +196,19 @@ fi
 if [[ -z "${HONO_DEVICE_PASSWORD}" && -z ${HONO_DEVICE_CERT} ]]; then
   error_and_exit "Missing required option: device-pwd | device-cert"
 fi
-if [[ -n "${HONO_DEVICE_CERT}" && -z "${HONO_DEVICE_KEY}" ]]; then
-  error_and_exit "Missing required option: device-key"
+if [[ -n "${HONO_DEVICE_CERT}" ]]; then
+  if [[ -z "${HONO_DEVICE_KEY}" ]]; then
+    error_and_exit "Missing required option: device-key"
+  elif [[ ! -e ${HONO_DEVICE_CERT} || ! -r ${HONO_DEVICE_CERT} ]]; then
+    error_and_exit "Cannot read client certificate from ${HONO_DEVICE_CERT}"
+  fi
 fi
-if [[ -z "${HONO_DEVICE_CERT}" && -n "${HONO_DEVICE_KEY}" ]]; then
-  error_and_exit "Missing required option: device-cert"
-fi
-if [[ -n ${PROVISION_TO_HONO} && -z ${HONO_TENANT_CA} ]]; then
-  error_and_exit "Missing required option: tenant-ca"
-fi
-if [[ ! -e ${HONO_DEVICE_CERT} || ! -r ${HONO_DEVICE_CERT} ]]; then
-  error_and_exit "Cannot read client certificate from ${HONO_DEVICE_CERT}"
-fi
-if [[ ! -e ${HONO_DEVICE_KEY} || ! -r ${HONO_DEVICE_KEY} ]]; then
-  error_and_exit "Cannot read client key from ${HONO_DEVICE_KEY}"
+if [[ -n "${HONO_DEVICE_KEY}" ]]; then
+  if [[ -z "${HONO_DEVICE_CERT}" ]]; then
+    error_and_exit "Missing required option: device-cert"
+  elif [[ ! -e ${HONO_DEVICE_KEY} || ! -r ${HONO_DEVICE_KEY} ]]; then
+    error_and_exit "Cannot read client key from ${HONO_DEVICE_KEY}"
+  fi
 fi
 
 if [[ -z "${HONO_KAFKA_BROKERS}" ]]; then
