@@ -20,13 +20,12 @@ SPDX-License-Identifier: Apache-2.0
 -->
 # Using the CSV-Provider
 
-With the CSV-provider one can replay signals from a CSV-file to an instance of the Kuksa.val data broker. More details are available in the [upstream repository](https://github.com/eclipse/kuksa.val.feeders/tree/main/csv_provider). To execute the CSV-provider with the Docker Compose setup, add the argument '--profile csv':
-
-```
-docker compose -f ./fms-demo-compose.yaml --profile direct --profile csv up --detach
-```
+With the CSV-provider one can replay signals from a CSV-file to an instance of the Kuksa.val data broker. More details are
+available in the [upstream repository](https://github.com/eclipse/kuksa.val.feeders/tree/main/csv_provider).
+The CSV-provider is started by default when using the Docker Compose setup.
 
 ## Recording
-The file in `csv-provider/signalsFmsRecording.csv` is a CSV representation of the beginning of the CAN-trace in `dbc-feeder/220421_MAN_Si_RIO_CAN_converted.log`. The CSV-representation of the full VSS-recording of the CAN-trace is available in the archive `csv-providers/signalsFmsRecording.zip`.
 
-You can perform your own recording for other traces by using the [CSV recorder from the Kuksa.val.feeders repository](https://github.com/eclipse/kuksa.val.feeders/tree/main/csv_provider). The script in [run_recorderFMS.sh](run_recorderFMS.sh) contains the signals to record for this use case.
+You can perform your own recording for other traces by using the
+[CSV recorder from the Kuksa.val.feeders repository](https://github.com/eclipse/kuksa.val.feeders/tree/main/csv_provider).
+The script in [run_recorderFMS.sh](run_recorderFMS.sh) contains the signals to record for this use case.
