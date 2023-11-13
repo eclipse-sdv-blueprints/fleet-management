@@ -39,6 +39,8 @@ HONO_KAFKA_BROKERS=""
 HONO_KAFKA_SECURE_PORT=9094
 HONO_KAFKA_USER="hono"
 HONO_KAFKA_PASSWORD="hono-secret"
+TRUST_STORE_PATH="/etc/ssl/certs/ca-certificates.crt"
+ENABLE_HOSTNAME_VALIDATION="false"
 OUT_DIR="."
 PROVISION_TO_HONO=""
 
@@ -49,20 +51,27 @@ Usage: ${cmd_name} OPTIONS ...
 
 OPTIONS
 
--h | --help               Display this usage information.
--t | --tenant             The identifier of the tenant to create the device for.
---tenant-ca               The path to a PEM file containing an X.509 certificate which should be set as the tenant's trust anchor for authenticating devices using a client certificate.
---device-id               The identifier of the device to create.
---device-pwd              The password that the device needs to use for authenticating to Hono's MQTT adapter.
---device-cert             The path to a PEM file containing an X.509 certificate that the device uses for authenticating to Hono's MQTT adapter.
---device-key              The path to a PEM file containing the private key that the device uses for authenticating to Hono's MQTT adapter.
--H | --host               The host name or IP address of Hono's device registry. [${HONO_HOST}]
--p | --port               The TLS port of the Hono device registry. [${HONO_REGISTRY_PORT}]
---kafka-brokers           A comma separated list of host name/IP address:port tuples of the Kafka broker(s) to consume messages from. [${HONO_HOST}:${HONO_KAFKA_SECURE_PORT}]
---kafka-user              The username to use for authenticating to the Kafka broker(s) to consume messages from. [${HONO_KAFKA_USER}]
---kafka-pwd               The password to use for authenticating to the Kafka broker(s) to consume messages from. [${HONO_KAFKA_PASSWORD}]
---out-dir                 The path to the folder to write configuration files to. [${OUT_DIR}]
---provision               Also provision device information to Hono's Device Registry.
+-h | --help                         Display this usage information.
+-t | --tenant ID                    The identifier of the tenant to create the device for.
+--tenant-ca PATH                    The path to a PEM file containing an X.509 certificate which should be set as the tenant's
+                                      trust anchor for authenticating devices using a client certificate.
+--device-id ID                      The identifier of the device to create.
+--device-pwd PWD                    The password that the device needs to use for authenticating to Hono's MQTT adapter.
+--device-cert PATH                  The path to a PEM file containing an X.509 certificate that the device uses for authenticating
+                                      to Hono's MQTT adapter.
+--device-key PATH                   The path to a PEM file containing the private key that the device uses for authenticating to
+                                      Hono's MQTT adapter.
+-H | --host HOST                    The host name or IP address of Hono's device registry. [${HONO_HOST}]
+-p | --port PORT                    The TLS port of the Hono device registry. [${HONO_REGISTRY_PORT}]
+--kafka-brokers LIST                A comma separated list of host name/IP address:port tuples of the Kafka broker(s) to consume
+                                      messages from. [${HONO_HOST}:${HONO_KAFKA_SECURE_PORT}]
+--kafka-user USER                   The username to use for authenticating to the Kafka broker(s) to consume messages from. [${HONO_KAFKA_USER}]
+--kafka-pwd PWD                     The password to use for authenticating to the Kafka broker(s) to consume messages from. [${HONO_KAFKA_PASSWORD}]
+--out-dir PATH                      The path to the folder to write configuration files to. [${OUT_DIR}]
+--provision                         Also provision device information to Hono's Device Registry.
+--trust-store-path PATH             The path to a file that contains PEM encoded trusted root certificates. [${TRUST_STORE_PATH}]
+--disable-hostname-validation       Disables matching of server certificates against the hostname/IP address used by a client to
+                                      connect to the server.
 
 Examples:
 
@@ -174,11 +183,17 @@ while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
   --kafka-pwd )
     shift; HONO_KAFKA_PASSWORD=$1
     ;;
+  --trust-store-path )
+    shift; TRUST_STORE_PATH=$1
+    ;;
   -o | --out-dir )
     shift; OUT_DIR=$1
     ;;
   --provision )
     PROVISION_TO_HONO=1
+    ;;
+  --disable-hostname-validation )
+    ENABLE_HOSTNAME_VALIDATION="false"
     ;;
   *)
     echo "Ignoring unknown option: $1"
@@ -238,8 +253,11 @@ security.protocol=SASL_SSL
 sasl.mechanism=SCRAM-SHA-512
 sasl.username=${HONO_KAFKA_USER}
 sasl.password=${HONO_KAFKA_PASSWORD}
-ssl.ca.location=/etc/ssl/certs/ca-certificates.crt
+ssl.ca.location=${TRUST_STORE_PATH}
 EOF
+if [[ "${ENABLE_HOSTNAME_VALIDATION}" == "false" ]]; then
+  echo "ssl.endpoint.identification.algorithm=" >> "${KAFKA_PROPERTIES_FILE}"
+fi
 
 # create file with environment variables that the FMS Forwarder running in the vehicle
 # will use to configure its connection to Hono's MQTT adapter
@@ -250,14 +268,16 @@ if [[ -n "${HONO_DEVICE_CERT}" ]]; then
     "mqtts://${HONO_HOST}:8883" \
     "${HONO_DEVICE_CERT}" \
     "${HONO_DEVICE_KEY}" \
-    "/etc/ssl/certs/ca-certificates.crt"
+    "${TRUST_STORE_PATH}" \
+    "${ENABLE_HOSTNAME_VALIDATION}"
 else
   create_mqtt_client_env \
     "${MQTT_PROPS_FILE}" \
     "mqtts://${HONO_HOST}:8883" \
     "${HONO_DEVICE_ID}@${HONO_TENANT_ID}" \
     "${HONO_DEVICE_PASSWORD}" \
-    "/etc/ssl/certs/ca-certificates.crt"
+    "${TRUST_STORE_PATH}" \
+    "${ENABLE_HOSTNAME_VALIDATION}"
 fi
 # create file with environment variables to be used with Docker Compose when
 # starting the services:

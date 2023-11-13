@@ -19,16 +19,14 @@
 
 use clap::{Arg, ArgMatches, Command};
 use log::{error, info, warn};
-use mqtt::{
-    AsyncClient, ConnectOptionsBuilder, CreateOptionsBuilder, SslOptionsBuilder,
-};
+use mqtt::{AsyncClient, ConnectOptionsBuilder, CreateOptionsBuilder, SslOptionsBuilder};
 use paho_mqtt as mqtt;
 use std::{thread, time::Duration};
-
 
 const PARAM_CA_PATH: &str = "ca-path";
 const PARAM_DEVICE_CERT: &str = "device-cert";
 const PARAM_DEVICE_KEY: &str = "device-key";
+const PARAM_ENABLE_HOSTNAME_VERIFICATION: &str = "enable-hostname-verification";
 const PARAM_MQTT_CLIENT_ID: &str = "mqtt-client-id";
 const PARAM_MQTT_URI: &str = "mqtt-uri";
 const PARAM_MQTT_USERNAME: &str = "mqtt-username";
@@ -37,20 +35,21 @@ const PARAM_TRUST_STORE_PATH: &str = "trust-store-path";
 
 /// Adds arguments to an existing command line which can be
 /// used to configure the connection to an MQTT endpoint.
-/// 
+///
 /// The following arguments are being added:
-/// 
-/// | long name           | environment variable | default value |
-/// |---------------------|----------------------|---------------|
-/// | mqtt-client-id      | MQTT_CLIENT_ID       | random ID     |
-/// | mqtt-uri            | MQTT_URI             | -             |
-/// | mqtt-username       | MQTT_USERNAME        | -             |
-/// | mqtt-password       | MQTT_PASSWORD        | -             |
-/// | device-cert         | DEVICE_CERT          | -             |
-/// | device-key          | DEVICE_KEY           | -             |
-/// | ca-path             | CA_PATH              | -             |
-/// | trust-store-path    | TRUST_STORE_PATH     | -             |
-/// 
+///
+/// | Long Name                    | Environment Variable         | Default Value |
+/// |------------------------------|------------------------------|---------------|
+/// | mqtt-client-id               | MQTT_CLIENT_ID               | -             |
+/// | mqtt-uri                     | MQTT_URI                     | -             |
+/// | mqtt-username                | MQTT_USERNAME                | -             |
+/// | mqtt-password                | MQTT_PASSWORD                | -             |
+/// | device-cert                  | DEVICE_CERT                  | -             |
+/// | device-key                   | DEVICE_KEY                   | -             |
+/// | ca-path                      | CA_PATH                      | -             |
+/// | trust-store-path             | TRUST_STORE_PATH             | -             |
+/// | enable-hostname-verification | ENABLE_HOSTNAME_VERIFICATION | `true`        |
+///
 pub fn add_command_line_args(command: Command) -> Command {
     command
         .arg(
@@ -125,10 +124,21 @@ pub fn add_command_line_args(command: Command) -> Command {
                 .required(false)
                 .env("TRUST_STORE_PATH"),
         )
+        .arg(
+            Arg::new(PARAM_ENABLE_HOSTNAME_VERIFICATION)
+                .value_parser(clap::builder::BoolishValueParser::new())
+                .long(PARAM_ENABLE_HOSTNAME_VERIFICATION)
+                .help("Indicates whether server certificates should be matched against the hostname/IP address 
+                    used by a client to connect to the server.")
+                .value_name("FLAG")
+                .required(false)
+                .default_value("true")
+                .env("ENABLE_HOSTNAME_VERIFICATION"),
+        )
 }
 
 /// A connection to an MQTT endpoint.
-/// 
+///
 pub struct MqttConnection {
     pub mqtt_client: AsyncClient,
     pub uri: String,
@@ -136,41 +146,24 @@ pub struct MqttConnection {
 }
 
 impl MqttConnection {
-
-    /// Creates a new connection to an MQTT endpoint.
-    /// 
-    /// Expects to find parameters as defined by [`add_command_line_args`] in the passed
-    /// in *args*.
-    /// 
-    /// The connection returned is configured to keep trying to (re-)connect to the configured
-    /// MQTT endpoint.
-    pub async fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
-        let mqtt_uri = args
-            .get_one::<String>(PARAM_MQTT_URI)
-            .unwrap()
-            .to_owned();
-        let client_id = args
-            .get_one::<String>(PARAM_MQTT_CLIENT_ID)
-            .unwrap_or(&"".to_string())
-            .to_owned();
+    fn get_connect_options(
+        args: &ArgMatches,
+    ) -> Result<paho_mqtt::ConnectOptions, Box<dyn std::error::Error>> {
         let mut ssl_options_builder = SslOptionsBuilder::new();
         if let Some(path) = args.get_one::<String>(PARAM_CA_PATH) {
-            match ssl_options_builder.ca_path(path) {
-                Err(e) => {
-                    error!("failed to set CA path on MQTT client: {e}");
-                    return Err(Box::new(e));
-                }
-                Ok(_builder) => (),
+            if let Err(e) = ssl_options_builder.ca_path(path) {
+                error!("failed to set CA path on MQTT client: {e}");
+                return Err(Box::new(e));
             }
         }
         if let Some(path) = args.get_one::<String>(PARAM_TRUST_STORE_PATH) {
-            match ssl_options_builder.trust_store(path) {
-                Err(e) => {
-                    error!("failed to set trust store path on MQTT client: {e}");
-                    return Err(Box::new(e));
-                }
-                Ok(_builder) => (),
+            if let Err(e) = ssl_options_builder.trust_store(path) {
+                error!("failed to set trust store path on MQTT client: {e}");
+                return Err(Box::new(e));
             }
+        }
+        if let Some(flag) = args.get_one::<bool>(PARAM_ENABLE_HOSTNAME_VERIFICATION) {
+            ssl_options_builder.verify(*flag);
         }
 
         let mut connect_options_builder = ConnectOptionsBuilder::new_v3();
@@ -215,7 +208,23 @@ impl MqttConnection {
         }
 
         connect_options_builder.ssl_options(ssl_options_builder.finalize());
-        let connect_options = connect_options_builder.finalize();
+        Ok(connect_options_builder.finalize())
+    }
+
+    /// Creates a new connection to an MQTT endpoint.
+    ///
+    /// Expects to find parameters as defined by [`add_command_line_args`] in the passed
+    /// in *args*.
+    ///
+    /// The connection returned is configured to keep trying to (re-)connect to the configured
+    /// MQTT endpoint.
+    pub async fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
+        let connect_options = MqttConnection::get_connect_options(args)?;
+        let mqtt_uri = args.get_one::<String>(PARAM_MQTT_URI).unwrap().to_owned();
+        let client_id = args
+            .get_one::<String>(PARAM_MQTT_CLIENT_ID)
+            .unwrap_or(&"".to_string())
+            .to_owned();
         info!("connecting to MQTT endpoint at {}", mqtt_uri);
         match CreateOptionsBuilder::new()
             .server_uri(&mqtt_uri)
@@ -258,5 +267,44 @@ impl MqttConnection {
             MqttConnection::on_connect_success,
             MqttConnection::on_connect_failure,
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn test_get_add_command_line_args_requies_uri() {
+        let command = super::add_command_line_args(clap::Command::new("mqtt"));
+        let matches = command.try_get_matches_from(vec!["mqtt"]);
+        assert!(matches.is_err_and(|e| e.kind() == clap::error::ErrorKind::MissingRequiredArgument));
+    }
+
+    #[test]
+    fn test_get_add_command_line_args_uses_defaults() {
+        let command = super::add_command_line_args(clap::Command::new("mqtt"));
+        let matches =
+            command.get_matches_from(vec!["mqtt", "--mqtt-uri", "mqtts://non-existing.host.io"]);
+        assert_eq!(
+            matches.get_one::<String>(super::PARAM_MQTT_URI).unwrap(),
+            "mqtts://non-existing.host.io"
+        );
+        assert!(matches
+            .get_one::<String>(super::PARAM_MQTT_CLIENT_ID)
+            .is_none());
+        assert!(matches
+            .get_one::<String>(super::PARAM_MQTT_USERNAME)
+            .is_none());
+        assert!(matches
+            .get_one::<String>(super::PARAM_MQTT_PASSWORD)
+            .is_none());
+        assert!(matches.get_one::<String>(super::PARAM_DEVICE_KEY).is_none());
+        assert!(matches
+            .get_one::<String>(super::PARAM_DEVICE_CERT)
+            .is_none());
+        assert!(matches.get_one::<String>(super::PARAM_CA_PATH).is_none());
+        assert!(matches
+            .get_one::<bool>(super::PARAM_ENABLE_HOSTNAME_VERIFICATION)
+            .unwrap());
     }
 }
