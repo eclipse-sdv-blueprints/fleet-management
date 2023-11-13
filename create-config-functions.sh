@@ -26,18 +26,36 @@
 
 # create file with environment variables that the FMS Forwarder running in the vehicle
 # will use to configure its connection to Hono's MQTT adapter
+create_common_mqtt_client_env() {
+  ENV_FILE_PATH=$1
+  URI=$2
+  TRUST_STORE=$3
+  ENABLE_HOSTNAME_VALIDATION=$4
+  echo "Creating MQTT client properties file ${ENV_FILE_PATH} ..."
+  cat <<EOF > "${ENV_FILE_PATH}"
+MQTT_URI=${URI}
+TRUST_STORE_PATH=${TRUST_STORE}
+ENABLE_HOSTNAME_VALIDATION=${ENABLE_HOSTNAME_VALIDATION}
+EOF
+}
+
+# create file with environment variables that the FMS Forwarder running in the vehicle
+# will use to configure its connection to Hono's MQTT adapter
 create_mqtt_client_env() {
   ENV_FILE_PATH=$1
   URI=$2
   USERNAME=$3
   PASSWORD=$4
   TRUST_STORE=$5
-  echo "Creating MQTT client properties file ${ENV_FILE_PATH} ..."
-  cat <<EOF > "${ENV_FILE_PATH}"
-MQTT_URI=${URI}
+  ENABLE_HOSTNAME_VALIDATION=$6
+  create_common_mqtt_client_env \
+    "${ENV_FILE_PATH}" \
+    "${URI}" \
+    "${TRUST_STORE}" \
+    "${ENABLE_HOSTNAME_VALIDATION}"
+  cat <<EOF >> "${ENV_FILE_PATH}"
 MQTT_USERNAME=${USERNAME}
 MQTT_PASSWORD=${PASSWORD}
-TRUST_STORE_PATH=${TRUST_STORE}
 EOF
 }
 
@@ -49,14 +67,17 @@ create_mqtt_client_env_with_cert() {
   CLIENT_CERT_PATH=$3
   CLIENT_KEY_PATH=$4
   TRUST_STORE=$5
-  echo "Creating MQTT client properties file ${ENV_FILE_PATH} ..."
+  ENABLE_HOSTNAME_VALIDATION=$6
+  create_common_mqtt_client_env \
+    "${ENV_FILE_PATH}" \
+    "${URI}" \
+    "${TRUST_STORE}" \
+    "${ENABLE_HOSTNAME_VALIDATION}"
   CONFIG_DIR_FMS_FORWARDER="${ENV_FILE_PATH%/*}/fms-forwarder"
   cp "${CLIENT_CERT_PATH}" "${CLIENT_KEY_PATH}" "${CONFIG_DIR_FMS_FORWARDER}"
-  cat <<EOF > "${ENV_FILE_PATH}"
+  cat <<EOF >> "${ENV_FILE_PATH}"
 DEVICE_CERT=/app/config/$(basename "$CLIENT_CERT_PATH")
 DEVICE_KEY=/app/config/$(basename "$CLIENT_KEY_PATH")
-MQTT_URI=${URI}
-TRUST_STORE_PATH=${TRUST_STORE}
 EOF
 }
 
