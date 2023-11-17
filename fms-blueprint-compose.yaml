@@ -83,7 +83,7 @@ services:
       source: "grafana-datasources"
       target: "/tmp/influxdb-datasources"
   grafana:
-    image: "docker.io/grafana/grafana:9.5.6"
+    image: "docker.io/grafana/grafana:9.5.14"
     container_name: "grafana"
     cap_drop: *default-drops
     ports:
@@ -128,7 +128,7 @@ services:
       target: "/tmp"
       read_only: true
   databroker:
-    image: "ghcr.io/eclipse/kuksa.val/databroker:0.4.0"
+    image: "ghcr.io/eclipse/kuksa.val/databroker:0.4.1"
     container_name: "databroker"
     cap_drop: *default-drops
     networks:
