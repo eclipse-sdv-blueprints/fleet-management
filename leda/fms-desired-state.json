@@ -1,0 +1,123 @@
+{
+  "activityId": "install-FMS-components",
+  "payload": {
+    "domains": [
+      {
+        "id": "containers",
+        "config": [],
+        "components": [
+          {
+            "id": "databroker",
+            "version": "0.4.1",
+            "config": [
+              {
+                "key": "image",
+                "value": "ghcr.io/eclipse/kuksa.val/databroker:0.4.1"
+              },
+              {
+                "key": "env",
+                "value": "RUST_LOG=info"
+              },
+              {
+                "key": "env",
+                "value": "KUKSA_DATA_BROKER_METADATA_FILE=/etc/databroker/vss.json"
+              },
+              {
+                "key": "port",
+                "value": "127.0.0.1:30555:55555"
+              },
+              {
+                "key": "mount",
+                "value": "/data/usr/fms/databroker:/etc/databroker:rprivate"
+              },
+              {
+                "key": "logMaxSize",
+                "value": "1M"
+              }
+            ]
+          },
+          {
+            "id": "csv-provider",
+            "version": "0.4",
+            "config": [
+              {
+                "key": "image",
+                "value": "ghcr.io/eclipse/kuksa.val.feeders/csv-provider:0.4"
+              },
+              {
+                "key": "env",
+                "value": "PROVIDER_SIGNALS_FILE=/tmp/fms/csv/signalsFmsRecording.csv"
+              },
+              {
+                "key": "env",
+                "value": "PROVIDER_INFINITE=1"
+              },
+              {
+                "key": "env",
+                "value": "KUKSA_DATA_BROKER_ADDR=databroker"
+              },
+              {
+                "key": "env",
+                "value": "PROVIDER_LOG_LEVEL=INFO"
+              },
+              {
+                "key": "mount",
+                "value": "/data/usr/fms/csv:/tmp/fms/csv:rprivate"
+              },
+              {
+                "key": "host",
+                "value": "databroker:container_databroker-host"
+              },
+              {
+                "key": "logMaxSize",
+                "value": "1M"
+              }
+            ]
+          },
+          {
+            "id": "fms-forwarder",
+            "version": "main",
+            "config": [
+              {
+                "key": "image",
+                "value": "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-forwarder:main"
+              },
+              {
+                "key": "cmd",
+                "value": "influx"
+              },
+              {
+                "key": "env",
+                "value": "RUST_LOG=info,fms_forwarder=debug"
+              },
+              {
+                "key": "env",
+                "value": "KUKSA_DATA_BROKER_URI=http://databroker:55555"
+              },
+              {
+                "key": "env",
+                "value": "INFLUXDB_URI=http://10.0.2.2:8086"
+              },
+              {
+                "key": "env",
+                "value": "INFLUXDB_TOKEN_FILE=/etc/forwarder/influxdb.token"
+              },
+              {
+                "key": "mount",
+                "value": "/data/usr/fms/forwarder:/etc/forwarder:rprivate"
+              },
+              {
+                "key": "host",
+                "value": "databroker:container_databroker-host"
+              },
+              {
+                "key": "logMaxSize",
+                "value": "1M"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
