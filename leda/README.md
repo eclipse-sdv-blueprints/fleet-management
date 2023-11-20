@@ -21,15 +21,20 @@ SPDX-License-Identifier: Apache-2.0
 
 # Setup with Eclipse Leda
 
-The components of the Fleet Management blueprint fall into two categories: the *KUKSA.val Databroker*,
-*CSV Provider* and *FMS Forwarder* components are supposed to run in the vehicle, whereas the remaining
-components are supposed to run in a (cloud) back end to which the vehicle is connected via (public internet)
-networking infrastructure.
+The components of the Fleet Management blueprint fall into two categories: the
+*KUKSA.val Databroker*, *CSV Provider* and *FMS Forwarder* components are
+supposed to run in the vehicle, whereas the remaining components are supposed
+to run in a (cloud) back end to which the vehicle is connected via (public
+internet) networking infrastructure.
 
-All of the components can be run on a single Docker host as described in the [top level README](../README.md). However, the following sections describe a more realistic deployment scenario in which
-[Eclipse Leda](https://eclipse-leda.github.io/leda/) is used as the vehicle runtime environment.
+All of the components can be run on a single Docker host as described in the
+[top level README](../README.md). However, the following sections describe a
+more realistic deployment scenario in which [Eclipse Leda](https://eclipse-leda.github.io/leda/)
+is used as the vehicle runtime environment.
 
-This guide was tested with release v0.1.0-M2 of Eclipse Leda.
+This guide was tested with pre-release
+[test-0.1.0-M3-rc](https://github.com/SoftwareDefinedVehicle/leda-distro-fork/releases/tag/test-0.1.0-M3-rc)
+of Eclipse Leda.
 
 # Start Back End Components
 
@@ -42,39 +47,42 @@ docker compose -f fms-blueprint-compose.yaml up influxdb grafana fms-server --de
 
 # Start In-Vehicle Coponents
 
-In the setup described here, the containers for the in-vehicle components
-are deployed to a Leda instance running on the
-same (local) host as the back-end components.
-The *FMS Forwarder* running in Leda then connects to the *influxdb* server managed
-by Docker Compose. See below for more details on how to deploy the components to different devices.
+In the setup described here, the containers for the in-vehicle components are
+deployed to a Leda instance running on the same (local) host as the back-end
+components. The *FMS Forwarder* running in Leda then connects to the *influxdb*
+server managed by Docker Compose.
 
 Please refer to [Leda's Getting Started](https://eclipse-leda.github.io/leda/docs/general-usage/)
 guide for setting up a Leda instance.
 
 ## Stop default Containers
 
-Leda comes with a set of default containers (including KUKSA.val Databroker) that are managed using
-Eclipse Kanto's *container-manager*. These containers are defined by means of JSON manifest files in
-Leda's `/data/var/containers/mainfests` folder.
+Leda comes with a set of default containers (including KUKSA.val Databroker) that
+are managed using Eclipse Kanto's *container-manager*. These containers are defined
+by means of JSON manifest files in Leda's `/data/var/containers/mainfests` folder.
 
-We will stop and disable some of Leda's default containers, make some changes to the configuration of the
-Databroker container and also deploy additional containers.
+We will stop and disable some of Leda's default containers, make some changes to the
+configuration of the Databroker container and also deploy additional containers.
 
 ```sh
 # in Leda instance's /data/var/containers/mainfests folder
 tar cf manifests.orig.tar * 
 kanto-cm stop --force -n feedercan
 mv feedercan.json feedercan.json.disabled
+kanto-cm stop --force -n feedergps
+mv feedergps.json feedergps.json.disabled
 kanto-cm stop --force -n hvacservice-example
 mv hvac.json hvac.json.disabled
+kanto-cm stop --force -n node-red-example
+mv node-red.json node-red.json.disabled
 kanto-cm stop --force -n seatservice-example
 mv seatservice.json seatservice.json.disabled
 ```
 
 ## Deploy in-vehicle Blueprint Components
 
-Some of the Fleet Management blueprint containers require access to configuration files that are not present
-in Leda, e.g. the FMS-specific VSS definitions.
+Some of the Fleet Management blueprint containers require access to configuration files
+that are not present in Leda, e.g. the FMS-specific VSS definitions.
 
 Create the folders in Leda from which the containers can mount these files:
 
@@ -102,16 +110,18 @@ scp -P 2222 spec/overlay/vss.json root@127.0.0.1:/data/usr/fms/databroker
 scp -P 2222 /tmp/influxdb.token root@127.0.0.1:/data/usr/fms/forwarder
 ```
 
-Finally, copy the manifest files to Leda, triggering the execution of the in-vehicle containers:
+Finally, apply the desired state to the Update Manager running on Leda in order to
+trigger execution of the in-vehicle components:
 
 ```sh
 # in this repository's root folder
-scp -P 2222 leda/data/var/containers/manifests/*.json root@127.0.0.1:/data/var/containers/manifests
+mosquitto_pub -h localhost -f leda/fms-desired-state.json -t vehicleupdate/desiredstate
 ```
 
-If you want to deploy the in-vehicle and the back-end components to different devices,
-for example, a RaspberryPi 4 and a developer machine,
-you need to replace the network address `127.0.0.1` in the scp-commands
-with the respective IP address of the in-vehicle device. You also need to
-adapt the IP address of the influx database in the container manifest for
-the *FMS-Forwarder* (`config.env.INFLUXDB_URI` in `data/var/containers/manifests/fms-forwarder.json`)
+# Run in-vehicle Components on a separate Node
+
+If you want to run the in-vehicle and the back-end components on different devices,
+e.g. a RaspberryPi 4 and a developer machine, you need to replace the network address
+`127.0.0.1` in the `scp` commands with the respective IP address of the in-vehicle device.
+You also need to adapt the IP address of the influx database in the container manifest
+for the *FMS-Forwarder* (`config.env.INFLUXDB_URI` in `data/var/containers/manifests/fms-forwarder.json`).
