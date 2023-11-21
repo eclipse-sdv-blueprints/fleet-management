@@ -32,9 +32,9 @@ All of the components can be run on a single Docker host as described in the
 more realistic deployment scenario in which [Eclipse Leda](https://eclipse-leda.github.io/leda/)
 is used as the vehicle runtime environment.
 
-This guide was tested with pre-release
-[test-0.1.0-M3-rc](https://github.com/SoftwareDefinedVehicle/leda-distro-fork/releases/tag/test-0.1.0-M3-rc)
-of Eclipse Leda.
+This guide was tested with the
+[0.1.0-M3](https://github.com/eclipse-leda/leda-distro/releases/tag/v0.1.0-M3)
+release of Eclipse Leda.
 
 # Start Back End Components
 
@@ -57,26 +57,28 @@ guide for setting up a Leda instance.
 
 ## Stop default Containers
 
-Leda comes with a set of default containers (including KUKSA.val Databroker) that
+Leda comes with a set of default containers (including Kuksa.val Databroker) that
 are managed using Eclipse Kanto's *container-manager*. These containers are defined
 by means of JSON manifest files in Leda's `/data/var/containers/mainfests` folder.
 
-We will stop and disable some of Leda's default containers, make some changes to the
-configuration of the Databroker container and also deploy additional containers.
+We will stop, remove and disable most of Leda's default containers and deploy the containers
+of the Fleet Management Blueprint via Kanto's Update Manager as described below.
 
 ```sh
 # in Leda instance's /data/var/containers/mainfests folder
 tar cf manifests.orig.tar * 
-kanto-cm stop --force -n feedercan
+kanto-cm remove --force -n feedercan
 mv feedercan.json feedercan.json.disabled
-kanto-cm stop --force -n feedergps
+kanto-cm remove --force -n feedergps
 mv feedergps.json feedergps.json.disabled
-kanto-cm stop --force -n hvacservice-example
+kanto-cm remove --force -n hvacservice-example
 mv hvac.json hvac.json.disabled
-kanto-cm stop --force -n node-red-example
+kanto-cm remove --force -n node-red-example
 mv node-red.json node-red.json.disabled
-kanto-cm stop --force -n seatservice-example
+kanto-cm remove --force -n seatservice-example
 mv seatservice.json seatservice.json.disabled
+kanto-cm remove --force -n databroker
+mv databroker.json databroker.json.disabled
 ```
 
 ## Deploy in-vehicle Blueprint Components
@@ -117,6 +119,17 @@ trigger execution of the in-vehicle components:
 # in this repository's root folder
 mosquitto_pub -h localhost -f leda/fms-desired-state.json -t vehicleupdate/desiredstate
 ```
+
+> :bulb: **Tip: Track Application of Desired State**
+> The Kanto Update Manager reports the progress of applying the desired state by means of
+> messages being published to an MQTT topic. In order to track the progress, run the following
+> command in a separate terminal *before* publishing the desired state:
+> ```sh
+> mosquitto_sub -h localhost -t vehicleupdate/desiredstatefeedback
+> ```
+> There are other topics you can use to e.g. get notified about the current state. Please refer
+> to the [Kanto Update Manager documentation](https://github.com/eclipse-kanto/update-manager/tree/main/docs)
+> for details.
 
 # Run in-vehicle Components on a separate Node
 
