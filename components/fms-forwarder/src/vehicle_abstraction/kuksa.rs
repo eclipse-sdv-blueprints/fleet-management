@@ -219,17 +219,27 @@ impl TryFrom<Value> for Option<bool> {
 pub fn new_vehicle_status(data: HashMap<String, Value>, _default_vin: &String) -> VehicleStatus {
     let mut vehicle_status = VehicleStatus::new();
     vehicle_status.created = MessageField::some(Timestamp::now());
+    println!("blubb");
 
     match env::var("SIGNAL_FILTER") {
         Ok(value) => {
             let mut snapshot_data_vec = SnapshotData::new();
+
+            println!("value: ");
+            println!(value);
             for field in value.split(',') {
+                println!("field: ");
+                println!(field);
                 if let Some(measurement) = data.get(field) {
                     let mut entry = KeyValue::new();
                     entry.key = field.to_string();
                     // entry.value = measurement.clone().try_into().unwrap().to_string();
                     entry.value = <datapoint::Value as TryInto<String>>::try_into(measurement.clone()).unwrap().to_string();
                     //entry.value = "123".to_string();
+
+                    println!("k,v: ");
+                    println!(key);
+                    println!(value);
                     snapshot_data_vec.entries.push(entry);
                 }
             }

@@ -47,3 +47,5 @@ tonic = { workspace = true, features = ["channel", "codegen", "tls", "prost"] }
 [build-dependencies]
 protoc-bin-vendored = { workspace = true }
 tonic-build = { workspace = true, features = ["prost", "transport"]}
+
+[dev-dependencies]

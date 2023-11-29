@@ -42,14 +42,16 @@ RUN mkdir components
 COPY . components/
 WORKDIR /home/rust/src/components
 
-RUN cargo test --package fms-forwarder
 RUN cargo build --package fms-forwarder --release --target $BUILDTARGET
 RUN mv target/${BUILDTARGET}/release/fms-forwarder /home/rust
 
-FROM scratch
+FROM alpine:latest
 
 COPY --from=builder /home/rust/fms-forwarder /app/fms-forwarder
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY . /foobar
+RUN ls -lisa /foobar
 COPY LICENSES /app/
+COPY fms-forwarder/entrypoint.sh /app/entrypoint.sh
 
-ENTRYPOINT [ "/app/fms-forwarder" ]
+ENTRYPOINT [ "/app/entrypoint.sh" ]

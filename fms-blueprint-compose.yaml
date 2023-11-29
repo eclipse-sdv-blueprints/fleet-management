@@ -40,6 +40,7 @@ volumes:
   influxdb-config:
   influxdb-auth:
   grafana-datasources:
+  vss-config-share:
 
 services:
   influxdb:
@@ -166,11 +167,15 @@ services:
       KUKSA_DATA_BROKER_URI: "http://databroker:55556"
       RUST_LOG: "${FMS_FORWARDER_LOG_CONFIG:-info,fms_forwarder=info,influx_client=info}"
       TRUST_STORE_PATH: "${FMS_FORWARDER_TRUST_STORE_PATH:-/etc/ssl/certs/ca-certificates.crt}"
-      SIGNAL_FILTER: "Vehicle.Speed,Vehicle.Powertrain.FuelSystem.Tank.First.RelativeLevel"
+      SIGNAL_FILTER: "Vehicle.Speed,Vehicle.Powertrain.FuelSystem.Tank.First.RelativeLevel,Vehicle.Exterior.AirTemperature"
     volumes:
     - type: "volume"
       source: "influxdb-auth"
       target: "/etc/forwarder"
+      read_only: true
+    - type: "volume"
+      source: "vss-config-share"
+      target: "/etc/vss"
       read_only: true
   csv-provider:
     image: "ghcr.io/eclipse/kuksa.val.feeders/csv-provider:main"
@@ -205,5 +210,9 @@ services:
       source: "influxdb-auth"
       target: "/tmp"
       read_only: true
+    - type: "volume"
+      source: "vss-config-share"
+      target: "/data/vss"
+      read_only: false
     environment:
       INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"

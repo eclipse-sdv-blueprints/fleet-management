@@ -2,7 +2,7 @@
     {
         "id": "2889273e53d6a5ed",
         "type": "tab",
-        "label": "Initialization",
+        "label": "Initialization/Connections",
         "disabled": false,
         "info": "",
         "env": []
@@ -10,7 +10,7 @@
     {
         "id": "7e9fdc799c9dacda",
         "type": "tab",
-        "label": "Flow 1",
+        "label": "Demo Flow",
         "disabled": false,
         "info": "",
         "env": []
@@ -133,6 +133,59 @@
         }
     },
     {
+        "id": "eb90e6c0557be894",
+        "type": "subflow",
+        "name": "update vehicle",
+        "info": "",
+        "category": "",
+        "in": [
+            {
+                "x": 50,
+                "y": 30,
+                "wires": []
+            }
+        ],
+        "out": [],
+        "env": [],
+        "meta": {},
+        "color": "#DDAA99"
+    },
+    {
+        "id": "84d8e7a18ece888f",
+        "type": "subflow",
+        "name": "filter VIN",
+        "info": "",
+        "category": "SDV",
+        "in": [
+            {
+                "x": 60,
+                "y": 60,
+                "wires": [
+                    {
+                        "id": "a18f783849d9cc2e"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 280,
+                "y": 60,
+                "wires": [
+                    {
+                        "id": "a18f783849d9cc2e",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "meta": {
+            "license": "Apache-2.0"
+        },
+        "color": "#DDAA99"
+    },
+    {
         "id": "95cd6ea4aaaa788f",
         "type": "influxdb",
         "hostname": "influxdb",
@@ -149,8 +202,9 @@
     {
         "id": "06b0f110fe273b8e",
         "type": "ui_tab",
-        "name": "Home",
-        "icon": "dashboard",
+        "name": "Configuration Output",
+        "icon": "fa-cogs",
+        "order": 2,
         "disabled": false,
         "hidden": false
     },
@@ -158,18 +212,20 @@
         "id": "3c614c9634e5fe0a",
         "type": "ui_base",
         "theme": {
-            "name": "theme-light",
+            "name": "theme-dark",
             "lightTheme": {
                 "default": "#0094CE",
                 "baseColor": "#0094CE",
                 "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
-                "edited": false
+                "edited": true,
+                "reset": false
             },
             "darkTheme": {
                 "default": "#097479",
                 "baseColor": "#097479",
                 "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
-                "edited": false
+                "edited": true,
+                "reset": false
             },
             "customTheme": {
                 "name": "Untitled Theme 1",
@@ -179,44 +235,44 @@
             },
             "themeState": {
                 "base-color": {
-                    "default": "#0094CE",
-                    "value": "#0094CE",
+                    "default": "#097479",
+                    "value": "#097479",
                     "edited": false
                 },
                 "page-titlebar-backgroundColor": {
-                    "value": "#0094CE",
+                    "value": "#097479",
                     "edited": false
                 },
                 "page-backgroundColor": {
-                    "value": "#fafafa",
-                    "edited": false
-                },
-                "page-sidebar-backgroundColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "group-textColor": {
-                    "value": "#1bbfff",
-                    "edited": false
-                },
-                "group-borderColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "group-backgroundColor": {
-                    "value": "#ffffff",
-                    "edited": false
-                },
-                "widget-textColor": {
                     "value": "#111111",
                     "edited": false
                 },
+                "page-sidebar-backgroundColor": {
+                    "value": "#333333",
+                    "edited": false
+                },
+                "group-textColor": {
+                    "value": "#0eb8c0",
+                    "edited": false
+                },
+                "group-borderColor": {
+                    "value": "#555555",
+                    "edited": false
+                },
+                "group-backgroundColor": {
+                    "value": "#333333",
+                    "edited": false
+                },
+                "widget-textColor": {
+                    "value": "#eeeeee",
+                    "edited": false
+                },
                 "widget-backgroundColor": {
-                    "value": "#0094ce",
+                    "value": "#097479",
                     "edited": false
                 },
                 "widget-borderColor": {
-                    "value": "#ffffff",
+                    "value": "#333333",
                     "edited": false
                 },
                 "base-font": {
@@ -232,10 +288,10 @@
             }
         },
         "site": {
-            "name": "Node-RED Dashboard",
+            "name": "MIA Fleet Management",
             "hideToolbar": "false",
             "allowSwipe": "false",
-            "lockMenu": "false",
+            "lockMenu": "true",
             "allowTempTheme": "true",
             "dateFormat": "DD/MM/YYYY",
             "sizes": {
@@ -253,13 +309,82 @@
     {
         "id": "110bee8780e3a7ad",
         "type": "ui_group",
-        "name": "MIA FMS",
+        "name": "Vehicle Status",
+        "tab": "270491e1f8bfa2c5",
+        "order": 1,
+        "disp": true,
+        "width": 12,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "161c98944e5c5a4a",
+        "type": "ui_group",
+        "name": "Signals",
         "tab": "06b0f110fe273b8e",
+        "order": 2,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "270491e1f8bfa2c5",
+        "type": "ui_tab",
+        "name": "Dashboard",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "3b75a4adca8ebd82",
+        "type": "ui_tab",
+        "name": "Raw Data",
+        "icon": "fa-database",
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "04b87adf505a67f6",
+        "type": "ui_group",
+        "name": "Data",
+        "tab": "3b75a4adca8ebd82",
         "order": 1,
         "disp": true,
         "width": "6",
         "collapse": false,
         "className": ""
+    },
+    {
+        "id": "e751f93fa563c263",
+        "type": "ui_spacer",
+        "z": "7e9fdc799c9dacda",
+        "name": "spacer",
+        "group": "110bee8780e3a7ad",
+        "order": 4,
+        "width": "12",
+        "height": "1"
+    },
+    {
+        "id": "d35a56c559d674f0",
+        "type": "ui_spacer",
+        "z": "7e9fdc799c9dacda",
+        "name": "spacer",
+        "group": "110bee8780e3a7ad",
+        "order": 7,
+        "width": "12",
+        "height": "1"
+    },
+    {
+        "id": "32b4e67717ae65c1",
+        "type": "ui_spacer",
+        "z": "7e9fdc799c9dacda",
+        "name": "spacer",
+        "group": "110bee8780e3a7ad",
+        "order": 1,
+        "width": "12",
+        "height": "1"
     },
     {
         "id": "d1dad6d5c2f7d87a",
@@ -314,6 +439,13 @@
                 "pt": "msg",
                 "to": "value",
                 "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "vin",
+                "tot": "str"
             }
         ],
         "action": "",
@@ -369,12 +501,12 @@
         "type": "function",
         "z": "d4b0bd7f01e6e982",
         "name": "update signal name",
-        "func": "const signal_name = env.get(\"signal_name\")\n\nif (signal_name !== flow.get(\"current_signal_name\")) {\n    flow.set(\"current_signal_name\", signal_name)\n    const signals_list = context.global.get(\"signal_names_list\")\n    signals_list.add(signal_name)\n    context.global.set(\"signal_names_list\", signals_list)\n}\n\nmsg.payload = {text: signal_name}\n\nreturn msg;\n",
+        "func": "const signal_name = env.get(\"signal_name\")\n\nif (signal_name !== flow.get(\"current_signal_name\")) {\n    flow.set(\"current_signal_name\", signal_name)\n\n    const signals_list = new Set(global.get(\"signal_names_list\"))\n    signals_list.add(signal_name)\n    global.set(\"signal_names_list\", Array.from(signals_list))\n}\n\nmsg.payload = {text: signal_name}\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
-        "initialize": "const signal_name = env.get(\"signal_name\")\nflow.set(\"current_signal_name\", signal_name)\n\nlet signals_list = context.global.get(\"signal_names_list\")\nif (!signals_list) {\n    signals_list = new Set()\n}\nsignals_list.add(signal_name)\ncontext.global.set(\"signal_names_list\")\n",
-        "finalize": "const signal_name = env.get(\"signal_name\")\nconst signals_list = context.global.get(\"signal_names_list\")\nsignals_list.delete(signal_name)\ncontext.global.set(\"signal_names_list\", signals_list)\n",
+        "initialize": "const signal_name = env.get(\"signal_name\")\nflow.set(\"current_signal_name\", signal_name)\n\nlet signals_list = new Set(global.get(\"signal_names_list\") ?? [])\nsignals_list.add(signal_name)\nglobal.set(\"signal_names_list\", Array.from(signals_list))\n",
+        "finalize": "const signal_name = env.get(\"signal_name\")\nconst signals_list = new Set(global.get(\"signal_names_list\"))\nsignals_list.delete(signal_name)\nglobal.set(\"signal_names_list\", Array.from(signals_list))\n",
         "libs": [],
         "x": 470,
         "y": 140,
@@ -412,6 +544,29 @@
         ]
     },
     {
+        "id": "a18f783849d9cc2e",
+        "type": "switch",
+        "z": "84d8e7a18ece888f",
+        "name": "",
+        "property": "topic",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "selected_vin",
+                "vt": "global"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 170,
+        "y": 60,
+        "wires": [
+            []
+        ]
+    },
+    {
         "id": "d981842589f74e1d",
         "type": "influxdb in",
         "z": "2889273e53d6a5ed",
@@ -444,8 +599,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 490,
-        "y": 120,
+        "x": 290,
+        "y": 200,
         "wires": []
     },
     {
@@ -462,7 +617,7 @@
                 "vt": "str"
             }
         ],
-        "repeat": "0.5",
+        "repeat": "1",
         "crontab": "",
         "once": true,
         "onceDelay": "0.5",
@@ -489,8 +644,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 290,
-        "y": 120,
+        "x": 110,
+        "y": 200,
         "wires": [
             [
                 "77c6640c083dd78d"
@@ -512,7 +667,8 @@
         "y": 60,
         "wires": [
             [
-                "2c163ea721113b9c"
+                "2c163ea721113b9c",
+                "4ed496bdbfc34268"
             ]
         ]
     },
@@ -548,10 +704,10 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "payload": "",
-        "payloadType": "date",
+        "payload": "INFLUXDB_TOKEN",
+        "payloadType": "env",
         "x": 110,
-        "y": 200,
+        "y": 280,
         "wires": [
             [
                 "31bbfc5dd71e6373"
@@ -563,7 +719,7 @@
         "type": "function",
         "z": "2889273e53d6a5ed",
         "name": "init",
-        "func": "global.set(\"signal_names_list\", new Set())\n\nreturn msg\n",
+        "func": "global.get(\"signal_names_list\") ?? global.set(\"signal_names_list\", [])\nglobal.set(\"influxdb_token\", msg.payload)\n\nreturn msg\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -571,33 +727,179 @@
         "finalize": "",
         "libs": [],
         "x": 270,
-        "y": 200,
+        "y": 280,
         "wires": [
             []
         ]
     },
     {
-        "id": "c9ce3d7308038b53",
-        "type": "switch",
-        "z": "7e9fdc799c9dacda",
-        "name": "ambientAirTemperature",
-        "property": "payload[\"_field\"]",
-        "propertyType": "msg",
-        "rules": [
+        "id": "a7eb0e65dfad37d9",
+        "type": "inject",
+        "z": "2889273e53d6a5ed",
+        "name": "",
+        "props": [
             {
-                "t": "eq",
-                "v": "ambientAirTemperature",
+                "p": "payload"
+            },
+            {
+                "p": "topic",
                 "vt": "str"
             }
         ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 520,
-        "y": 300,
+        "repeat": "1",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "signal_names_list",
+        "payload": "signal_names_list",
+        "payloadType": "global",
+        "x": 150,
+        "y": 360,
         "wires": [
             [
-                "06ad9941f172082f"
+                "5e1892047a36f175"
+            ]
+        ]
+    },
+    {
+        "id": "5e1892047a36f175",
+        "type": "rbe",
+        "z": "2889273e53d6a5ed",
+        "name": "",
+        "func": "rbe",
+        "gap": "",
+        "start": "",
+        "inout": "out",
+        "septopics": false,
+        "property": "payload",
+        "topi": "topic",
+        "x": 330,
+        "y": 360,
+        "wires": [
+            [
+                "b97fb0e96feffb71"
+            ]
+        ]
+    },
+    {
+        "id": "e67302bc0ad1d2a8",
+        "type": "link out",
+        "z": "2889273e53d6a5ed",
+        "name": "signal configuration",
+        "mode": "link",
+        "links": [
+            "d7b40ac277e5f727"
+        ],
+        "x": 575,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "b97fb0e96feffb71",
+        "type": "sort",
+        "z": "2889273e53d6a5ed",
+        "name": "",
+        "order": "ascending",
+        "as_num": false,
+        "target": "payload",
+        "targetType": "msg",
+        "msgKey": "payload",
+        "msgKeyType": "elem",
+        "seqKey": "payload",
+        "seqKeyType": "msg",
+        "x": 450,
+        "y": 360,
+        "wires": [
+            [
+                "e67302bc0ad1d2a8",
+                "455b40f41b443d2c"
+            ]
+        ]
+    },
+    {
+        "id": "5a21e62e1cbbd2c4",
+        "type": "ui_table",
+        "z": "2889273e53d6a5ed",
+        "group": "04b87adf505a67f6",
+        "name": "",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "columns": [],
+        "outputs": 0,
+        "cts": false,
+        "x": 810,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "0e469af65d3930d5",
+        "type": "function",
+        "z": "2889273e53d6a5ed",
+        "name": "data table",
+        "func": "msg.payload = {\n    \"VIN\": msg.vin,\n    \"Signal\": msg.field,\n    \"Value\": msg.value\n    //timestamp?\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 660,
+        "y": 200,
+        "wires": [
+            [
+                "5a21e62e1cbbd2c4"
+            ]
+        ]
+    },
+    {
+        "id": "4ed496bdbfc34268",
+        "type": "subflow:32b0ac61c667424c",
+        "z": "2889273e53d6a5ed",
+        "name": "",
+        "x": 480,
+        "y": 140,
+        "wires": [
+            [
+                "0e469af65d3930d5"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "3114d42348ab6a92",
+        "type": "file",
+        "z": "2889273e53d6a5ed",
+        "name": "",
+        "filename": "/data/vss/signal_filter.cfg",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": true,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 290,
+        "y": 420,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "455b40f41b443d2c",
+        "type": "function",
+        "z": "2889273e53d6a5ed",
+        "name": "join",
+        "func": "msg.payload = msg.payload.join(\",\")\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 90,
+        "y": 420,
+        "wires": [
+            [
+                "3114d42348ab6a92"
             ]
         ]
     },
@@ -607,11 +909,11 @@
         "z": "7e9fdc799c9dacda",
         "name": "",
         "group": "110bee8780e3a7ad",
-        "order": 0,
-        "width": 0,
-        "height": 0,
+        "order": 5,
+        "width": "6",
+        "height": "3",
         "gtype": "gage",
-        "title": "ambientAirTemperature",
+        "title": "Air Temperature",
         "label": "degrees",
         "format": "{{value}}",
         "min": "-20",
@@ -625,59 +927,9 @@
         "seg2": "",
         "diff": false,
         "className": "",
-        "x": 1030,
-        "y": 240,
+        "x": 660,
+        "y": 80,
         "wires": []
-    },
-    {
-        "id": "45337ee5c1d39d5b",
-        "type": "switch",
-        "z": "7e9fdc799c9dacda",
-        "name": "engineSpeed",
-        "property": "payload[\"_field\"]",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "eq",
-                "v": "engineSpeed",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 480,
-        "y": 380,
-        "wires": [
-            [
-                "fb3f2a187d48ef95"
-            ]
-        ]
-    },
-    {
-        "id": "65181b198631cfaa",
-        "type": "switch",
-        "z": "7e9fdc799c9dacda",
-        "name": "fuelLevel1",
-        "property": "payload[\"_field\"]",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "eq",
-                "v": "fuelLevel1",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 480,
-        "y": 440,
-        "wires": [
-            [
-                "517d345c89050cf9"
-            ]
-        ]
     },
     {
         "id": "ead0071740eb34eb",
@@ -685,11 +937,11 @@
         "z": "7e9fdc799c9dacda",
         "name": "",
         "group": "110bee8780e3a7ad",
-        "order": 0,
-        "width": 0,
-        "height": 0,
+        "order": 2,
+        "width": "6",
+        "height": "3",
         "gtype": "gage",
-        "title": "engineSpeed",
+        "title": "Current Speed",
         "label": "",
         "format": "{{value}}",
         "min": "0",
@@ -703,8 +955,8 @@
         "seg2": "",
         "diff": false,
         "className": "",
-        "x": 1010,
-        "y": 320,
+        "x": 660,
+        "y": 180,
         "wires": []
     },
     {
@@ -713,11 +965,11 @@
         "z": "7e9fdc799c9dacda",
         "name": "",
         "group": "110bee8780e3a7ad",
-        "order": 0,
-        "width": 0,
-        "height": 0,
+        "order": 8,
+        "width": "6",
+        "height": "3",
         "gtype": "wave",
-        "title": "fuelLevel1",
+        "title": "Fuel Level",
         "label": "",
         "format": "{{value}}",
         "min": "0",
@@ -731,111 +983,30 @@
         "seg2": "",
         "diff": false,
         "className": "",
-        "x": 990,
-        "y": 380,
+        "x": 650,
+        "y": 280,
         "wires": []
-    },
-    {
-        "id": "7e7e782b6314fde4",
-        "type": "switch",
-        "z": "7e9fdc799c9dacda",
-        "name": "totalEngineHours",
-        "property": "payload[\"_field\"]",
-        "propertyType": "msg",
-        "rules": [
-            {
-                "t": "eq",
-                "v": "totalEngineHours",
-                "vt": "str"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 1,
-        "x": 500,
-        "y": 520,
-        "wires": [
-            [
-                "db0ce46ef27c4794"
-            ]
-        ]
     },
     {
         "id": "1962d05c53b3194e",
         "type": "ui_text",
         "z": "7e9fdc799c9dacda",
         "group": "110bee8780e3a7ad",
-        "order": 3,
-        "width": 0,
-        "height": 0,
+        "order": 10,
+        "width": "6",
+        "height": "3",
         "name": "",
-        "label": "totalEngineHours",
-        "format": "{{msg.payload}}",
-        "layout": "col-center",
+        "label": "Total Engine Hours",
+        "format": "{{msg.payload}} h",
+        "layout": "row-spread",
         "className": "",
         "style": false,
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 1030,
-        "y": 460,
+        "x": 670,
+        "y": 340,
         "wires": []
-    },
-    {
-        "id": "fb3f2a187d48ef95",
-        "type": "subflow:32b0ac61c667424c",
-        "z": "7e9fdc799c9dacda",
-        "name": "",
-        "x": 760,
-        "y": 380,
-        "wires": [
-            [],
-            [
-                "ead0071740eb34eb"
-            ]
-        ]
-    },
-    {
-        "id": "db0ce46ef27c4794",
-        "type": "subflow:32b0ac61c667424c",
-        "z": "7e9fdc799c9dacda",
-        "name": "",
-        "x": 760,
-        "y": 520,
-        "wires": [
-            [],
-            [
-                "1962d05c53b3194e"
-            ]
-        ]
-    },
-    {
-        "id": "517d345c89050cf9",
-        "type": "subflow:32b0ac61c667424c",
-        "z": "7e9fdc799c9dacda",
-        "name": "",
-        "x": 760,
-        "y": 440,
-        "wires": [
-            [],
-            [
-                "81d835ed5de68b9d"
-            ]
-        ]
-    },
-    {
-        "id": "06ad9941f172082f",
-        "type": "subflow:32b0ac61c667424c",
-        "z": "7e9fdc799c9dacda",
-        "name": "",
-        "x": 760,
-        "y": 300,
-        "wires": [
-            [],
-            [
-                "b7f422d49af26639"
-            ]
-        ]
     },
     {
         "id": "5d76169c79019f45",
@@ -846,17 +1017,12 @@
             "2c163ea721113b9c"
         ],
         "x": 55,
-        "y": 60,
+        "y": 80,
         "wires": [
             [
-                "c9ce3d7308038b53",
-                "45337ee5c1d39d5b",
-                "65181b198631cfaa",
-                "7e7e782b6314fde4",
                 "01b63d24ec6b8c94",
                 "18527e9c1c8e2378",
-                "7d5fb43b377a3519",
-                "c9cdc2cd989e8c43"
+                "7d5fb43b377a3519"
             ]
         ]
     },
@@ -872,8 +1038,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 740,
-        "y": 60,
+        "x": 440,
+        "y": 20,
         "wires": []
     },
     {
@@ -884,16 +1050,17 @@
         "env": [
             {
                 "name": "signal_name",
-                "value": "ambientAirTemperature",
+                "value": "Vehicle.Exterior.AirTemperature",
                 "type": "str"
             }
         ],
-        "x": 450,
-        "y": 40,
+        "x": 230,
+        "y": 80,
         "wires": [
             [],
             [
-                "9c20e25293e10dd5"
+                "9c20e25293e10dd5",
+                "6900c9c3c9e2074f"
             ]
         ]
     },
@@ -905,16 +1072,17 @@
         "env": [
             {
                 "name": "signal_name",
-                "value": "engineSpeed",
+                "value": "Vehicle.Speed",
                 "type": "str"
             }
         ],
-        "x": 450,
-        "y": 100,
+        "x": 230,
+        "y": 180,
         "wires": [
             [],
             [
-                "9c20e25293e10dd5"
+                "9c20e25293e10dd5",
+                "c782d3dc120b7e7c"
             ]
         ]
     },
@@ -926,38 +1094,392 @@
         "env": [
             {
                 "name": "signal_name",
-                "value": "fuelLevel1",
+                "value": "Vehicle.Powertrain.FuelSystem.Tank.First.RelativeLevel",
                 "type": "str"
             }
         ],
-        "x": 450,
-        "y": 160,
+        "x": 230,
+        "y": 280,
         "wires": [
             [],
             [
-                "9c20e25293e10dd5"
+                "9c20e25293e10dd5",
+                "b8ae7479941b6af3"
             ]
         ]
     },
     {
-        "id": "c9cdc2cd989e8c43",
-        "type": "subflow:d4b0bd7f01e6e982",
+        "id": "a325343f36d43d34",
+        "type": "ui_list",
+        "z": "7e9fdc799c9dacda",
+        "group": "161c98944e5c5a4a",
+        "name": "",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "lineType": "two",
+        "actionType": "none",
+        "allowHTML": false,
+        "outputs": 0,
+        "topic": "",
+        "x": 390,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "d7b40ac277e5f727",
+        "type": "link in",
+        "z": "7e9fdc799c9dacda",
+        "name": "config",
+        "links": [
+            "e67302bc0ad1d2a8"
+        ],
+        "x": 55,
+        "y": 580,
+        "wires": [
+            [
+                "a325343f36d43d34"
+            ]
+        ]
+    },
+    {
+        "id": "b6c7df43a6a80bd5",
+        "type": "ui_dropdown",
         "z": "7e9fdc799c9dacda",
         "name": "",
-        "env": [
+        "label": "VIN",
+        "tooltip": "",
+        "place": "Select option",
+        "group": "110bee8780e3a7ad",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "passthru": true,
+        "multiple": false,
+        "options": [
             {
-                "name": "signal_name",
-                "value": "totalEngineHours",
+                "label": "",
+                "value": "",
                 "type": "str"
             }
         ],
-        "x": 450,
+        "payload": "",
+        "topic": "topic",
+        "topicType": "msg",
+        "className": "",
+        "x": 430,
+        "y": 660,
+        "wires": [
+            [
+                "7e827c0cf79115c8"
+            ]
+        ]
+    },
+    {
+        "id": "0d837ea88253009a",
+        "type": "inject",
+        "z": "7e9fdc799c9dacda",
+        "name": "VIN list",
+        "props": [
+            {
+                "p": "options",
+                "v": "[\"YV2E4C3A5VB180691\",\"YV2E3C4A5VB421337\"]",
+                "vt": "json"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.1",
+        "topic": "",
+        "x": 100,
+        "y": 660,
+        "wires": [
+            [
+                "b6c7df43a6a80bd5"
+            ]
+        ]
+    },
+    {
+        "id": "7e827c0cf79115c8",
+        "type": "change",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "selected_vin",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 660,
+        "y": 660,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "890779ea2ab521f8",
+        "type": "change",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "options[0]",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 260,
+        "y": 720,
+        "wires": [
+            [
+                "b6c7df43a6a80bd5"
+            ]
+        ]
+    },
+    {
+        "id": "6fbab3ed38ef9153",
+        "type": "switch",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "property": "selected_vin",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "empty"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 90,
+        "y": 720,
+        "wires": [
+            [
+                "890779ea2ab521f8"
+            ]
+        ]
+    },
+    {
+        "id": "6900c9c3c9e2074f",
+        "type": "subflow:84d8e7a18ece888f",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "x": 440,
+        "y": 80,
+        "wires": [
+            [
+                "b7f422d49af26639",
+                "078b9517a0c2f40c"
+            ]
+        ]
+    },
+    {
+        "id": "0c3a423fbaa78958",
+        "type": "subflow:84d8e7a18ece888f",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "x": 440,
+        "y": 340,
+        "wires": [
+            [
+                "1962d05c53b3194e"
+            ]
+        ]
+    },
+    {
+        "id": "b8ae7479941b6af3",
+        "type": "subflow:84d8e7a18ece888f",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "x": 440,
+        "y": 280,
+        "wires": [
+            [
+                "81d835ed5de68b9d"
+            ]
+        ]
+    },
+    {
+        "id": "c782d3dc120b7e7c",
+        "type": "subflow:84d8e7a18ece888f",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "x": 440,
+        "y": 180,
+        "wires": [
+            [
+                "ead0071740eb34eb",
+                "2a5edd99f6990383"
+            ]
+        ]
+    },
+    {
+        "id": "b0b805afa9fe3147",
+        "type": "comment",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "info": "Vehicle.Powertrain.CombustionEngine.DieselExhaustFluid.Level\n",
+        "x": 80,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "d3ab186bb0f5ae8e",
+        "type": "comment",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "info": "Vehicle.Powertrain.CombustionEngine.EngineHours\n",
+        "x": 80,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "de36924a37a1de7a",
+        "type": "ui_gauge",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "group": "110bee8780e3a7ad",
+        "order": 9,
+        "width": "6",
+        "height": "3",
+        "gtype": "wave",
+        "title": "AdBlue Level",
+        "label": "",
+        "format": "{{value}}",
+        "min": "0",
+        "max": "100",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 650,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "e008107a8ee6b0e2",
+        "type": "subflow:84d8e7a18ece888f",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "x": 440,
+        "y": 400,
+        "wires": [
+            [
+                "de36924a37a1de7a"
+            ]
+        ]
+    },
+    {
+        "id": "2a5edd99f6990383",
+        "type": "ui_chart",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "group": "110bee8780e3a7ad",
+        "order": 3,
+        "width": "6",
+        "height": "3",
+        "label": "Speed History",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "0",
+        "ymax": "250",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 660,
         "y": 220,
         "wires": [
-            [],
-            [
-                "9c20e25293e10dd5"
-            ]
+            []
+        ]
+    },
+    {
+        "id": "078b9517a0c2f40c",
+        "type": "ui_chart",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "group": "110bee8780e3a7ad",
+        "order": 6,
+        "width": "6",
+        "height": "3",
+        "label": "Air Temperature History",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "-20",
+        "ymax": "40",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 690,
+        "y": 120,
+        "wires": [
+            []
         ]
     }
 ]
