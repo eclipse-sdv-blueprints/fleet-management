@@ -109,68 +109,13 @@ message OemDriverId {
   optional string type = 2;
 }
 
+message KeyValue {
+  string key = 1;
+  string value = 2;
+}
+
 message SnapshotData {
-  GnssPosition gnss_position = 1;
-  // The vehicle wheelbased speed.
-  optional double wheel_based_speed = 2;
-  // The Tacho speed.
-  optional double tachograph_speed = 3;
-  // The engine (Diesel/gaseous) speed in rev/min.
-  optional double engine_speed = 4;
-  // The electric motor speed in rev/min.
-  optional double electric_motor_speed = 5;
-  // Type of fuel currently being utilized by the vehicle acc. j1939's SPN 5837.
-  optional string fuel_type = 6;
-  // The fuel level percentage.
-  optional double fuel_level1 = 7;
-  // Ratio of volume of fuel to the total volume of fuel storage container, in percent.
-  // When Fuel Level 2 is not used, Fuel Level 1 represents the total fuel in all fuel
-  // storage containers. When Fuel Level 2 is used, Fuel Level 1 represents the fuel
-  // level in the primary or left-side fuel storage container.
-  optional double fuel_level2 = 8;
-  // The adblue level percentage.
-  optional double catalyst_fuel_level = 9;
-  // Tachograph Working state of the first driver.
-  optional string driver1_working_state = 10;
-  // The identity of the second driver.
-  DriverId driver2_id = 11;
-  // Tachograph Working state of the second driver.
-  optional string driver2_working_state = 12;
-  // The Ambient air temperature in Celsius.
-  optional double ambient_air_temperature = 13;
-  // Switch signal which indicates when the parking brake is set.
-  // In general the switch actuated by the operator's park brake control, whether
-  // a pedal, lever or other control mechanism.
-  optional bool parking_brake_engaged = 14;
-  // Indicates the hybrid battery pack remaining charge.
-  // 0% means no charge remaining,
-  // 100% means full charge remaining.
-  // Is used as well for full electrical vehicles.
-  optional double hybrid_battery_pack_remaining_charge = 15;
-  // Indicates the charging status of the battery pack. Recuperation is excluded.
-  // NOT_AVAILABLE, NOT_CHARGING, CHARGING, CHARGING_AC, CHARGING_DC, ERROR
-  optional string battery_pack_charging_status = 16;
-  // Indicates the charging connection status of the battery pack.
-  // NOT_AVAILABLE, CONNECTING, CONNECTED, DISCONNECTING, DISCONNECTED, ERROR
-  optional string battery_pack_charging_connection_status = 17;
-  // Device used to charge the battery pack. Standard rFMS values
-  // taken from ISO 15118 (OEM can have additional values):
-  // ACD - Automatic Connection Device
-  // WPT - Wireless Power Transfer
-  // VEHICLE_COUPLER - manual connection of a flexible cable to an EV
-  // NONE - No device connected
-  // NOT_AVAILABLE - Unknown
-  optional string battery_pack_charging_device = 18;
-  // Charging power in watts.
-  optional double battery_pack_charging_power = 19;
-  // Estimated time when charging has reached the target level.
-  google.protobuf.Timestamp estimated_time_battery_pack_charging_completed = 20;
-  // Estimated distance to empty (tanks and/or battery packs) in meters.
-  DistanceToEmpty estimated_distance_to_empty = 21;
-  // The vehicle's axles and their current load.
-  repeated AxleLoad vehicle_axles = 22;
-  // List of trailers connected to the truck.
-  repeated Trailer trailers = 23;
+  repeated KeyValue entries = 1;
 }
 
 message TachoDriverId {

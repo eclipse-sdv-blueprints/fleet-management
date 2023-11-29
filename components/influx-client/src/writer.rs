@@ -83,84 +83,9 @@ fn build_snapshot_measurement(
         .tag(crate::TAG_VIN, vin)
         .field(crate::FIELD_CREATED_DATE_TIME, created_date_time);
 
-    if let Some(snapshot_data) = vehicle_status.snapshot_data.clone().into_option() {
-        if let Some(value) = snapshot_data.wheel_based_speed {
-            builder = builder.field(crate::FIELD_WHEEL_BASED_SPEED, value);
-        }
-        if let Some(value) = snapshot_data.tachograph_speed {
-            builder = builder.field(crate::FIELD_TACHOGRAPH_SPEED, value);
-        }
-        if let Some(value) = snapshot_data.fuel_type {
-            builder = builder.field(crate::FIELD_FUEL_TYPE, value);
-        }
-        if let Some(value) = snapshot_data.engine_speed {
-            builder = builder.field(crate::FIELD_ENGINE_SPEED, value);
-        }
-        if let Some(value) = snapshot_data.catalyst_fuel_level {
-            builder = builder.field(crate::FIELD_CATALYST_FUEL_LEVEL, value);
-        }
-        if let Some(value) = snapshot_data.fuel_level1 {
-            builder = builder.field(crate::FIELD_FUEL_LEVEL1, value);
-        }
-        if let Some(value) = snapshot_data.fuel_level2 {
-            builder = builder.field(crate::FIELD_FUEL_LEVEL2, value);
-        }
-        if let Some(value) = snapshot_data.driver1_working_state {
-            builder = builder.field(crate::FIELD_DRIVER1_WORKING_STATE, value);
-        }
-        if let Some(value) = snapshot_data.driver2_working_state {
-            builder = builder.field(crate::FIELD_DRIVER2_WORKING_STATE, value);
-        }
-        if let Some(value) = snapshot_data.ambient_air_temperature {
-            builder = builder.field(crate::FIELD_AMBIENT_AIR_TEMP, value);
-        }
-        if let Some(value) = snapshot_data.parking_brake_engaged {
-            builder = builder.field(crate::FIELD_PARKING_BREAK_SWITCH, value);
-        }
 
-        if let Some(current_location) = snapshot_data.gnss_position.into_option() {
-            builder = builder
-                .field(crate::FIELD_LATITUDE, current_location.latitude)
-                .field(crate::FIELD_LONGITUDE, current_location.longitude);
-
-            if let Some(value) = current_location.heading {
-                builder = builder.field(crate::FIELD_HEADING, value);
-            }
-
-            if let Some(value) = current_location.altitude {
-                builder = builder.field(crate::FIELD_ALTITUDE, value);
-            }
-
-            if let Some(value) = current_location.speed {
-                builder = builder.field(crate::FIELD_SPEED, value);
-            }
-
-            if let Some(instant) = current_location.instant.clone().into_option() {
-                builder = builder.field(crate::FIELD_POSITION_DATE_TIME, instant.seconds);
-            }
-        }
-
-        if let Some(distance_to_empty) = snapshot_data
-            .estimated_distance_to_empty
-            .into_option()
-        {
-            if let Some(value) = distance_to_empty.fuel {
-                builder = builder.field(crate::FIELD_ESTIMATED_DIST_TO_EMPTY_FUEL, value);
-            }
-            if let Some(value) = distance_to_empty.total {
-                builder = builder.field(crate::FIELD_ESTIMATED_DIST_TO_EMPTY_TOTAL, value);
-            }
-        }
-
-        if let Some(tacho_driver_id) = snapshot_data.driver2_id.clone().into_option()
-            .and_then(|driver_id| driver_id.tacho_driver_identification.into_option()) {
-                builder = builder
-                    .field(crate::FIELD_DRIVER2_ID, tacho_driver_id.driver_identification)
-                    .field(
-                        crate::FIELD_DRIVER2_CARD_ISSUER,
-                        tacho_driver_id.card_issuing_memberState,
-                    );
-        }
+    for entry in &vehicle_status.snapshot_data.entries {
+        builder = builder.field(entry.key.clone(), entry.value.clone());
     }
 
     match builder.build() {

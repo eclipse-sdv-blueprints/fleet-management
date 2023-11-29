@@ -135,7 +135,7 @@ pub fn add_command_line_args(command_line: Command) -> Command {
                 .value_name("IDENTIFIER")
                 .required(false)
                 .env("DEFAULT_VIN")
-                .default_value("YV2E4C3A5VB180691"),
+                .default_value("YV2E4C3A5VB180691"),  // TODO: avoid this constant here
         )
         .arg(
             Arg::new(PARAM_TIMER_INTERVAL)
@@ -526,30 +526,30 @@ pub async fn init(
                         }
                         FmsTrigger::Driver2Login => {
                             info!("driver two has logged in");
-                            trigger.driver = new_vehicle_status
+                            /*trigger.driver = new_vehicle_status
                                 .snapshot_data
                                 .get_or_default()
                                 .driver2_id
-                                .clone();
+                                .clone();*/
                         }
                         FmsTrigger::Driver2Logout => {
                             info!("driver two has logged out");
-                            trigger.driver = last_known_status
+                            /*trigger.driver = last_known_status
                                 .snapshot_data
                                 .get_or_default()
                                 .driver2_id
-                                .clone();
+                                .clone();*/
                         }
                         FmsTrigger::Driver2WorkingStateChanged(status) => {
                             info!(
                                 "driver two's working state has changed to status {}",
                                 status
                             );
-                            trigger.driver = last_known_status
+                            /*trigger.driver = last_known_status
                                 .snapshot_data
                                 .get_or_default()
                                 .driver2_id
-                                .clone();
+                                .clone();*/
                         }
                         FmsTrigger::EngineOn => {
                             info!("engine has been started");

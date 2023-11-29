@@ -19,10 +19,10 @@
 
 networks:
   fms-backend:
-    driver: overlay
+    driver: bridge  # overlay does not work and complains about docker swarm stuff
     attachable: true
   fms-vehicle:
-    driver: overlay
+    driver: bridge
     attachable: true
 
 configs:
@@ -166,6 +166,7 @@ services:
       KUKSA_DATA_BROKER_URI: "http://databroker:55556"
       RUST_LOG: "${FMS_FORWARDER_LOG_CONFIG:-info,fms_forwarder=info,influx_client=info}"
       TRUST_STORE_PATH: "${FMS_FORWARDER_TRUST_STORE_PATH:-/etc/ssl/certs/ca-certificates.crt}"
+      SIGNAL_FILTER: "Vehicle.Speed,Vehicle.Powertrain.FuelSystem.Tank.First.RelativeLevel"
     volumes:
     - type: "volume"
       source: "influxdb-auth"
@@ -187,3 +188,22 @@ services:
       PROVIDER_LOG_LEVEL: "INFO"
       KUKSA_DATA_BROKER_ADDR: "databroker"
       KUKSA_DATA_BROKER_PORT: "55556"
+
+  nodered:
+    build:
+      context: node-red
+      dockerfile: Dockerfile
+    ports:
+    - "8082:1880"
+    networks:
+    - "fms-backend"
+    depends_on:
+      influxdb:
+        condition: service_started
+    volumes:
+    - type: "volume"
+      source: "influxdb-auth"
+      target: "/tmp"
+      read_only: true
+    environment:
+      INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"

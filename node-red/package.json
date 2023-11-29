@@ -1,0 +1,19 @@
+{
+    "name": "mia-hackathon-2023",
+    "version": "0.0.1",
+    "description": "SDV Hackathon 2023",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "g.meyer@signum-media.de",
+    "license": "Apache-2.0",
+    "dependencies": {
+        "node-red": "3.1.0",
+        "node-red-dashboard": "3.6.1",
+        "node-red-node-ui-list": "0.3.6",
+        "node-red-node-ui-table": "0.4.3",
+        "node-red-contrib-influxdb": "0.6.1",
+        "node-red-contrib-web-worldmap": "4.3.2",
+        "@node-red-contrib-themes/theme-collection": "3.1.5"
+    }
+}
