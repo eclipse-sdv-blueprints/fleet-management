@@ -1,7 +1,7 @@
 {
-    "name": "mia-hackathon-2023",
+    "name": "mia-fleet-management",
     "version": "0.0.1",
-    "description": "SDV Hackathon 2023",
+    "description": "SDV Hackathon 2023 - Team MIA",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },

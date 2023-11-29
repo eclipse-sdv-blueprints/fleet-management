@@ -227,7 +227,9 @@ pub fn new_vehicle_status(data: HashMap<String, Value>, _default_vin: &String) -
                 if let Some(measurement) = data.get(field) {
                     let mut entry = KeyValue::new();
                     entry.key = field.to_string();
-                    entry.value = measurement.clone().try_into().unwrap();
+                    // entry.value = measurement.clone().try_into().unwrap().to_string();
+                    entry.value = <datapoint::Value as TryInto<String>>::try_into(measurement.clone()).unwrap().to_string();
+                    //entry.value = "123".to_string();
                     snapshot_data_vec.entries.push(entry);
                 }
             }

@@ -1,5 +1,13 @@
 [
     {
+        "id": "2889273e53d6a5ed",
+        "type": "tab",
+        "label": "Initialization",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "7e9fdc799c9dacda",
         "type": "tab",
         "label": "Flow 1",
@@ -12,7 +20,7 @@
         "type": "subflow",
         "name": "influx to value",
         "info": "",
-        "category": "",
+        "category": "SDV",
         "in": [
             {
                 "x": 60,
@@ -47,14 +55,82 @@
             }
         ],
         "env": [],
-        "meta": {},
+        "meta": {
+            "license": "Apache-2.0"
+        },
         "color": "#DDAA99",
         "outputLabels": [
             "message",
-            "value",
-            "",
-            ""
+            "value"
         ]
+    },
+    {
+        "id": "d4b0bd7f01e6e982",
+        "type": "subflow",
+        "name": "select signal",
+        "info": "",
+        "category": "SDV",
+        "in": [
+            {
+                "x": 60,
+                "y": 60,
+                "wires": [
+                    {
+                        "id": "4d50901bd23ed524"
+                    },
+                    {
+                        "id": "55e70c455d920385"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 710,
+                "y": 60,
+                "wires": [
+                    {
+                        "id": "09044a59f8898114",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 710,
+                "y": 120,
+                "wires": [
+                    {
+                        "id": "09044a59f8898114",
+                        "port": 1
+                    }
+                ]
+            }
+        ],
+        "env": [
+            {
+                "name": "signal_name",
+                "type": "str",
+                "value": ""
+            }
+        ],
+        "meta": {
+            "license": "Apache-2.0"
+        },
+        "color": "#DDAA99",
+        "outputLabels": [
+            "msg",
+            "value"
+        ],
+        "status": {
+            "x": 740,
+            "y": 180,
+            "wires": [
+                {
+                    "id": "4d50901bd23ed524",
+                    "port": 0
+                }
+            ]
+        }
     },
     {
         "id": "95cd6ea4aaaa788f",
@@ -252,9 +328,93 @@
         ]
     },
     {
-        "id": "1d204ff02f421001",
+        "id": "55e70c455d920385",
+        "type": "switch",
+        "z": "d4b0bd7f01e6e982",
+        "name": "current_signal_name",
+        "property": "payload[\"_field\"]",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "current_signal_name",
+                "vt": "flow"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 260,
+        "y": 60,
+        "wires": [
+            [
+                "09044a59f8898114"
+            ]
+        ]
+    },
+    {
+        "id": "09044a59f8898114",
+        "type": "subflow:32b0ac61c667424c",
+        "z": "d4b0bd7f01e6e982",
+        "name": "",
+        "x": 480,
+        "y": 60,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "4d50901bd23ed524",
+        "type": "function",
+        "z": "d4b0bd7f01e6e982",
+        "name": "update signal name",
+        "func": "const signal_name = env.get(\"signal_name\")\n\nif (signal_name !== flow.get(\"current_signal_name\")) {\n    flow.set(\"current_signal_name\", signal_name)\n    const signals_list = context.global.get(\"signal_names_list\")\n    signals_list.add(signal_name)\n    context.global.set(\"signal_names_list\", signals_list)\n}\n\nmsg.payload = {text: signal_name}\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "const signal_name = env.get(\"signal_name\")\nflow.set(\"current_signal_name\", signal_name)\n\nlet signals_list = context.global.get(\"signal_names_list\")\nif (!signals_list) {\n    signals_list = new Set()\n}\nsignals_list.add(signal_name)\ncontext.global.set(\"signal_names_list\")\n",
+        "finalize": "const signal_name = env.get(\"signal_name\")\nconst signals_list = context.global.get(\"signal_names_list\")\nsignals_list.delete(signal_name)\ncontext.global.set(\"signal_names_list\", signals_list)\n",
+        "libs": [],
+        "x": 470,
+        "y": 140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "21b88d93e549f913",
+        "type": "inject",
+        "z": "d4b0bd7f01e6e982",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 110,
+        "y": 140,
+        "wires": [
+            [
+                "4d50901bd23ed524"
+            ]
+        ]
+    },
+    {
+        "id": "d981842589f74e1d",
         "type": "influxdb in",
-        "z": "7e9fdc799c9dacda",
+        "z": "2889273e53d6a5ed",
         "influxdb": "95cd6ea4aaaa788f",
         "name": "Vehicle InfluxDB",
         "query": "from(bucket: \"demo\")\n    |> range(start: -1h)\n    |> last()\n",
@@ -262,35 +422,36 @@
         "precision": "",
         "retentionPolicy": "",
         "org": "sdv",
-        "x": 400,
+        "x": 300,
         "y": 60,
         "wires": [
             [
-                "df5f505cbeaf94c0",
-                "eb77e9998c52fba8"
+                "3b25e6c277cb1ba7",
+                "45ec95ec9cc925e7"
             ]
         ]
     },
     {
-        "id": "e77bfa13c9f824f4",
+        "id": "77c6640c083dd78d",
         "type": "debug",
-        "z": "7e9fdc799c9dacda",
-        "name": "debug 1",
-        "active": false,
+        "z": "2889273e53d6a5ed",
+        "name": "debug influx",
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "false",
+        "complete": "payload",
+        "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 820,
-        "y": 60,
+        "x": 490,
+        "y": 120,
         "wires": []
     },
     {
-        "id": "4ced8655d5a5e9a9",
+        "id": "35dbc73ad43892e4",
         "type": "inject",
-        "z": "7e9fdc799c9dacda",
+        "z": "2889273e53d6a5ed",
         "name": "",
         "props": [
             {
@@ -304,23 +465,23 @@
         "repeat": "0.5",
         "crontab": "",
         "once": true,
-        "onceDelay": "0.1",
+        "onceDelay": "0.5",
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 170,
+        "x": 110,
         "y": 60,
         "wires": [
             [
-                "1d204ff02f421001"
+                "d981842589f74e1d"
             ]
         ]
     },
     {
-        "id": "df5f505cbeaf94c0",
+        "id": "3b25e6c277cb1ba7",
         "type": "function",
-        "z": "7e9fdc799c9dacda",
-        "name": "function 1",
+        "z": "2889273e53d6a5ed",
+        "name": "debug data",
         "func": "const data = msg.payload.map( e => {\n    return e[\"_field\"]\n    \n});\n\n// msg.payload = data\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -328,12 +489,91 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 620,
+        "x": 290,
+        "y": 120,
+        "wires": [
+            [
+                "77c6640c083dd78d"
+            ]
+        ]
+    },
+    {
+        "id": "45ec95ec9cc925e7",
+        "type": "split",
+        "z": "2889273e53d6a5ed",
+        "name": "",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 470,
         "y": 60,
         "wires": [
             [
-                "e77bfa13c9f824f4"
+                "2c163ea721113b9c"
             ]
+        ]
+    },
+    {
+        "id": "2c163ea721113b9c",
+        "type": "link out",
+        "z": "2889273e53d6a5ed",
+        "name": "influx data",
+        "mode": "link",
+        "links": [
+            "5d76169c79019f45"
+        ],
+        "x": 575,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "405a2ace947a3dc4",
+        "type": "inject",
+        "z": "2889273e53d6a5ed",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 110,
+        "y": 200,
+        "wires": [
+            [
+                "31bbfc5dd71e6373"
+            ]
+        ]
+    },
+    {
+        "id": "31bbfc5dd71e6373",
+        "type": "function",
+        "z": "2889273e53d6a5ed",
+        "name": "init",
+        "func": "global.set(\"signal_names_list\", new Set())\n\nreturn msg\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 270,
+        "y": 200,
+        "wires": [
+            []
         ]
     },
     {
@@ -353,33 +593,11 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 550,
-        "y": 380,
+        "x": 520,
+        "y": 300,
         "wires": [
             [
                 "06ad9941f172082f"
-            ]
-        ]
-    },
-    {
-        "id": "eb77e9998c52fba8",
-        "type": "split",
-        "z": "7e9fdc799c9dacda",
-        "name": "",
-        "splt": "\\n",
-        "spltType": "str",
-        "arraySplt": 1,
-        "arraySpltType": "len",
-        "stream": false,
-        "addname": "",
-        "x": 590,
-        "y": 220,
-        "wires": [
-            [
-                "c9ce3d7308038b53",
-                "45337ee5c1d39d5b",
-                "65181b198631cfaa",
-                "7e7e782b6314fde4"
             ]
         ]
     },
@@ -407,8 +625,8 @@
         "seg2": "",
         "diff": false,
         "className": "",
-        "x": 1090,
-        "y": 380,
+        "x": 1030,
+        "y": 240,
         "wires": []
     },
     {
@@ -428,8 +646,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 510,
-        "y": 460,
+        "x": 480,
+        "y": 380,
         "wires": [
             [
                 "fb3f2a187d48ef95"
@@ -453,8 +671,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 510,
-        "y": 520,
+        "x": 480,
+        "y": 440,
         "wires": [
             [
                 "517d345c89050cf9"
@@ -485,8 +703,8 @@
         "seg2": "",
         "diff": false,
         "className": "",
-        "x": 1070,
-        "y": 460,
+        "x": 1010,
+        "y": 320,
         "wires": []
     },
     {
@@ -513,8 +731,8 @@
         "seg2": "",
         "diff": false,
         "className": "",
-        "x": 1050,
-        "y": 520,
+        "x": 990,
+        "y": 380,
         "wires": []
     },
     {
@@ -534,8 +752,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 530,
-        "y": 600,
+        "x": 500,
+        "y": 520,
         "wires": [
             [
                 "db0ce46ef27c4794"
@@ -559,8 +777,8 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 1090,
-        "y": 600,
+        "x": 1030,
+        "y": 460,
         "wires": []
     },
     {
@@ -568,8 +786,8 @@
         "type": "subflow:32b0ac61c667424c",
         "z": "7e9fdc799c9dacda",
         "name": "",
-        "x": 790,
-        "y": 460,
+        "x": 760,
+        "y": 380,
         "wires": [
             [],
             [
@@ -582,8 +800,8 @@
         "type": "subflow:32b0ac61c667424c",
         "z": "7e9fdc799c9dacda",
         "name": "",
-        "x": 790,
-        "y": 600,
+        "x": 760,
+        "y": 520,
         "wires": [
             [],
             [
@@ -596,8 +814,8 @@
         "type": "subflow:32b0ac61c667424c",
         "z": "7e9fdc799c9dacda",
         "name": "",
-        "x": 790,
-        "y": 520,
+        "x": 760,
+        "y": 440,
         "wires": [
             [],
             [
@@ -610,12 +828,135 @@
         "type": "subflow:32b0ac61c667424c",
         "z": "7e9fdc799c9dacda",
         "name": "",
-        "x": 790,
-        "y": 380,
+        "x": 760,
+        "y": 300,
         "wires": [
             [],
             [
                 "b7f422d49af26639"
+            ]
+        ]
+    },
+    {
+        "id": "5d76169c79019f45",
+        "type": "link in",
+        "z": "7e9fdc799c9dacda",
+        "name": "data source",
+        "links": [
+            "2c163ea721113b9c"
+        ],
+        "x": 55,
+        "y": 60,
+        "wires": [
+            [
+                "c9ce3d7308038b53",
+                "45337ee5c1d39d5b",
+                "65181b198631cfaa",
+                "7e7e782b6314fde4",
+                "01b63d24ec6b8c94",
+                "18527e9c1c8e2378",
+                "7d5fb43b377a3519",
+                "c9cdc2cd989e8c43"
+            ]
+        ]
+    },
+    {
+        "id": "9c20e25293e10dd5",
+        "type": "debug",
+        "z": "7e9fdc799c9dacda",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 740,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "01b63d24ec6b8c94",
+        "type": "subflow:d4b0bd7f01e6e982",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "env": [
+            {
+                "name": "signal_name",
+                "value": "ambientAirTemperature",
+                "type": "str"
+            }
+        ],
+        "x": 450,
+        "y": 40,
+        "wires": [
+            [],
+            [
+                "9c20e25293e10dd5"
+            ]
+        ]
+    },
+    {
+        "id": "18527e9c1c8e2378",
+        "type": "subflow:d4b0bd7f01e6e982",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "env": [
+            {
+                "name": "signal_name",
+                "value": "engineSpeed",
+                "type": "str"
+            }
+        ],
+        "x": 450,
+        "y": 100,
+        "wires": [
+            [],
+            [
+                "9c20e25293e10dd5"
+            ]
+        ]
+    },
+    {
+        "id": "7d5fb43b377a3519",
+        "type": "subflow:d4b0bd7f01e6e982",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "env": [
+            {
+                "name": "signal_name",
+                "value": "fuelLevel1",
+                "type": "str"
+            }
+        ],
+        "x": 450,
+        "y": 160,
+        "wires": [
+            [],
+            [
+                "9c20e25293e10dd5"
+            ]
+        ]
+    },
+    {
+        "id": "c9cdc2cd989e8c43",
+        "type": "subflow:d4b0bd7f01e6e982",
+        "z": "7e9fdc799c9dacda",
+        "name": "",
+        "env": [
+            {
+                "name": "signal_name",
+                "value": "totalEngineHours",
+                "type": "str"
+            }
+        ],
+        "x": 450,
+        "y": 220,
+        "wires": [
+            [],
+            [
+                "9c20e25293e10dd5"
             ]
         ]
     }
