@@ -216,3 +216,33 @@ services:
       read_only: false
     environment:
       INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
+
+  vss-forwarder:
+    build:
+      context: components/vss-forwarder
+      dockerfile: Dockerfile
+    container_name: "vss-forwarder"
+    networks:
+    - "fms-backend"
+    - "fms-vehicle"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+      databroker:
+        condition: service_started
+    volumes:
+    - type: "volume"
+      source: "influxdb-auth"
+      target: "/etc/influxdb"
+      read_only: true
+    - type: "volume"
+      source: "vss-config-share"
+      target: "/data/vss"
+      read_only: true
+    env_file: "${FMS_FORWARDER_PROPERTIES_FILE:-./influxdb/fms-demo.env}"
+    environment:
+      INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
+      KUKSA_DATA_BROKER_ADDR: "databroker"
+      KUKSA_DATA_BROKER_PORT: "55556"
+      SIGNAL_FILTER: "Vehicle.Speed,Vehicle.Exterior.AirTemperature"
+
