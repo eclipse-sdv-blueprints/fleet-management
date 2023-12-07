@@ -40,7 +40,7 @@ HONO_KAFKA_SECURE_PORT=9094
 HONO_KAFKA_USER="hono"
 HONO_KAFKA_PASSWORD="hono-secret"
 TRUST_STORE_PATH="/etc/ssl/certs/ca-certificates.crt"
-ENABLE_HOSTNAME_VALIDATION="false"
+ENABLE_HOSTNAME_VALIDATION="true"
 OUT_DIR="."
 PROVISION_TO_HONO=""
 
@@ -256,7 +256,7 @@ sasl.password=${HONO_KAFKA_PASSWORD}
 ssl.ca.location=${TRUST_STORE_PATH}
 EOF
 if [[ "${ENABLE_HOSTNAME_VALIDATION}" == "false" ]]; then
-  echo "ssl.endpoint.identification.algorithm=" >> "${KAFKA_PROPERTIES_FILE}"
+  echo "ssl.endpoint.identification.algorithm=none" >> "${KAFKA_PROPERTIES_FILE}"
 fi
 
 # create file with environment variables that the FMS Forwarder running in the vehicle
