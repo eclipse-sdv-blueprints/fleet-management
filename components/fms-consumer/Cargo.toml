@@ -34,11 +34,11 @@ env_logger = { workspace = true }
 fms-proto = { workspace = true }
 futures = "0.3"
 influx-client = { workspace = true, features = ["writer"] }
-rdkafka = { version = "0.33", default-features = false, features = ["libz", "tokio", "cmake-build", "ssl-vendored"] }
+rdkafka = { version = "0.36", default-features = false, features = ["libz", "tokio", "cmake-build", "ssl-vendored"] }
 log = { workspace = true }
 protobuf = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 
 [build-dependencies]
 # see https://github.com/fede1024/rust-rdkafka/issues/572#issuecomment-1529316876
-openssl-src = { version = "111", features = ["force-engine"] }
+openssl-src = { version = "300", features = ["force-engine"] }

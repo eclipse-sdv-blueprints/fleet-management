@@ -30,7 +30,7 @@ crate/cratesio/-/crossbeam-utils/0.8.16, MIT OR Apache-2.0, approved, clearlydef
 crate/cratesio/-/csv/1.2.2, Unlicense OR MIT, approved, clearlydefined
 crate/cratesio/-/csv-core/0.1.10, Unlicense OR MIT, approved, clearlydefined
 crate/cratesio/-/curl/0.4.44, MIT AND curl, approved, #9765
-crate/cratesio/-/curl-sys/0.4.65, MIT, approved, #9784
+crate/cratesio/-/curl-sys/0.4.65+curl-8.2.1, MIT, approved, #9784
 crate/cratesio/-/duration-str/0.7.0, Apache-2.0, approved, clearlydefined
 crate/cratesio/-/either/1.9.0, Apache-2.0 AND MIT AND Apache-2.0 AND MIT, approved, #10050
 crate/cratesio/-/encoding_rs/0.8.32, Apache-2.0 AND BSD-3-Clause AND MIT AND Apache-2.0 AND (Apache-2.0 AND CC0-1.0 AND MIT) AND MIT AND BSD-3-Clause AND (Apache-2.0 AND BSD-3-Clause AND CC0-1.0 AND MIT) AND (Apache-2.0 AND MIT) AND CC0-1.0, approved, #9762
@@ -71,8 +71,8 @@ crate/cratesio/-/isahc/1.7.2, MIT AND CC-BY-4.0 AND MPL-2.0, approved, #9775
 crate/cratesio/-/is-terminal/0.4.9, MIT, approved, clearlydefined
 crate/cratesio/-/itertools/0.10.5, Apache-2.0 AND MIT AND Apache-2.0 AND MIT, approved, #4247
 crate/cratesio/-/itoa/1.0.9, MIT OR Apache-2.0, approved, clearlydefined
-crate/cratesio/-/libc/0.2.147, MIT OR Apache-2.0, approved, clearlydefined
-crate/cratesio/-/libnghttp2-sys/0.1.7, Apache-2.0 AND MIT AND Apache-2.0 AND MIT, approved, #9783
+crate/cratesio/-/libc/0.2.150, MIT OR Apache-2.0, approved, clearlydefined
+crate/cratesio/-/libnghttp2-sys/0.1.7+1.45.0, Apache-2.0 AND MIT AND Apache-2.0 AND MIT, approved, #9783
 crate/cratesio/-/libz-sys/1.1.12, Apache-2.0 AND BSL-1.0 AND MIT AND CC-BY-3.0 AND CC-BY-4.0 AND LicenseRef-Public-domain AND (GPL-2.0-or-later AND LicenseRef-scancode-ada-linking-exception) AND Info-ZIP AND NTP AND Zlib, approved, #9763
 crate/cratesio/-/linux-raw-sys/0.4.3, Apache-2.0 AND MIT, approved, #9787
 crate/cratesio/-/log/0.4.19, MIT OR Apache-2.0, approved, clearlydefined
@@ -88,7 +88,7 @@ crate/cratesio/-/num_enum_derive/0.5.11, BSD-3-Clause OR (MIT OR Apache-2.0), ap
 crate/cratesio/-/num-traits/0.2.16, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/once_cell/1.18.0, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/openssl-probe/0.1.5, MIT OR Apache-2.0, approved, clearlydefined
-crate/cratesio/-/openssl-sys/0.9.92, MIT AND (Apache-2.0 AND MIT), approved, #9757
+crate/cratesio/-/openssl-sys/0.9.95, MIT AND (Apache-2.0 AND MIT), approved, #9757
 crate/cratesio/-/paho-mqtt/0.12.3, EPL-1.0 OR BSD-3-Clause, approved, #9785
 crate/cratesio/-/paho-mqtt-sys/0.9.0, , approved, #11611
 crate/cratesio/-/parking/2.1.0, Apache-2.0 OR MIT, approved, clearlydefined
@@ -110,8 +110,8 @@ crate/cratesio/-/quote/1.0.32, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/rand/0.8.5, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/rand_chacha/0.3.1, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/rand_core/0.6.4, MIT OR Apache-2.0, approved, clearlydefined
-crate/cratesio/-/rdkafka/0.33.2, MIT, approved, clearlydefined
-crate/cratesio/-/rdkafka-sys/4.5.0, MIT, approved, #9766
+crate/cratesio/-/rdkafka/0.36.0, MIT, approved, clearlydefined
+crate/cratesio/-/rdkafka-sys/4.7.0+2.3.0, MIT AND BSD-2-Clause AND Zlib AND BSD-3-Clause AND ISC AND Apache-2.0 and LicenseRef-MSVC-Runtime, approved, https://gitlab.eclipse.org/eclip
 crate/cratesio/-/regex/1.9.1, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/regex-automata/0.3.3, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/regex-syntax/0.7.4, Apache-2.0 AND MIT AND Apache-2.0 AND MIT AND Unicode-DFS-2016, approved, #9758
