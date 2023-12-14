@@ -57,15 +57,14 @@ async fn main() {
         .route("/", get(root))
         .route("/rfms/vehicleposition", get(get_vehicleposition))
         .route("/rfms/vehicles", get(get_vehicles))
+        .route("/rfms/vehiclestatuses", get(get_vehiclesstatuses))
         .with_state(influx_reader);
-    axum::Server::bind(&"0.0.0.0:8081".parse().unwrap())
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+        let listener = tokio::net::TcpListener::bind("0.0.0.0:8081").await.unwrap();
+        axum::serve(listener, app).await.unwrap();
 }
 
 async fn root() -> &'static str {
-    "Welcome to the rFMS server. The following endpoints are implemented: '/rfms/vehicleposition and /rfms/vehicles'"
+    "Welcome to the rFMS server. The following endpoints are implemented: '/rfms/vehicleposition', '/rfms/vehicles', and '/rfms/vehiclestatuses'"
 }
 
 async fn get_vehicleposition(
@@ -130,7 +129,81 @@ async fn get_vehicles(
             Json(result_object)
         })
         .map_err(|e| {
-            error!("error retrieving vehicle status: {e}");
+            error!("error retrieving vehicles: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })
 }
+
+fn parse_latest_only(params: &HashMap<String, String>) -> Result<Option<bool>, StatusCode> {
+    let latest_parameter = params.get("latestOnly");
+    if let Some(latest_string) = latest_parameter {
+        let latest_result = latest_string.parse();
+        if latest_result.is_err() {
+            return Err(StatusCode::BAD_REQUEST);
+        }
+        return Ok(latest_result.ok());
+    }
+    Ok(None)
+}
+
+async fn get_vehiclesstatuses(
+    State(influx_server): State<Arc<InfluxReader>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    
+    
+    let start_parameter = params.get("starttime");
+    let stop_parameter = params.get("stoptime");
+    
+    
+    let latest_only = match parse_latest_only(&params) {
+        Ok(value) => value,
+        Err(status) => return Err(status), 
+    };
+    
+    if start_parameter.is_none() && latest_only.is_none() {
+        // rFMS makes it mandatory to either supply the starttime or latestOnly
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    if latest_only.is_some() && (start_parameter.is_some() || stop_parameter.is_some()) {
+        // rFMS does not allow to set latestOnly and and time at the same time
+        return  Err(StatusCode::BAD_REQUEST);
+    }
+
+    let start_time = start_parameter.map_or(0, |text| {
+        DateTime::<Utc>::from_str(text).map_or(0, |time| time.timestamp())
+    });
+
+    let stop_time = stop_parameter
+        .map_or_else(|| Utc::now().timestamp(), |text| {
+            DateTime::<Utc>::from_str(text).map_or_else(|_| Utc::now().timestamp(), |time| time.timestamp())
+        });
+
+    let vin = params.get("vin");
+    let trigger_filter = params.get("triggerFilter");
+
+
+    influx_server
+        .get_vehiclesstatuses(start_time, stop_time, vin, trigger_filter, latest_only)
+        .await
+        .map(|vehicles_statuses| {
+            let response = models::VehicleStatusResponseObjectVehicleStatusResponse {
+                vehicle_statuses: Some(vehicles_statuses),
+            };
+
+            //TODO for request_server_date_time
+            // put in start time used in influx query instead of now
+            let result_object = json!(models::VehicleStatusResponseObject {
+                vehicle_status_response: response,
+                more_data_available: false,
+                more_data_available_link: None,
+                request_server_date_time: Utc::now()
+            });
+            Json(result_object)
+        })
+        .map_err(|e| {
+            error!("error retrieving vehicle statuses: {e}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })
+    }
