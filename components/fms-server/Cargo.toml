@@ -30,7 +30,7 @@ readme.workspace = true
 
 [dependencies]
 async-trait = "0.1"
-axum = "0.7.2"
+axum = "0.7"
 chrono = { workspace = true, features = ["clock", "serde"] }
 clap = { workspace = true, features = ["std", "env", "color", "help", "usage", "error-context", "suggestions"] }
 const_format = { version = "0.2" }

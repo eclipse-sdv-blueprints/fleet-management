@@ -24,7 +24,12 @@ use influx_client::connection::InfluxConnection;
 use influxrs::InfluxError;
 use log::error;
 
-use crate::models::{self, GnssPositionObject, TriggerObject, VehiclePositionObject, VehicleStatusObject, DriverWorkingStateProperty};
+use crate::models::TriggerObject;
+use crate::models::status::{VehicleStatusObject, DriverWorkingStateProperty, SnapshotDataObject};
+use crate::models::vehicle::VehicleObject;
+use crate::models::position::{GnssPositionObject, VehiclePositionObject};
+use crate::query_parser::QueryParameters;
+
 
 const FILTER_FIELDS_POSITION: &str = formatcp!(
     r#"filter(fn: (r) => contains(set: ["{}","{}","{}","{}","{}","{}","{}","{}", "{}"], value: r._field))"#,
@@ -92,7 +97,7 @@ impl InfluxReader {
         InfluxConnection::new(args).map(|con| InfluxReader { influx_con: con })
     }
 
-    pub async fn get_vehicles(&self) -> Result<Vec<models::VehicleObject>, InfluxError> {
+    pub async fn get_vehicles(&self) -> Result<Vec<VehicleObject>, InfluxError> {
         let read_query = influxrs::Query::new(format!(
             r#"
                 import "influxdata/influxdb/schema"
@@ -107,7 +112,7 @@ impl InfluxReader {
                 .filter_map(|entry| {
                     entry
                         .get("_value")
-                        .map(|vin| models::VehicleObject::new(vin.to_string()))
+                        .map(|vin| VehicleObject::new(vin.to_string()))
                 })
                 .collect()
         })
@@ -115,19 +120,15 @@ impl InfluxReader {
 
     pub async fn get_vehicleposition(
         &self,
-        start_time: i64,
-        stop_time: i64,
-        vin: Option<&String>,
-        trigger: Option<&String>,
-        latest_only: bool,
-    ) -> Result<Vec<models::VehiclePositionObject>, InfluxError> {
+        parameters: &QueryParameters,
+    ) -> Result<Vec<VehiclePositionObject>, InfluxError> {
         // Build Query
-        let time_filter = format!("range(start: {}, stop: {})", start_time, stop_time);
-        let vin_filter = match vin {
+        let time_filter = format!("range(start: {}, stop: {})", parameters.start_time, parameters.stop_time);
+        let vin_filter = match &parameters.vin {
             Some(v) => format!(r#"filter(fn: (r) => r["{}"] == "{}""#, influx_client::TAG_VIN, v),
             None => FILTER_TAG_ANY_VIN.to_string(),
         };
-        let trigger_filter = match trigger {
+        let trigger_filter = match &parameters.trigger_filter {
             Some(t) => format!(r#"filter(fn: (r) => r["{}"] == "{}")"#, influx_client::TAG_TRIGGER, t),
             None => FILTER_TAG_ANY_TRIGGER.to_string(),
         };
@@ -138,7 +139,7 @@ impl InfluxReader {
             .then(vin_filter)
             .then(trigger_filter)
             .then(FILTER_FIELDS_POSITION);
-        if latest_only {
+        if Some(true) == parameters.latest_only {
             read_query = read_query.then("last()");
         }
         read_query = read_query
@@ -195,19 +196,15 @@ impl InfluxReader {
 
     pub async fn get_vehiclesstatuses(
         &self,
-        start_time: i64,
-        stop_time: i64,
-        vin: Option<&String>,
-        trigger: Option<&String>,
-        latest_only: Option<bool>,
-    ) -> Result<Vec<models::VehicleStatusObject>, InfluxError> {
+        parameters: &QueryParameters,
+    ) -> Result<Vec<VehicleStatusObject>, InfluxError> {
         // Build Query
-        let time_filter = format!("range(start: {}, stop: {})", start_time, stop_time);
-        let vin_filter = match vin {
+        let time_filter = format!("range(start: {}, stop: {})", parameters.start_time, parameters.stop_time);
+        let vin_filter = match &parameters.vin {
             Some(v) => format!(r#"filter(fn: (r) => r["{}"] == "{}""#, influx_client::TAG_VIN, v),
             None => FILTER_TAG_ANY_VIN.to_string(),
         };
-        let trigger_filter = match trigger {
+        let trigger_filter = match &parameters.trigger_filter {
             Some(t) => format!(r#"filter(fn: (r) => r["{}"] == "{}")"#, influx_client::TAG_TRIGGER, t),
             None => FILTER_TAG_ANY_TRIGGER.to_string(),
         };
@@ -217,7 +214,7 @@ impl InfluxReader {
             .then(vin_filter)
             .then(trigger_filter)
             .then(r#"aggregateWindow(every: 500ms, fn: last, createEmpty: false)"#);
-        if Some(true) == latest_only {
+        if Some(true) == parameters.latest_only {
             read_query = read_query
             .then(r#"group(columns: ["_measurement", "_field", "vin"], mode:"by")"#)
             .then("last()");
@@ -262,7 +259,7 @@ impl InfluxReader {
                                 _ => None,
                             };
 
-                            let snapshot_data = Some(models::SnapshotDataObject {
+                            let snapshot_data = Some(SnapshotDataObject {
                                 gnss_position,
                                 wheel_based_speed: unpack_value_f64(entry.get(influx_client::FIELD_WHEEL_BASED_SPEED)),
                                 tachograph_speed: unpack_value_f64(entry.get(influx_client::FIELD_TACHOGRAPH_SPEED)),
