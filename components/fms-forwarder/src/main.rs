@@ -26,12 +26,15 @@ use influx_client::writer::InfluxWriter;
 use log::{error, info};
 use status_publishing::StatusPublisher;
 use tokio::sync::mpsc;
+use zenoh_publisher::ZenohPublisher;
 
 mod hono_publisher;
 mod mqtt_connection;
+mod zenoh_publisher;
 
 const SUBCOMMAND_HONO: &str = "hono";
 const SUBCOMMAND_INFLUX: &str = "influx";
+const SUBCOMMAND_ZENOH: &str = "zenoh";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -51,6 +54,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ))
         .subcommand(influx_client::connection::add_command_line_args(
             Command::new(SUBCOMMAND_INFLUX).about("Forwards VSS data to an Influx DB server"),
+        ))
+        .subcommand(zenoh_publisher::add_command_line_args(
+            Command::new(SUBCOMMAND_ZENOH).about("Forwards VSS data to an zenoh"),
         ));
 
     let args = parser.get_matches();
@@ -72,6 +78,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(writer) => Box::new(writer),
                 Err(e) => {
                     error!("failed to create InfluxDB writer: {e}");
+                    process::exit(1);
+                }
+            }
+        },
+        Some(SUBCOMMAND_ZENOH) => {
+            let zenoh_args = args.subcommand_matches(SUBCOMMAND_ZENOH).unwrap();
+            match ZenohPublisher::new(zenoh_args).await {
+                Ok(writer) => Box::new(writer),
+                Err(e) => {
+                    error!("failed to create zenoh Publisher: {e}");
                     process::exit(1);
                 }
             }
