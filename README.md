@@ -128,7 +128,7 @@ At present, step 1 has been concluded, and we are actively advancing with the on
 2. Start up the zenoh router and back end services using Docker Compose files in the top level (fleet-management/) folder:
 
    ```sh
-   docker compose -f ./fms-blueprint-compose-zenoh.yaml -f ./fms-blueprint-compose.yaml up --detach
+   docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.yaml up --detach
    ```
 
 
