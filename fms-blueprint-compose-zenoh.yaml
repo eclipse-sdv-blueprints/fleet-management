@@ -12,6 +12,6 @@ services:
     - 8000:8000/tcp
     restart: unless-stopped
     volumes:
-    - ./zenoh-config.json:/zenoh-config.json
+    - ./zenoh-config.json5:/zenoh-config.json5
   fms-forwarder:
     command: "zenoh -m client"
