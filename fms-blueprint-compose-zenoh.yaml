@@ -1,0 +1,17 @@
+services:
+  zenoh:
+    command: -c /zenoh-config.json
+    environment:
+      RUST_LOG: zenoh=info
+    image: eclipse/zenoh:0.10.1-rc
+    container_name: "fms-zenoh-router"
+    network_mode: host
+    ports:
+    - 7447:7447/tcp
+    - 1883:1883/tcp
+    - 8000:8000/tcp
+    restart: unless-stopped
+    volumes:
+    - ./zenoh-config.json:/zenoh-config.json
+  fms-forwarder:
+    command: "zenoh -m client"
