@@ -1,20 +1,16 @@
-////
-//// This file presents the default configuration used by both the `zenoh-plugin-mqtt` plugin and the `zenoh-bridge-mqtt` standalone executable.
-//// The "mqtt" JSON5 object below can be used as such in the "plugins" part of a config file for the zenoh router (zenohd).
-////
 {
   plugins: {
     ////
     //// MQTT related configuration
     //// All settings are optional and are unset by default - uncomment the ones you want to set
     ////
-    // mqtt: {
+    mqtt: {
       ////
       //// port: The address to bind the MQTT server. Default: "0.0.0.0:1883". Accepted values:'
       ////       - a port number ("0.0.0.0" will be used as IP to bind, meaning any interface of the host)
       ////       - a string with format `<local_ip>:<port_number>` (to bind the MQTT server to a specific interface).
       ////
-      //  port: "0.0.0.0:1883",
+      // port: "0.0.0.0:1883",
 
       ////
       //// scope: A string added as prefix to all routed MQTT topics when mapped to a zenoh resource.
@@ -45,19 +41,16 @@
       ////
       // generalise_subs: ["PUB1", "PUB2"],
 
-   // },
+    },
+
 
     ////
     //// REST API configuration (active only if this part is defined)
     ////
-     rest: {
-    //   ////
-    //   //// The HTTP port number (for all network interfaces).
-    //   //// You can bind on a specific interface setting a "<local_ip>:<port>" string.
-    //   ////
-       http_port: 8000,
-    // },
+    // Optionally, add the REST plugin
+    rest: { http_port: 8000 },
   },
+
 
   ////
   //// zenoh related configuration (see zenoh documentation for more details)
@@ -79,7 +72,7 @@
   ////
   connect: {
     endpoints: [
-      // "<proto>/<ip>:<port>"
+       //"tcp/127.0.0.1:7447"
     ]
   },
 
@@ -90,7 +83,7 @@
   ////
   listen: {
     endpoints: [
-      // "<proto>/<ip>:<port>"
+      //"tcp/127.0.0.1:7447"
     ]
   },
 }
