@@ -14,7 +14,7 @@
       ////       - a port number ("0.0.0.0" will be used as IP to bind, meaning any interface of the host)
       ////       - a string with format `<local_ip>:<port_number>` (to bind the MQTT server to a specific interface).
       ////
-        port: "0.0.0.0:1883",
+      //  port: "0.0.0.0:1883",
 
       ////
       //// scope: A string added as prefix to all routed MQTT topics when mapped to a zenoh resource.
