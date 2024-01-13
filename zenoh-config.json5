@@ -8,7 +8,7 @@
     //// MQTT related configuration
     //// All settings are optional and are unset by default - uncomment the ones you want to set
     ////
-    mqtt: {
+    // mqtt: {
       ////
       //// port: The address to bind the MQTT server. Default: "0.0.0.0:1883". Accepted values:'
       ////       - a port number ("0.0.0.0" will be used as IP to bind, meaning any interface of the host)
@@ -45,7 +45,7 @@
       ////
       // generalise_subs: ["PUB1", "PUB2"],
 
-    },
+   // },
 
     ////
     //// REST API configuration (active only if this part is defined)
