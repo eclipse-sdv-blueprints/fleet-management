@@ -1,6 +1,6 @@
 services:
   zenoh:
-    command: -c /zenoh-config.json
+    command: -c /zenoh-config.json5
     environment:
       RUST_LOG: zenoh=info
     image: eclipse/zenoh:0.10.1-rc
