@@ -100,10 +100,9 @@ of an Eclipse Hono instance as shown in the diagram below.
    Influx DB.
 
 
-# Using Zenoh Router to send Vehicle Data to rest of the world
+# Using Zenoh Router to geographically distribute the vehicle data
 
-The integration of Eclipse Zenoh into the FMS blueprint will be realized in two steps:
-
+The integration of Eclipse Zenoh into the FMS blueprint is planned to be realized in two steps:
 
 **Step 1:  Extend FMS Forwarder to publish data in Zenoh and configure Zenoh Router to also receive data over MQTT**
 
@@ -115,7 +114,7 @@ The integration of Eclipse Zenoh into the FMS blueprint will be realized in two 
 
 - Implement the necessary changes in Zenoh Router using Zenoh Flow to create components that publish / consume data into influxdb.
 
-At present, step 1 has been concluded, and we are actively advancing with the ongoing work on step 2.
+Currently, step 1 has been implemented, and we now provide the instructions on how you can test the communication using Zenoh, and we are actively advancing with the ongoing work on step 2.
 
 <img src="img/architecture-zenoh.drawio.png">
 
@@ -131,7 +130,7 @@ At present, step 1 has been concluded, and we are actively advancing with the on
    docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.yaml up --detach
    ```
 
-
+Here you find the [Zenoh based Python Subscriber](https://github.com/vivekpandey02/fms-zenoh-test-subscriber) application to validate the data transmissted by FMS Fowarder.
 
 # Manual configuration
 
