@@ -244,13 +244,10 @@ impl InfluxWriter {
             return;
         }
         let created_timestamp: u128 = match vehicle_status.created.clone().into_option() {
-            Some(ts) => match <Timestamp as TryInto<SystemTime>>::try_into(ts) {
-                Ok(sys_time) => sys_time.duration_since(UNIX_EPOCH).unwrap().as_millis(),
-                Err(e) => {
-                    debug!("ignoring vehicle status with improper created timestamp: {e}");
-                    return;
-                },
-            },
+            Some(ts) => <Timestamp as Into<SystemTime>>::into(ts)
+                                    .duration_since(UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_millis(),
             None => {
                 debug!("ignoring vehicle status without created timestamp");
                 return;
