@@ -15,10 +15,10 @@ pub fn add_command_line_args(command: Command) -> Command {
     command
         .arg(
             Arg::new("mode")
-                .value_parser(clap::value_parser!(WhatAmI))
+		.value_parser(clap::value_parser!(WhatAmI))
                 .long("mode")
                 .short('m')
-                .help("-m, --mode=[MODE] 'The zenoh session mode (peer by default).")
+                .help("The zenoh session mode (peer by default).")
                 .required(false),
         )
         .arg(
@@ -26,7 +26,7 @@ pub fn add_command_line_args(command: Command) -> Command {
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .long("connect")
                 .short('e')
-                .help("-e, --connect=[ENDPOINT]...  'Endpoints to connect to.'")
+                .help("Endpoints to connect to.")
                 .required(false),
         )
         .arg(
@@ -34,14 +34,14 @@ pub fn add_command_line_args(command: Command) -> Command {
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .long("listen")
                 .short('l')
-                .help("-l, --listen=[ENDPOINT]...   'Endpoints to listen on.'")
+                .help("Endpoints to listen on.")
                 .required(false),
         )
         .arg(
             Arg::new("no-multicast-scouting")
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .long("no-multicast-scouting")
-                .help("--no-multicast-scouting 'Disable the multicast-based scouting mechanism.'")
+                .help("Disable the multicast-based scouting mechanism.")
                 .required(false),
         )
 }

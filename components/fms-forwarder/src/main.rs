@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Command::new(SUBCOMMAND_INFLUX).about("Forwards VSS data to an Influx DB server"),
         ))
         .subcommand(zenoh_publisher::add_command_line_args(
-            Command::new(SUBCOMMAND_ZENOH).about("Forwards VSS data to an zenoh"),
+            Command::new(SUBCOMMAND_ZENOH).about("Forwards VSS data to zenoh"),
         ));
 
     let args = parser.get_matches();
