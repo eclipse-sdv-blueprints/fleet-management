@@ -17,33 +17,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-use axum::http::StatusCode;
-use axum::{routing::get, Json, Router};
-
-use axum::extract::{Query, State};
 use clap::Command;
-use log::{error, info};
-
-use serde_json::json;
-use std::collections::HashMap;
-use std::process;
-use std::sync::Arc;
-
-use chrono::Utc;
-
-use influx_reader::InfluxReader;
-
-mod influx_reader;
-mod models;
-mod query_parser;
-
-use models::position::{
-    VehiclePositionResponseObject, VehiclePositionResponseObjectVehiclePositionResponse,
-};
-use models::status::{
-    VehicleStatusResponseObject, VehicleStatusResponseObjectVehicleStatusResponse,
-};
-use query_parser::parse_query_parameters;
 
 #[tokio::main]
 async fn main() {
@@ -51,107 +25,9 @@ async fn main() {
 
     let mut parser = Command::new("rFMS server")
         .about("Exposes data from an InfluxDB via an rFMS API endpoint.");
-    parser = influx_client::connection::add_command_line_args(parser);
+    parser = fms_server::add_command_line_args(parser);
     let args = parser.get_matches();
-    let influx_reader = InfluxReader::new(&args).map_or_else(
-        |e| {
-            error!("failed to create InfluxDB client: {e}");
-            process::exit(1);
-        },
-        Arc::new,
-    );
-    info!("starting rFMS server");
-    let app = Router::new()
-        .route("/", get(root))
-        .route("/rfms/vehicleposition", get(get_vehicleposition))
-        .route("/rfms/vehicles", get(get_vehicles))
-        .route("/rfms/vehiclestatuses", get(get_vehiclesstatuses))
-        .with_state(influx_reader);
+    let router = fms_server::app(args);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8081").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
-}
-
-async fn root() -> &'static str {
-    "Welcome to the rFMS server. The following endpoints are implemented: '/rfms/vehicleposition', '/rfms/vehicles', and '/rfms/vehiclestatuses'"
-}
-
-async fn get_vehicleposition(
-    State(influx_server): State<Arc<InfluxReader>>,
-    Query(params): Query<HashMap<String, String>>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
-    let query_parameters = parse_query_parameters(&params)?;
-
-    influx_server
-        .get_vehicleposition(&query_parameters)
-        .await
-        .map(|positions| {
-            let result = json!(VehiclePositionResponseObject {
-                vehicle_position_response: VehiclePositionResponseObjectVehiclePositionResponse {
-                    vehicle_positions: Some(positions)
-                },
-                more_data_available: false,
-                more_data_available_link: None,
-                request_server_date_time: chrono::Utc::now()
-            });
-
-            Json(result)
-        })
-        .map_err(|e| {
-            error!("error retrieving vehicle positions: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })
-}
-
-async fn get_vehicles(
-    State(influx_server): State<Arc<InfluxReader>>,
-    Query(_params): Query<HashMap<String, String>>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
-    influx_server
-        .get_vehicles()
-        .await
-        .map(|vehicles| {
-            let response = models::vehicle::VehicleResponseObjectVehicleResponse {
-                vehicles: Some(vehicles),
-            };
-
-            let result_object = json!(models::vehicle::VehicleResponseObject {
-                vehicle_response: response,
-                more_data_available: false,
-                more_data_available_link: None,
-            });
-            Json(result_object)
-        })
-        .map_err(|e| {
-            error!("error retrieving vehicles: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })
-}
-
-async fn get_vehiclesstatuses(
-    State(influx_server): State<Arc<InfluxReader>>,
-    Query(params): Query<HashMap<String, String>>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
-    let query_parameters = parse_query_parameters(&params)?;
-    influx_server
-        .get_vehiclesstatuses(&query_parameters)
-        .await
-        .map(|vehicles_statuses| {
-            let response = VehicleStatusResponseObjectVehicleStatusResponse {
-                vehicle_statuses: Some(vehicles_statuses),
-            };
-
-            //TODO for request_server_date_time
-            // put in start time used in influx query instead of now
-            let result_object = json!(VehicleStatusResponseObject {
-                vehicle_status_response: response,
-                more_data_available: false,
-                more_data_available_link: None,
-                request_server_date_time: Utc::now()
-            });
-            Json(result_object)
-        })
-        .map_err(|e| {
-            error!("error retrieving vehicle statuses: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR
-        })
+    axum::serve::serve(listener, router.into_make_service()).await.unwrap();
 }
