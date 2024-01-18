@@ -29,5 +29,7 @@ async fn main() {
     let args = parser.get_matches();
     let router = fms_server::app(args);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8081").await.unwrap();
-    axum::serve::serve(listener, router.into_make_service()).await.unwrap();
+    axum::serve::serve(listener, router.into_make_service())
+        .await
+        .unwrap();
 }

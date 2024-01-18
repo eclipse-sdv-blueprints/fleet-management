@@ -21,7 +21,7 @@ use axum::http::StatusCode;
 use axum::{routing::get, Json, Router};
 
 use axum::extract::{Query, State};
-use clap::{Command, ArgMatches};
+use clap::{ArgMatches, Command};
 use log::{error, info};
 
 use serde_json::json;
@@ -37,9 +37,13 @@ mod influx_reader;
 mod models;
 mod query_parser;
 
+use models::position::{
+    VehiclePositionResponseObject, VehiclePositionResponseObjectVehiclePositionResponse,
+};
+use models::status::{
+    VehicleStatusResponseObject, VehicleStatusResponseObjectVehicleStatusResponse,
+};
 use query_parser::parse_query_parameters;
-use models::position::{VehiclePositionResponseObject, VehiclePositionResponseObjectVehiclePositionResponse};
-use models::status::{VehicleStatusResponseObjectVehicleStatusResponse, VehicleStatusResponseObject};
 
 pub fn app(args: ArgMatches) -> Router {
     let influx_reader = InfluxReader::new(&args).map_or_else(
@@ -77,10 +81,9 @@ async fn get_vehicleposition(
         .await
         .map(|positions| {
             let result = json!(VehiclePositionResponseObject {
-                vehicle_position_response:
-                    VehiclePositionResponseObjectVehiclePositionResponse {
-                        vehicle_positions: Some(positions)
-                    },
+                vehicle_position_response: VehiclePositionResponseObjectVehiclePositionResponse {
+                    vehicle_positions: Some(positions)
+                },
                 more_data_available: false,
                 more_data_available_link: None,
                 request_server_date_time: chrono::Utc::now()
@@ -146,4 +149,4 @@ async fn get_vehiclesstatuses(
             error!("error retrieving vehicle statuses: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })
-    }
+}

@@ -29,8 +29,9 @@ const LATEST_ONLY_QUERY: &str = "latestOnly";
 const START_TIME_QUERY: &str = "starttime";
 const STOP_TIME_QUERY: &str = "stoptime";
 const VIN_QUERY: &str = "vin";
-const TRIGGER_FILTER_QUERY: &str = "triggerFiler";
+const TRIGGER_FILTER_QUERY: &str = "triggerFilter";
 
+#[derive(Debug)]
 pub struct QueryParameters {
     pub start_time: i64,
     pub stop_time: i64,
@@ -97,4 +98,134 @@ fn parse_time(params: &HashMap<String, String>, key: &str) -> Result<Option<i64>
         return Ok(Some(latest_result.unwrap().timestamp()));
     }
     Ok(None)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::query_parser::parse_query_parameters;
+    use axum::http::StatusCode;
+    use std::collections::HashMap;
+
+    #[test]
+    fn no_parameters_returns_400() {
+        let parameters: HashMap<String, String> = vec![].into_iter().collect();
+        let result = parse_query_parameters(&parameters);
+        assert!(result.is_err(), "Expected Err but got Ok");
+        assert_eq!(result.unwrap_err(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn no_latestonly_or_time_returns_400() {
+        let parameters: HashMap<String, String> = vec![(String::from("vin"), String::from("1234"))]
+            .into_iter()
+            .collect();
+        let result = parse_query_parameters(&parameters);
+        assert!(result.is_err(), "Expected Err but got Ok");
+        assert_eq!(result.unwrap_err(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn latestonly_and_starttime_returns_400() {
+        let parameters: HashMap<String, String> = vec![
+            (String::from("latestOnly"), String::from("true")),
+            (
+                String::from("starttime"),
+                String::from("2022-12-15T15:12:00Z"),
+            ),
+        ]
+        .into_iter()
+        .collect();
+        let result = parse_query_parameters(&parameters);
+        assert!(result.is_err(), "Expected Err but got Ok");
+        assert_eq!(result.unwrap_err(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn latestonly_and_stoptime_returns_400() {
+        let parameters: HashMap<String, String> = vec![
+            (String::from("latestOnly"), String::from("false")),
+            (
+                String::from("stoptime"),
+                String::from("2022-12-15T15:12:00Z"),
+            ),
+        ]
+        .into_iter()
+        .collect();
+        let result = parse_query_parameters(&parameters);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn latestonly_but_not_bool_returns_400() {
+        let parameters: HashMap<String, String> =
+            vec![(String::from("latestOnly"), String::from("123"))]
+                .into_iter()
+                .collect();
+        let result = parse_query_parameters(&parameters);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn startime_but_not_timestamp_returns_400() {
+        let parameters: HashMap<String, String> =
+            vec![(String::from("starttime"), String::from("Random"))]
+                .into_iter()
+                .collect();
+        let result = parse_query_parameters(&parameters);
+        assert!(result.is_err(), "Expected Err but got Ok");
+        assert_eq!(result.unwrap_err(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn with_latestonly_works() {
+        let parameters: HashMap<String, String> = vec![
+            (String::from("latestOnly"), String::from("false")),
+            (String::from("vin"), String::from("WDD169005-1J-236684")),
+            (String::from("triggerFilter"), String::from("TIMER")),
+        ]
+        .into_iter()
+        .collect();
+        let result = parse_query_parameters(&parameters);
+        assert!(result.is_ok(), "Expected Ok but got Err");
+        let query_result = result.unwrap();
+        assert_eq!(
+            query_result
+                .latest_only
+                .unwrap_or_else(|| panic!("No latestOnly present")),
+            false
+        );
+        assert_eq!(
+            query_result.vin.unwrap_or_else(|| panic!("No vin present")),
+            "WDD169005-1J-236684"
+        );
+        assert_eq!(
+            query_result
+                .trigger_filter
+                .unwrap_or_else(|| panic!("No trigger filter present")),
+            "TIMER"
+        );
+    }
+
+    #[test]
+    fn with_starttime_works() {
+        let parameters: HashMap<String, String> = vec![
+            (
+                String::from("starttime"),
+                String::from("2022-12-15T15:12:00Z"),
+            ),
+            (
+                String::from("stoptime"),
+                String::from("2022-12-15T15:13:00Z"),
+            ),
+        ]
+        .into_iter()
+        .collect();
+        let result = parse_query_parameters(&parameters);
+        assert!(result.is_ok(), "Expected Ok but got Err");
+        let query_result = result.unwrap();
+        assert_eq!(query_result.start_time, 1671117120);
+        assert_eq!(query_result.stop_time, 1671117180);
+    }
 }
