@@ -39,5 +39,6 @@ jobs:
       with:
         components: clippy
     - run: |-
+        cargo fmt --manifest-path components/Cargo.toml --all --check
         cargo clippy --manifest-path components/Cargo.toml --workspace --all-features -- -Dwarnings
         cargo test --manifest-path components/Cargo.toml --workspace --all-features

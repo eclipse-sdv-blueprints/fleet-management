@@ -106,3 +106,8 @@ Docker Compose file. Please refer to the Docker and/or Podman documentation for 
 setup manually.
 
 Additional information can be found in the components' corresponding subfolders.
+
+# Contributing
+
+We are looking forward to your ideas and PRs. Each PRs triggers a GitHub action which checks the formating, performs linting and runs the test. You can performe similar check in your development environment. For more details check the respective [action](.github/workflows/lint_source_code.yaml) where the checks are listed in the bottom of the file.
+
