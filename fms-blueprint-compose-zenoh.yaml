@@ -5,7 +5,9 @@ services:
       RUST_LOG: zenoh=info
     image: eclipse/zenoh:0.10.1-rc
     container_name: "fms-zenoh-router"
-    network_mode: host
+    networks:
+    - "fms-backend"
+    - "fms-vehicle"
     ports:
     - 7447:7447/tcp
     - 1883:1883/tcp
