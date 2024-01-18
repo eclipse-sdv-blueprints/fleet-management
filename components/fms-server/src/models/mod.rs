@@ -20,8 +20,8 @@
 use crate::models;
 
 pub mod position;
-pub mod vehicle;
 pub mod status;
+pub mod vehicle;
 
 /// This description is placed here due to limitations of describing references in OpenAPI  Property __driverId__:  The driver id of driver. (independant whether it is driver or Co-driver)  This is only set if the TriggerType = DRIVER_LOGIN, DRIVER_LOGOUT, DRIVER_1_WORKING_STATE_CHANGED or DRIVER_2_WORKING_STATE_CHANGED  For DRIVER_LOGIN it is the id of the driver that logged in  For DRIVER_LOGOUT it is the id of the driver that logged out  For DRIVER_1_WORKING_STATE_CHANGED it is the id of driver 1  For DRIVER_2_WORKING_STATE_CHANGED it is the id of driver 2  Property __tellTaleInfo__:  The tell tale(s) that triggered this message.  This is only set if the TriggerType = TELL_TALE
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -37,35 +37,34 @@ pub struct TriggerObject {
 
     /// Additional TriggerInfo content for OEM specific triggers E.g. TRAILER_ATTACHED_TRIGGER [id of trailer]
     #[serde(rename = "triggerInfo")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub trigger_info: Option<Vec<String>>,
 
     #[serde(rename = "driverId")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub driver_id: Option<DriverIdObject>,
 
     /// The id of a PTO. This is only set if the TriggerType = PTO_ENABLED or PTO_DISABLED
     #[serde(rename = "ptoId")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pto_id: Option<String>,
 
     #[serde(rename = "tellTaleInfo")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tell_tale_info: Option<TellTaleObject>,
 
     #[serde(rename = "chargingStatusInfo")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub charging_status_info: Option<TriggerObjectChargingStatusInfo>,
 
     #[serde(rename = "chargingConnectionStatusInfo")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub charging_connection_status_info: Option<TriggerObjectChargingConnectionStatusInfo>,
-
 }
 
 impl TriggerObject {
     #[allow(clippy::new_without_default)]
-    pub fn new(trigger_type: String, context: String, ) -> TriggerObject {
+    pub fn new(trigger_type: String, context: String) -> TriggerObject {
         TriggerObject {
             trigger_type,
             context,
@@ -79,18 +78,16 @@ impl TriggerObject {
     }
 }
 
-
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct DriverIdObject {
     #[serde(rename = "tachoDriverIdentification")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tacho_driver_identification: Option<models::DriverIdObjectTachoDriverIdentification>,
 
     #[serde(rename = "oemDriverIdentification")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub oem_driver_identification: Option<models::DriverIdObjectOemDriverIdentification>,
-
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -102,14 +99,13 @@ pub struct TellTaleObject {
 
     /// The OemTellTale is only set when the TellTale == OEM_SPECIFIC_TELL_TALE. This is an OEM specific string defining a tell tale in the OEM context.
     #[serde(rename = "oemTellTale")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub oem_tell_tale: Option<String>,
 
     /// The current state of the tell tale.
     // Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "state")]
     pub state: String,
-
 }
 
 /// Additional information can be provided if the trigger type is BATTERY_PACK_CHARGING_STATUS_CHANGE.
@@ -119,14 +115,13 @@ pub struct TriggerObjectChargingStatusInfo {
     /// CHARGING_STARTED - Charging has started  CHARGING_COMPLETED - Charging is completed  CHARGING_INTERRUPTED - Charging has been interrupted (no error)  ERROR - An error occurred when charging  ESTIMATED_COMPLETION_TIME_CHANGED - The estimated time for completed charging has changed. (Threshold is outside scope of rFMS)  TIMER - A predefined time has passed since last charge status update. (Frequency is outside the scope of rFMS)  CHARGING_LEVEL - The charging level has reached a predefined level. (Charging levels are outside the scope of rFMS)
     // Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "event")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub event: Option<String>,
 
     /// Details regarding the event. Content is OEM specific
     #[serde(rename = "eventDetail")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub event_detail: Option<String>,
-
 }
 
 /// Additional information can be provided if the trigger type is BATTERY_PACK_CHARGING_CONNECTION_STATUS_CHANGE.
@@ -136,14 +131,13 @@ pub struct TriggerObjectChargingConnectionStatusInfo {
     /// CONNECTING - Vehicle is being connected to a charger  CONNECTED - Vehicle is connected to a charger  DISCONNECTING - Vehicle is being disconnected from the charger  DISCONNECTED - Vehicle is not connected to a charger  ERROR - An error occurred
     // Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "event")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub event: Option<String>,
 
     /// Details regarding the event. Content is OEM specific
     #[serde(rename = "eventDetail")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub event_detail: Option<String>,
-
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -160,19 +154,18 @@ pub struct DriverIdObjectTachoDriverIdentification {
     /// Code to distinguish different types of equipment for the tachograph application. See description of the field 'DriverAuthenticationEquipment' in COMMISSION REGULATION (EC) No 1360/2002 Annex 1b
     // Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "driverAuthenticationEquipment")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub driver_authentication_equipment: Option<String>,
 
     /// A card replacement index. This fields is formatted according the definition for CardReplacementIndex (chap 2.26) in: COMMISSION REGULATION (EC) No 1360/2002 Annex 1b
     #[serde(rename = "cardReplacementIndex")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub card_replacement_index: Option<String>,
 
     /// A card renewal index. This fields is formatted according the definition for CardRenewalIndex (chap 2.25) in: COMMISSION REGULATION (EC) No 1360/2002 Annex 1b
     #[serde(rename = "cardRenewalIndex")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub card_renewal_index: Option<String>,
-
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -180,12 +173,11 @@ pub struct DriverIdObjectTachoDriverIdentification {
 pub struct DriverIdObjectOemDriverIdentification {
     /// Contains an optional id type (e.g. pin, USB, encrypted EU id...)
     #[serde(rename = "idType")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub id_type: Option<String>,
 
     /// An OEM specific driver id.
     #[serde(rename = "oemDriverIdentification")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub oem_driver_identification: Option<String>,
-
 }

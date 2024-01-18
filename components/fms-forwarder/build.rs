@@ -18,7 +18,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     // use vendored protoc instead of relying on user provided protobuf installation
     std::env::set_var("PROTOC", protoc_bin_vendored::protoc_bin_path().unwrap());
 
@@ -27,9 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_server(false)
         .compile(
             &["proto/kuksa/val/v1/val.proto"],
-            &[
-                "proto",
-                "proto/kuksa/val/v1",
-                ])?;
+            &["proto", "proto/kuksa/val/v1"],
+        )?;
     Ok(())
 }

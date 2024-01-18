@@ -17,7 +17,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-use clap::{ArgMatches, Arg, ArgGroup, Command};
+use clap::{Arg, ArgGroup, ArgMatches, Command};
 use influxrs::InfluxClient;
 use log::{error, info};
 
@@ -29,9 +29,9 @@ const PARAM_INFLUXDB_TOKEN_FILE: &str = "influxdb-token-file";
 
 /// Adds command line arguments to an existing command line which can be
 /// used to configure the connection to an InfluxDB server.
-/// 
+///
 /// The following arguments are being added:
-/// 
+///
 /// | long name           | environment variable    | default value |
 /// |---------------------|-------------------------|---------------|
 /// | influxdb-bucket     | INFLUXDB_BUCKET         | `demo`        |
@@ -39,7 +39,7 @@ const PARAM_INFLUXDB_TOKEN_FILE: &str = "influxdb-token-file";
 /// | influxdb-uri        | INFLUXDB_URI            | -             |
 /// | influxdb-token      | INFLUXDB_TOKEN          | -             |
 /// | influxdb-token-file | INFLUXDB_TOKEN_FILE     | -             |
-/// 
+///
 pub fn add_command_line_args(command_line: Command) -> Command {
     command_line
         .arg(
@@ -116,16 +116,16 @@ pub struct InfluxConnection {
 
 impl InfluxConnection {
     /// Creates a new connection to an InfluxDB server.
-    /// 
+    ///
     /// Determines the parameters necessary for creating the connection from values specified on
     /// the command line or via environment variables as defined by [`add_command_line_args`].
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use clap::Command;
     /// use influx_client::connection::InfluxConnection;
-    /// 
+    ///
     /// let command = influx_client::connection::add_command_line_args(Command::new("influx_client"));
     /// let matches = command.get_matches_from(vec![
     ///     "influx_client",
@@ -138,7 +138,10 @@ impl InfluxConnection {
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
     pub fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
-        let influx_uri = args.get_one::<String>(PARAM_INFLUXDB_URI).unwrap().to_owned();
+        let influx_uri = args
+            .get_one::<String>(PARAM_INFLUXDB_URI)
+            .unwrap()
+            .to_owned();
         let influx_token = match args.get_one::<String>(PARAM_INFLUXDB_TOKEN) {
             Some(token) => token.to_string(),
             None => {
@@ -149,7 +152,10 @@ impl InfluxConnection {
                 }
             }
         };
-        let influx_org = args.get_one::<String>(PARAM_INFLUXDB_ORG).unwrap().to_owned();
+        let influx_org = args
+            .get_one::<String>(PARAM_INFLUXDB_ORG)
+            .unwrap()
+            .to_owned();
         let influx_bucket = args
             .get_one::<String>(PARAM_INFLUXDB_BUCKET)
             .unwrap()
@@ -169,55 +175,87 @@ mod tests {
 
     #[test]
     fn test_command_line_uses_defaults() {
-
         let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
         let matches = command.get_matches_from(vec![
-                "influx_client",
-                "--influxdb-uri", "http://influx.io",
-                "--influxdb-token", "the-token",
-                ]);
-        assert_eq!(matches.get_one::<String>(super::PARAM_INFLUXDB_URI).unwrap(), "http://influx.io");
-        assert_eq!(matches.get_one::<String>(super::PARAM_INFLUXDB_TOKEN).unwrap(), "the-token");
-        assert_eq!(matches.get_one::<String>(super::PARAM_INFLUXDB_ORG).unwrap(), "sdv");
-        assert_eq!(matches.get_one::<String>(super::PARAM_INFLUXDB_BUCKET).unwrap(), "demo");
+            "influx_client",
+            "--influxdb-uri",
+            "http://influx.io",
+            "--influxdb-token",
+            "the-token",
+        ]);
+        assert_eq!(
+            matches
+                .get_one::<String>(super::PARAM_INFLUXDB_URI)
+                .unwrap(),
+            "http://influx.io"
+        );
+        assert_eq!(
+            matches
+                .get_one::<String>(super::PARAM_INFLUXDB_TOKEN)
+                .unwrap(),
+            "the-token"
+        );
+        assert_eq!(
+            matches
+                .get_one::<String>(super::PARAM_INFLUXDB_ORG)
+                .unwrap(),
+            "sdv"
+        );
+        assert_eq!(
+            matches
+                .get_one::<String>(super::PARAM_INFLUXDB_BUCKET)
+                .unwrap(),
+            "demo"
+        );
     }
 
     #[test]
     fn test_command_line_requires_uri() {
-
         let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
-        let matches = command.try_get_matches_from(vec![
-                "influx_client",
-                "--influxdb-token", "the-token",
-            ]);
+        let matches =
+            command.try_get_matches_from(vec!["influx_client", "--influxdb-token", "the-token"]);
         assert!(matches.is_err_and(|e| e.kind() == clap::error::ErrorKind::MissingRequiredArgument));
     }
 
     #[test]
     fn test_command_line_requires_token_or_token_file() {
-
         let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
         let no_token_matches = command.try_get_matches_from(vec![
-                "influx_client",
-                "--influxdb-uri", "http://influx.io",
-            ]);
-        assert!(no_token_matches.is_err_and(|e| e.kind() == clap::error::ErrorKind::MissingRequiredArgument));
+            "influx_client",
+            "--influxdb-uri",
+            "http://influx.io",
+        ]);
+        assert!(no_token_matches
+            .is_err_and(|e| e.kind() == clap::error::ErrorKind::MissingRequiredArgument));
 
         let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
         let with_token_matches = command.get_matches_from(vec![
             "influx_client",
-            "--influxdb-uri", "http://influx.io",
-            "--influxdb-token", "the-token",
+            "--influxdb-uri",
+            "http://influx.io",
+            "--influxdb-token",
+            "the-token",
         ]);
-        assert_eq!(with_token_matches.get_one::<String>(super::PARAM_INFLUXDB_TOKEN).unwrap(), "the-token");
+        assert_eq!(
+            with_token_matches
+                .get_one::<String>(super::PARAM_INFLUXDB_TOKEN)
+                .unwrap(),
+            "the-token"
+        );
 
         let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
         let with_token_file_matches = command.get_matches_from(vec![
             "influx_client",
-            "--influxdb-uri", "http://influx.io",
-            "--influxdb-token-file", "/path/to/token-file",
+            "--influxdb-uri",
+            "http://influx.io",
+            "--influxdb-token-file",
+            "/path/to/token-file",
         ]);
-        assert_eq!(with_token_file_matches.get_one::<String>(super::PARAM_INFLUXDB_TOKEN_FILE).unwrap(), "/path/to/token-file");
+        assert_eq!(
+            with_token_file_matches
+                .get_one::<String>(super::PARAM_INFLUXDB_TOKEN_FILE)
+                .unwrap(),
+            "/path/to/token-file"
+        );
     }
-
 }

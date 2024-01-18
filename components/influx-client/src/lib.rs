@@ -61,4 +61,3 @@ pub const TAG_VIN: &str = "vin";
 pub mod connection;
 #[cfg(feature = "writer")]
 pub mod writer;
-

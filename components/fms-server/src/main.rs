@@ -37,9 +37,13 @@ mod influx_reader;
 mod models;
 mod query_parser;
 
+use models::position::{
+    VehiclePositionResponseObject, VehiclePositionResponseObjectVehiclePositionResponse,
+};
+use models::status::{
+    VehicleStatusResponseObject, VehicleStatusResponseObjectVehicleStatusResponse,
+};
 use query_parser::parse_query_parameters;
-use models::position::{VehiclePositionResponseObject, VehiclePositionResponseObjectVehiclePositionResponse};
-use models::status::{VehicleStatusResponseObjectVehicleStatusResponse, VehicleStatusResponseObject};
 
 #[tokio::main]
 async fn main() {
@@ -63,8 +67,8 @@ async fn main() {
         .route("/rfms/vehicles", get(get_vehicles))
         .route("/rfms/vehiclestatuses", get(get_vehiclesstatuses))
         .with_state(influx_reader);
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:8081").await.unwrap();
-        axum::serve(listener, app).await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8081").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
 
 async fn root() -> &'static str {
@@ -82,10 +86,9 @@ async fn get_vehicleposition(
         .await
         .map(|positions| {
             let result = json!(VehiclePositionResponseObject {
-                vehicle_position_response:
-                    VehiclePositionResponseObjectVehiclePositionResponse {
-                        vehicle_positions: Some(positions)
-                    },
+                vehicle_position_response: VehiclePositionResponseObjectVehiclePositionResponse {
+                    vehicle_positions: Some(positions)
+                },
                 more_data_available: false,
                 more_data_available_link: None,
                 request_server_date_time: chrono::Utc::now()
@@ -128,7 +131,6 @@ async fn get_vehiclesstatuses(
     State(influx_server): State<Arc<InfluxReader>>,
     Query(params): Query<HashMap<String, String>>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    
     let query_parameters = parse_query_parameters(&params)?;
     influx_server
         .get_vehiclesstatuses(&query_parameters)
@@ -152,4 +154,4 @@ async fn get_vehiclesstatuses(
             error!("error retrieving vehicle statuses: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
         })
-    }
+}

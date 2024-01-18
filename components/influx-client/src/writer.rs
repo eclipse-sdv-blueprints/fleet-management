@@ -20,11 +20,11 @@
 //! Provides means to write a Vehicle's current status properties
 //! to an InfluxDB as Influx *measurements*.
 use clap::ArgMatches;
-use log::{debug, warn};
-use std::time::{SystemTime, UNIX_EPOCH};
-use protobuf::well_known_types::timestamp::Timestamp;
 use fms_proto::fms::VehicleStatus;
 use influxrs::Measurement;
+use log::{debug, warn};
+use protobuf::well_known_types::timestamp::Timestamp;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::connection::InfluxConnection;
 
@@ -55,11 +55,20 @@ fn build_header_measurement(
         builder = builder.field(crate::FIELD_ENGINE_TOTAL_FUEL_USED, value);
     }
 
-    if let Some(tacho_driver_id) = vehicle_status.driver1_id.clone().into_option()
-        .and_then(|driver_id| driver_id.tacho_driver_identification.into_option()) {
-
-            builder = builder.field(crate::FIELD_DRIVER1_ID, tacho_driver_id.driver_identification);
-            builder = builder.field(crate::FIELD_DRIVER1_CARD_ISSUER, tacho_driver_id.card_issuing_memberState);
+    if let Some(tacho_driver_id) = vehicle_status
+        .driver1_id
+        .clone()
+        .into_option()
+        .and_then(|driver_id| driver_id.tacho_driver_identification.into_option())
+    {
+        builder = builder.field(
+            crate::FIELD_DRIVER1_ID,
+            tacho_driver_id.driver_identification,
+        );
+        builder = builder.field(
+            crate::FIELD_DRIVER1_CARD_ISSUER,
+            tacho_driver_id.card_issuing_memberState,
+        );
     }
 
     match builder.build() {
@@ -77,7 +86,6 @@ fn build_snapshot_measurement(
     created_date_time: u128,
     vehicle_status: &VehicleStatus,
 ) -> Option<Measurement> {
-
     let mut builder = Measurement::builder(crate::MEASUREMENT_SNAPSHOT)
         .tag(crate::TAG_TRIGGER, trigger)
         .tag(crate::TAG_VIN, vin)
@@ -140,10 +148,7 @@ fn build_snapshot_measurement(
             }
         }
 
-        if let Some(distance_to_empty) = snapshot_data
-            .estimated_distance_to_empty
-            .into_option()
-        {
+        if let Some(distance_to_empty) = snapshot_data.estimated_distance_to_empty.into_option() {
             if let Some(value) = distance_to_empty.fuel {
                 builder = builder.field(crate::FIELD_ESTIMATED_DIST_TO_EMPTY_FUEL, value);
             }
@@ -152,14 +157,21 @@ fn build_snapshot_measurement(
             }
         }
 
-        if let Some(tacho_driver_id) = snapshot_data.driver2_id.clone().into_option()
-            .and_then(|driver_id| driver_id.tacho_driver_identification.into_option()) {
-                builder = builder
-                    .field(crate::FIELD_DRIVER2_ID, tacho_driver_id.driver_identification)
-                    .field(
-                        crate::FIELD_DRIVER2_CARD_ISSUER,
-                        tacho_driver_id.card_issuing_memberState,
-                    );
+        if let Some(tacho_driver_id) = snapshot_data
+            .driver2_id
+            .clone()
+            .into_option()
+            .and_then(|driver_id| driver_id.tacho_driver_identification.into_option())
+        {
+            builder = builder
+                .field(
+                    crate::FIELD_DRIVER2_ID,
+                    tacho_driver_id.driver_identification,
+                )
+                .field(
+                    crate::FIELD_DRIVER2_CARD_ISSUER,
+                    tacho_driver_id.card_issuing_memberState,
+                );
         }
     }
 
@@ -178,9 +190,8 @@ pub struct InfluxWriter {
 }
 
 impl InfluxWriter {
-
     /// Creates a new writer.
-    /// 
+    ///
     /// Determines the parameters necessary for creating the writer from values specified on
     /// the command line or via environment variables as defined by [`super::add_command_line_args`].
     pub fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
@@ -188,14 +199,14 @@ impl InfluxWriter {
     }
 
     /// Writes Vehicle status information as measurements to the InfluxDB server.
-    /// 
+    ///
     /// The measurements are being written to the *bucket* in the *organization* that have been
     /// configured via command line arguments and/or environment variables passed in to [`self::InfluxWriter::new()`].
-    /// 
+    ///
     /// This function writes the current vehicle status to InfluxDB by means of two measurements:
-    /// 
+    ///
     /// * *header* - contains the following tags/fields:
-    /// 
+
     ///   | Type  | Name            | Description                      |
     ///   | ----- | --------------- | -------------------------------- |
     ///   | tag   | trigger         | The type of event that triggered the reporting of the vehicle status. |
@@ -208,9 +219,9 @@ impl InfluxWriter {
     ///   | field | engineTotalFuelUsed | The total fuel the vehicle has used during its lifetime in MilliLitres. |
     ///   | field | driver1Id | The unique identification of driver one in a Member State. |
     ///   | field | driver1IdCardIssuer | The country alpha code of the Member State having issued driver one's card. |
-    /// 
+
     /// * *snapshot* - contains the following tags/fields:
-    /// 
+
     ///   | Type  | Name            | Description                      |
     ///   | ----- | --------------- | -------------------------------- |
     ///   | tag   | trigger         | The type of event that triggered the reporting of the vehicle status. |
@@ -237,7 +248,6 @@ impl InfluxWriter {
     ///   | field | driver2WorkingState | Tachograph Working state of the driver two. |
     ///   | field | ambientAirTemperature | The Ambient air temperature in Celsius. |
     ///   | field | parkingBrakeSwitch | Switch signal which indicates when the parking brake is set. |
-    /// 
     pub async fn write_vehicle_status(&self, vehicle_status: &VehicleStatus) {
         if vehicle_status.vin.is_empty() {
             debug!("ignoring vehicle status without VIN ...");
@@ -245,9 +255,9 @@ impl InfluxWriter {
         }
         let created_timestamp: u128 = match vehicle_status.created.clone().into_option() {
             Some(ts) => <Timestamp as Into<SystemTime>>::into(ts)
-                                    .duration_since(UNIX_EPOCH)
-                                    .unwrap()
-                                    .as_millis(),
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis(),
             None => {
                 debug!("ignoring vehicle status without created timestamp");
                 return;
@@ -257,16 +267,19 @@ impl InfluxWriter {
             Some(t) => match t.context.as_str() {
                 "RFMS" => t.type_.clone(),
                 _ => {
-                    debug!("ignoring vehicle status with unsupported trigger context [{}]", t.context);
+                    debug!(
+                        "ignoring vehicle status with unsupported trigger context [{}]",
+                        t.context
+                    );
                     return;
-                },
+                }
             },
             None => {
                 debug!("ignoring vehicle status without trigger");
                 return;
-            },
+            }
         };
-    
+
         let mut measurements: Vec<Measurement> = Vec::new();
         if let Some(measurement) = build_header_measurement(
             vehicle_status.vin.as_str(),

@@ -34,24 +34,24 @@ pub struct VehiclePositionObject {
 
     /// When the data was retrieved in the vehicle in iso8601 format.
     #[serde(rename = "createdDateTime")]
-    pub created_date_time: chrono::DateTime::<chrono::Utc>,
+    pub created_date_time: chrono::DateTime<chrono::Utc>,
 
     /// Reception at Server. To be used for handling of \"more data available\" in iso8601 format.
     #[serde(rename = "receivedDateTime")]
-    pub received_date_time: chrono::DateTime::<chrono::Utc>,
+    pub received_date_time: chrono::DateTime<chrono::Utc>,
 
     #[serde(rename = "gnssPosition")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub gnss_position: Option<GnssPositionObject>,
 
     /// Wheel-Based Vehicle Speed in km/h (Speed of the vehicle as calculated from wheel or tailshaft speed)
     #[serde(rename = "wheelBasedSpeed")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub wheel_based_speed: Option<f64>,
 
     /// Tachograph vehicle speed in km/h (Speed of the vehicle registered by the tachograph)
     #[serde(rename = "tachographSpeed")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tachograph_speed: Option<f64>,
 }
 
@@ -68,23 +68,22 @@ pub struct GnssPositionObject {
 
     /// The direction of the vehicle (0-359)
     #[serde(rename = "heading")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub heading: Option<i32>,
 
     /// The altitude of the vehicle. Where 0 is sea level, negative values below sealevel and positive above sealevel. Unit in meters.
     #[serde(rename = "altitude")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub altitude: Option<i32>,
 
     /// The GNSS(e.g. GPS)-speed in km/h
     #[serde(rename = "speed")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub speed: Option<f64>,
 
     /// The time of the position data in iso8601 format.
     #[serde(rename = "positionDateTime")]
-    pub position_date_time: chrono::DateTime::<chrono::Utc>,
-
+    pub position_date_time: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -99,21 +98,18 @@ pub struct VehiclePositionResponseObject {
 
     /// Populated with the link to the next part of the result when moreDataAvailable is true. The link is relative, i.e. starts with /rfms/vehiclepositions, and preserves any query parameters from the original request.
     #[serde(rename = "moreDataAvailableLink")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub more_data_available_link: Option<String>,
 
     /// Time to be used to ask for historical data at customers (for starttime), to solve the problem of having different times at server and clients. This is the time at the server when this request was received. To avoid losing any messages or get duplicates, this is the time that should be supplied in the startTime parameter in the next request in iso8601 format.
     #[serde(rename = "requestServerDateTime")]
-    pub request_server_date_time: chrono::DateTime::<chrono::Utc>,
-
+    pub request_server_date_time: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct VehiclePositionResponseObjectVehiclePositionResponse {
     #[serde(rename = "vehiclePositions")]
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub vehicle_positions: Option<Vec<VehiclePositionObject>>,
-
 }
-

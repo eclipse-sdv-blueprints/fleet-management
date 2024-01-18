@@ -25,15 +25,18 @@ use mqtt::MessageBuilder;
 use paho_mqtt as mqtt;
 use protobuf::Message;
 
-use crate::{status_publishing::StatusPublisher, mqtt_connection::{self, MqttConnection}};
+use crate::{
+    mqtt_connection::{self, MqttConnection},
+    status_publishing::StatusPublisher,
+};
 
 const TOPIC_TELEMETRY: &str = "telemetry/?content-type=application%2Fvnd.google.protobuf";
 
 /// Adds arguments to an existing command line which can be
 /// used to configure the connection to a Hono MQTT protocol adapter.
-/// 
+///
 /// See [`mqtt_connection::add_command_line_args`]
-/// 
+///
 pub fn add_command_line_args(command: Command) -> Command {
     mqtt_connection::add_command_line_args(command)
 }
@@ -43,22 +46,19 @@ pub struct HonoPublisher {
 }
 
 impl HonoPublisher {
-
     /// Creates a new publisher.
-    /// 
+    ///
     /// Determines the parameters necessary for creating the publisher from values specified on
     /// the command line or via environment variables as defined by [`add_command_line_args`].
-    /// 
+    ///
     /// The publisher returned is configured to keep trying to (re-)connect to the configured
-    /// MQTT endpoint using a client certificate of username/password credentials. 
+    /// MQTT endpoint using a client certificate of username/password credentials.
     pub async fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
-
-        MqttConnection::new(args).await
-            .map(|con| {
-                HonoPublisher { mqtt_connection: con }
-                })
-            }
-        }
+        MqttConnection::new(args).await.map(|con| HonoPublisher {
+            mqtt_connection: con,
+        })
+    }
+}
 
 #[async_trait]
 impl StatusPublisher for HonoPublisher {
