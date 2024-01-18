@@ -21,16 +21,16 @@ use std::process;
 
 use clap::Command;
 use fms_proto::fms::VehicleStatus;
-use status_publishing::StatusPublisher;
 use hono_publisher::HonoPublisher;
 use influx_client::writer::InfluxWriter;
 use log::{error, info};
+use status_publishing::StatusPublisher;
 use tokio::sync::mpsc;
 
-mod status_publishing;
-mod vehicle_abstraction;
 mod hono_publisher;
 mod mqtt_connection;
+mod status_publishing;
+mod vehicle_abstraction;
 
 const SUBCOMMAND_HONO: &str = "hono";
 const SUBCOMMAND_INFLUX: &str = "influx";
@@ -65,9 +65,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Err(e) => {
                     error!("failed to create Hono publisher: {}", e);
                     process::exit(1);
-                },
+                }
             }
-        },
+        }
         Some(SUBCOMMAND_INFLUX) => {
             let influx_args = args.subcommand_matches(SUBCOMMAND_INFLUX).unwrap();
             match InfluxWriter::new(influx_args) {
@@ -77,15 +77,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     process::exit(1);
                 }
             }
-        },
+        }
         Some(_) => {
             // cannot happen because subcommand is required
             process::exit(1);
-        },
+        }
         None => {
             // cannot happen because subcommand is required
             process::exit(1);
-        },
+        }
     };
 
     info!("starting FMS forwarder");

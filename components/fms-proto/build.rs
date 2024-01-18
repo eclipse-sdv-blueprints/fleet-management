@@ -18,7 +18,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     protobuf_codegen::Codegen::new()
         .protoc()
         // use vendored protoc instead of relying on user provided protobuf installation

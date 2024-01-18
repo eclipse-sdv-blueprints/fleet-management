@@ -20,23 +20,23 @@
 tonic::include_proto!("kuksa.val.v1");
 
 use log::debug;
-use protobuf::{MessageField, well_known_types::timestamp::Timestamp};
+use protobuf::{well_known_types::timestamp::Timestamp, MessageField};
 
 use std::collections::HashMap;
 
 use self::datapoint::Value;
-use fms_proto::fms::VehicleStatus;
 use crate::vehicle_abstraction::vss;
+use fms_proto::fms::VehicleStatus;
 
 #[derive(Debug)]
-pub struct UnsupportedValueTypeError{}
+pub struct UnsupportedValueTypeError {}
 
 impl TryFrom<Value> for u32 {
     type Error = UnsupportedValueTypeError;
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
             Value::Uint32(v) => Ok(v),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -46,7 +46,7 @@ impl TryFrom<Value> for Option<u32> {
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
             Value::Uint32(v) => Ok(Some(v)),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -57,7 +57,7 @@ impl TryFrom<Value> for u64 {
         match value {
             Value::Uint32(v) => Ok(v as u64),
             Value::Uint64(v) => Ok(v),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -68,7 +68,7 @@ impl TryFrom<Value> for Option<u64> {
         match value {
             Value::Uint32(v) => Ok(Some(v as u64)),
             Value::Uint64(v) => Ok(Some(v)),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -79,7 +79,7 @@ impl TryFrom<Value> for i32 {
         match value {
             Value::Uint32(v) => Ok(v as i32),
             Value::Int32(v) => Ok(v),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -90,7 +90,7 @@ impl TryFrom<Value> for Option<i32> {
         match value {
             Value::Uint32(v) => Ok(Some(v as i32)),
             Value::Int32(v) => Ok(Some(v)),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -103,7 +103,7 @@ impl TryFrom<Value> for i64 {
             Value::Uint64(v) => Ok(v as i64),
             Value::Int32(v) => Ok(v as i64),
             Value::Int64(v) => Ok(v),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -116,7 +116,7 @@ impl TryFrom<Value> for Option<i64> {
             Value::Uint64(v) => Ok(Some(v as i64)),
             Value::Int32(v) => Ok(Some(v as i64)),
             Value::Int64(v) => Ok(Some(v)),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -128,7 +128,7 @@ impl TryFrom<Value> for f32 {
             Value::Uint32(v) => Ok(v as f32),
             Value::Int32(v) => Ok(v as f32),
             Value::Float(v) => Ok(v),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -140,7 +140,7 @@ impl TryFrom<Value> for Option<f32> {
             Value::Uint32(v) => Ok(Some(v as f32)),
             Value::Int32(v) => Ok(Some(v as f32)),
             Value::Float(v) => Ok(Some(v)),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -155,7 +155,7 @@ impl TryFrom<Value> for f64 {
             Value::Int64(v) => Ok(v as f64),
             Value::Double(v) => Ok(v),
             Value::Float(v) => Ok(v as f64),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -170,7 +170,7 @@ impl TryFrom<Value> for Option<f64> {
             Value::Int64(v) => Ok(Some(v as f64)),
             Value::Double(v) => Ok(Some(v)),
             Value::Float(v) => Ok(Some(v as f64)),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -180,7 +180,7 @@ impl TryFrom<Value> for String {
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
             Value::String(v) => Ok(v),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -190,7 +190,7 @@ impl TryFrom<Value> for Option<String> {
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
             Value::String(v) => Ok(Some(v)),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -200,7 +200,7 @@ impl TryFrom<Value> for bool {
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
             Value::Bool(v) => Ok(v),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }
@@ -210,7 +210,7 @@ impl TryFrom<Value> for Option<bool> {
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
             Value::Bool(v) => Ok(Some(v)),
-            _ => Err(UnsupportedValueTypeError{}),
+            _ => Err(UnsupportedValueTypeError {}),
         }
     }
 }

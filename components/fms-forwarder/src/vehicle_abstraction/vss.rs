@@ -17,10 +17,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-pub const FMS_VEHICLE_CABIN_TELLTALE_ECT_STATUS: &str =
-    "Vehicle.Cabin.Telltale.ECT.Status";
-pub const FMS_VEHICLE_CABIN_TELLTALE_ENGINE_STATUS: &str =
-    "Vehicle.Cabin.Telltale.Engine.Status";
+pub const FMS_VEHICLE_CABIN_TELLTALE_ECT_STATUS: &str = "Vehicle.Cabin.Telltale.ECT.Status";
+pub const FMS_VEHICLE_CABIN_TELLTALE_ENGINE_STATUS: &str = "Vehicle.Cabin.Telltale.Engine.Status";
 pub const FMS_VEHICLE_CABIN_TELLTALE_ENGINEOIL_STATUS: &str =
     "Vehicle.Cabin.Telltale.EngineOil.Status";
 pub const FMS_VEHICLE_CABIN_TELLTALE_FUELLEVEL_STATUS: &str =
@@ -28,7 +26,8 @@ pub const FMS_VEHICLE_CABIN_TELLTALE_FUELLEVEL_STATUS: &str =
 pub const FMS_VEHICLE_CABIN_TELLTALE_PARKINGBRAKE_STATUS: &str =
     "Vehicle.Cabin.Telltale.ParkingBrake.Status";
 pub const VSS_VEHICLE_CURRENTOVERALLWEIGHT: &str = "Vehicle.CurrentOverallWeight";
-pub const VSS_VEHICLE_CHASSIS_PARKINGBRAKE_ISENGAGED: &str = "Vehicle.Chassis.ParkingBrake.IsEngaged";
+pub const VSS_VEHICLE_CHASSIS_PARKINGBRAKE_ISENGAGED: &str =
+    "Vehicle.Chassis.ParkingBrake.IsEngaged";
 pub const VSS_VEHICLE_CURRENTLOCATION_LATITUDE: &str = "Vehicle.CurrentLocation.Latitude";
 pub const VSS_VEHICLE_CURRENTLOCATION_LONGITUDE: &str = "Vehicle.CurrentLocation.Longitude";
 pub const VSS_VEHICLE_CURRENTLOCATION_ALTITUDE: &str = "Vehicle.CurrentLocation.Altitude";
