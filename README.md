@@ -102,21 +102,15 @@ of an Eclipse Hono instance as shown in the diagram below.
 
 # Using Zenoh Router to geographically distribute the vehicle data
 
-The integration of Eclipse Zenoh into the FMS blueprint is planned to be realized in two steps:
-
-**Step 1:  Extend FMS Forwarder to publish data in Zenoh and configure Zenoh Router to also receive data over MQTT**
+The integration Extend FMS Forwarder to publish data in Zenoh and configure Zenoh Router to also receive data over MQTT:
 
 - Assess the current FMS Forwarder and identify the necessary modifications to enable data publication through Zenoh.
 - Implement the required code changes to publish data via Zenoh.
 - MQTT plugin configuration on the Zenoh Router to as well support MQTT interfaces.
 
-**Step 2: FMS consumer Integration in Zenoh Router**
-
-- Implement the necessary changes in Zenoh Router using Zenoh Flow to create components that publish / consume data into influxdb.
-
-Currently, step 1 has been implemented, and we now provide the instructions on how you can test the communication using Zenoh, and we are actively advancing with the ongoing work on step 2.
-
 <img src="img/architecture-zenoh.drawio.png">
+
+We now provide the instructions on how you can test the communication using Zenoh
 
 1. Create a local docker image for FMS Forworder to support the zenoh communication, run the below command from  fleet-management/components/ directory:
    
@@ -131,6 +125,7 @@ Currently, step 1 has been implemented, and we now provide the instructions on h
    ```
 
 Here you find the [Zenoh based Python Subscriber](https://github.com/vivekpandey02/fms-zenoh-test-subscriber) application to validate the data transmissted by FMS Fowarder.
+
 
 # Manual configuration
 
