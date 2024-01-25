@@ -29,15 +29,18 @@ readme.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+async-trait = { workspace = true }
+async-std = {features = ["attributes"] }
 clap = { workspace = true, features = ["std", "env", "color", "help", "usage", "error-context", "suggestions"] }
 env_logger = { workspace = true }
 fms-proto = { workspace = true }
-futures = "0.3"
+futures = {version ="0.3"}
 influx-client = { workspace = true, features = ["writer"] }
 rdkafka = { version = "0.36", default-features = false, features = ["libz", "tokio", "cmake-build", "ssl-vendored"] }
 log = { workspace = true }
 protobuf = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
+zenoh = {version = "0.10.1-rc"}
 
 [build-dependencies]
 # see https://github.com/fede1024/rust-rdkafka/issues/572#issuecomment-1529316876
