@@ -17,3 +17,33 @@ services:
     - ./zenoh-config.json5:/zenoh-config.json5
   fms-forwarder:
     command: "zenoh -m client"
+    
+  fms-consumer:
+    command: "zenoh"
+    image: "fms-consumer:custom"
+    build:
+      context: "./components"
+      dockerfile: "Dockerfile.fms-consumer"
+    container_name: "fms-consumer"
+    cap_drop:
+    - CAP_MKNOD
+    - CAP_NET_RAW
+    - CAP_AUDIT_WRITE
+    networks:
+    - "fms-backend"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    env_file:
+    - "./influxdb/fms-demo.env"
+    environment:
+      INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
+      #INFLUXDB_URI: "http://influxdb:8086"
+      #INFLUXDB_ORG: "sdv"
+      #INFLUXDB_BUCKET: "demo"
+      RUST_LOG: "${FMS_CONSUMER_LOG_CONFIG:-info,fms_consumer=debug,influx_client=debug}"
+    volumes:
+    - type: "volume"
+      source: "influxdb-auth"
+      target: "/tmp"
+      read_only: true
