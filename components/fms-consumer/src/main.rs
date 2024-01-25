@@ -36,12 +36,55 @@ use rdkafka::consumer::Consumer;
 use rdkafka::message::{BorrowedHeaders, BorrowedMessage, Headers};
 use rdkafka::{ClientConfig, Message};
 
+
+use async_std::task::sleep;
+use futures::prelude::*;
+use futures::select;
+use zenoh::config::Config;
+use zenoh::prelude::r#async::*;
+
+
 const CONTENT_TYPE_PROTOBUF: &str = "application/vnd.google.protobuf";
 
 const HEADER_NAME_ORIG_ADDRESS: &str = "orig_address";
 
 const PARAM_KAFKA_PROPERTIES_FILE: &str = "kafka-properties-file";
 const PARAM_KAFKA_TOPIC_NAME: &str = "kafka-topic";
+
+const SUBCOMMAND_HANO_KAFKA: &str = "hano-Kafka";
+const SUBCOMMAND_ZENOH: &str = "zenoh";
+
+const KEY_EXPR: &str = "fms/vehicleStatus";
+
+pub fn parse_args(args: &ArgMatches) -> Config {
+    let mut config: Config = Config::default();
+
+    if let Some(mode) = args.get_one::<WhatAmI>("mode") {
+        config.set_mode(Some(*mode)).unwrap();
+    }
+
+    if let Some(values) = args.get_many::<String>("connect") {
+        config
+            .connect
+            .endpoints
+            .extend(values.map(|v| v.parse().unwrap()))
+    }
+    if let Some(values) = args.get_many::<String>("listen") {
+        config
+            .listen
+            .endpoints
+            .extend(values.map(|v| v.parse().unwrap()))
+    }
+    if let Some(values) = args.get_one::<bool>("no-multicast-scouting") {
+        config
+            .scouting
+            .multicast
+            .set_enabled(Some(*values))
+            .unwrap();
+    }
+
+    config
+}
 
 fn add_property_bag_to_map(property_bag: String, headers: &mut HashMap<String, String>) {
     property_bag.split('&').for_each(|p| {
@@ -148,6 +191,17 @@ async fn process_protobuf_message(
     }
 }
 
+async fn process_zenoh_message(
+    payload: &[u8],
+    influx_writer: Arc<InfluxWriter>,
+){
+              if let Some(vehicle_status) = deserialize_vehicle_status(payload) {
+                influx_writer.write_vehicle_status(&vehicle_status).await;
+            } else {
+        	debug!("ignoring message without payload");
+    	    }
+}
+
 async fn process_message(m: &BorrowedMessage<'_>, influx_writer: Arc<InfluxWriter>) {
     if let Some(headers) = m.headers() {
         let message_properties = get_headers_as_map(headers);
@@ -251,9 +305,17 @@ pub async fn main() {
         .unwrap_or(option_env!("VERGEN_GIT_SHA").unwrap_or("unknown"));
 
     let mut parser = Command::new("FMS data consumer")
+        .arg_required_else_help(true)
         .version(version)
-        .about("Receives FMS related VSS data points via Hono's Kafka based Telemetry API and writes them to an InfluxDB server")
-        .arg(
+        .about("Receives FMS related VSS data points via Hono's Kafka based Telemetry API and writes them to an InfluxDB server");
+
+    parser = influx_client::connection::add_command_line_args(parser);
+
+    parser = parser
+        .subcommand_required(true)
+        .subcommand(influx_client::connection::add_command_line_args(
+            Command::new(SUBCOMMAND_HANO_KAFKA)
+                .about("Forwards VSS data to an Influx DB server from Kafka").arg(
             Arg::new(PARAM_KAFKA_PROPERTIES_FILE)
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .long(PARAM_KAFKA_PROPERTIES_FILE)
@@ -272,10 +334,100 @@ pub async fn main() {
                 .value_name("TOPIC")
                 .required(true)
                 .env("KAFKA_TOPIC_NAME"),
-        );
+        ),
+        ))
+        .subcommand(influx_client::connection::add_command_line_args(
+            Command::new(SUBCOMMAND_ZENOH)
+                .about("Forwards VSS data to an Influx DB server from zenoh")
+            .arg(
+            Arg::new("mode")
+		.value_parser(clap::value_parser!(WhatAmI))
+                .long("mode")
+                .short('m')
+                .help("The zenoh session mode (peer by default).")
+                .required(false),
+        )
+        .arg(
+            Arg::new("connect")
+                .value_parser(clap::builder::NonEmptyStringValueParser::new())
+                .long("connect")
+                .short('e')
+                .help("Endpoints to connect to.")
+                .required(false),
+        )
+        .arg(
+            Arg::new("listen")
+                .value_parser(clap::builder::NonEmptyStringValueParser::new())
+                .long("listen")
+                .short('l')
+                .help("Endpoints to listen on.")
+                .required(false),
+        )
+        .arg(
+            Arg::new("no-multicast-scouting")
+                .value_parser(clap::builder::NonEmptyStringValueParser::new())
+                .long("no-multicast-scouting")
+                .help("Disable the multicast-based scouting mechanism.")
+                .required(false),
+        ),
+        ));
 
-    parser = influx_client::connection::add_command_line_args(parser);
     let args = parser.get_matches();
-    info!("starting FMS data consumer");
-    run_async_processor(&args).await
+
+    match args.subcommand_name() {
+        Some(SUBCOMMAND_HANO_KAFKA) => {
+            info!("starting FMS data consumer");
+            run_async_processor(&args).await
+        }
+        Some(SUBCOMMAND_ZENOH) => {
+            let influx_writer = InfluxWriter::new(&args).map_or_else(
+                |e| {
+                    error!("failed to create InfluxDB writer: {e}");
+                    process::exit(1);
+                },
+                Arc::new,
+            );
+           let zenoh_args = args.subcommand_matches(SUBCOMMAND_ZENOH).unwrap();
+            let config = parse_args(zenoh_args);
+
+            println!("Opening session...");
+            let session = zenoh::open(config).res().await.unwrap();
+
+            println!("Declaring Subscriber on '{}'...", &KEY_EXPR);
+
+            let subscriber = session.declare_subscriber(KEY_EXPR).res().await.unwrap();
+
+            println!("Enter 'q' to quit...");
+            let mut stdin = async_std::io::stdin();
+            let mut input = [0_u8];
+            loop {
+                select!(
+                    sample = subscriber.recv_async() => {
+                        let sample = sample.unwrap();
+                        let cloned_writer = influx_writer.clone();
+                        process_zenoh_message(&*sample.value.payload.contiguous(), cloned_writer).await
+
+                    },
+
+                    _ = stdin.read_exact(&mut input).fuse() => {
+
+                        match input[0] {
+                            b'q' => break,
+                            0 => sleep(Duration::from_secs(1)).await,
+                            _ => (),
+                        }
+
+                    }
+                );
+            }
+        }
+        Some(_) => {
+            // cannot happen because subcommand is required
+            process::exit(1);
+        }
+        None => {
+            // cannot happen because subcommand is required
+            process::exit(1);
+        }
+    };
 }
