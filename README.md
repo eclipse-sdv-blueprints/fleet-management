@@ -110,21 +110,19 @@ Zenoh Router provides a plugin mechanism to other protocols and here we allow FM
 <img src="img/architecture-zenoh.drawio.svg">
 
 We now provide the instructions on how you can test the communication using Zenoh
-
+ 
 1. Create a local docker image for FMS Forworder to support the zenoh communication, run the below command from  fleet-management/components/ directory:
    ```sh
    docker build -t fms-forwarder:custom -f Dockerfile.fms-forwarder .
    ```
-2. Create a local docker image for FMS Consumer to support the zenoh communication, run the below command from  fleet-management/components/ directory:
    ```sh
    docker build -t fms-consumer:custom -f Dockerfile.fms-consumer .
    ```
-3. Start up the zenoh router and back end services using Docker Compose files in the top level (fleet-management/) folder:
-
+2. Start up the zenoh router and back end services using Docker Compose files in the top level (fleet-management/) folder:
+ 
    ```sh
    docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.yaml up --detach
    ```
-
 # Manual configuration
 
 All information required for setting up the networks, volumes, configs and containers is contained in the
