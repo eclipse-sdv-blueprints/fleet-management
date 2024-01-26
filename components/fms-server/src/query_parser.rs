@@ -190,12 +190,9 @@ mod tests {
         let result = parse_query_parameters(&parameters);
         assert!(result.is_ok(), "Expected Ok but got Err");
         let query_result = result.unwrap();
-        assert_eq!(
-            query_result
-                .latest_only
-                .unwrap_or_else(|| panic!("No latestOnly present")),
-            false
-        );
+        assert!(!query_result
+            .latest_only
+            .unwrap_or_else(|| panic!("No latestOnly present")));
         assert_eq!(
             query_result.vin.unwrap_or_else(|| panic!("No vin present")),
             "WDD169005-1J-236684"
