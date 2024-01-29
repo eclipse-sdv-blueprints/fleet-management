@@ -51,7 +51,7 @@ const HEADER_NAME_ORIG_ADDRESS: &str = "orig_address";
 const PARAM_KAFKA_PROPERTIES_FILE: &str = "kafka-properties-file";
 const PARAM_KAFKA_TOPIC_NAME: &str = "kafka-topic";
 
-const SUBCOMMAND_HONO_KAFKA: &str = "hono-kafka";
+const SUBCOMMAND_KAFKA: &str = "kafka";
 const SUBCOMMAND_ZENOH: &str = "zenoh";
 
 const KEY_EXPR: &str = "fms/vehicleStatus";
@@ -234,9 +234,9 @@ async fn run_async_processor(args: &ArgMatches) {
         Arc::new,
     );
 
-    let hono_kafka_args = args.subcommand_matches(SUBCOMMAND_HONO_KAFKA).unwrap();
+    let kafka_args = args.subcommand_matches(SUBCOMMAND_KAFKA).unwrap();
     let mut client_config =
-        get_kafka_client_config(hono_kafka_args.get_one::<String>(PARAM_KAFKA_PROPERTIES_FILE).unwrap())
+        get_kafka_client_config(kafka_args.get_one::<String>(PARAM_KAFKA_PROPERTIES_FILE).unwrap())
             .unwrap_or_else(|e| {
                 error!("failed to create Kafka client: {e}");
                 process::exit(1);
@@ -251,7 +251,7 @@ async fn run_async_processor(args: &ArgMatches) {
             process::exit(1);
         });
 
-    let topic_name = hono_kafka_args.get_one::<String>(PARAM_KAFKA_TOPIC_NAME).unwrap();
+    let topic_name = kafka_args.get_one::<String>(PARAM_KAFKA_TOPIC_NAME).unwrap();
 
     match consumer.fetch_metadata(Some(topic_name), Duration::from_secs(10)) {
         Err(e) => {
@@ -361,7 +361,7 @@ pub async fn main() {
     parser = parser
         .subcommand_required(true)
         .subcommand(influx_client::connection::add_command_line_args(
-            Command::new(SUBCOMMAND_HONO_KAFKA)
+            Command::new(SUBCOMMAND_KAFKA)
                 .about("Forwards VSS data to an Influx DB server from Kafka").arg(
             Arg::new(PARAM_KAFKA_PROPERTIES_FILE)
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
@@ -429,7 +429,7 @@ pub async fn main() {
     let args = parser.get_matches();
 
     match args.subcommand_name() {
-        Some(SUBCOMMAND_HONO_KAFKA) => {
+        Some(SUBCOMMAND_KAFKA) => {
             info!("starting FMS data consumer  Kafka");
             run_async_processor(&args).await
         }
