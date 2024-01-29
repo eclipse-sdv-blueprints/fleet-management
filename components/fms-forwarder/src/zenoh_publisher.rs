@@ -44,10 +44,22 @@ pub fn add_command_line_args(command: Command) -> Command {
                 .help("Disable the multicast-based scouting mechanism.")
                 .required(false),
         )
+        .arg(
+            Arg::new("config")
+                .value_parser(clap::builder::NonEmptyStringValueParser::new())
+                .long("config")
+                .short('c')
+                .help("A configuration file.")
+                .required(false),
+        )
 }
 
 pub fn parse_args(args: &ArgMatches) -> Config {
-    let mut config: Config = Config::default();
+    let mut config: Config = if let Some(conf_file) = args.get_one::<String>("config") {
+        Config::from_file(conf_file).unwrap()
+    } else {
+        Config::default()
+    };
 
     if let Some(mode) = args.get_one::<WhatAmI>("mode") {
         config.set_mode(Some(*mode)).unwrap();
