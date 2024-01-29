@@ -19,7 +19,7 @@ services:
     command: "zenoh -m client"
     
   fms-consumer:
-    command: "zenoh"
+    command: "zenoh -m client"
     image: "fms-consumer:custom"
     build:
       context: "./components"
