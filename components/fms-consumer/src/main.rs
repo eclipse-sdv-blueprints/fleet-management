@@ -220,7 +220,7 @@ async fn process_kafka_message(m: &BorrowedMessage<'_>, influx_writer: Arc<Influ
     }
 }
 
-async fn run_async_processor(args: &ArgMatches) {
+async fn run_async_processor_kafka(args: &ArgMatches) {
     let influx_writer = InfluxWriter::new(args).map_or_else(
         |e| {
             error!("failed to create InfluxDB writer: {e}");
@@ -320,7 +320,7 @@ async fn run_async_processor_zenoh(args: &ArgMatches) {
 
     let subscriber = session.declare_subscriber(KEY_EXPR).res().await.unwrap();
 
-    info!("Enter 'q' to quit...");
+    println!("Enter 'q' to quit...");
     let mut stdin = async_std::io::stdin();
     let mut input = [0_u8];
     loop {
@@ -432,7 +432,7 @@ pub async fn main() {
     match args.subcommand_name() {
         Some(SUBCOMMAND_KAFKA) => {
             info!("starting FMS data consumer for Kafka");
-            run_async_processor(&args).await
+            run_async_processor_kafka(&args).await
         }
         Some(SUBCOMMAND_ZENOH) => {
             info!("starting FMS data consumer for Zenoh");
