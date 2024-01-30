@@ -15,12 +15,13 @@ services:
     restart: unless-stopped
     volumes:
     - ./zenoh-config.json5:/zenoh-config.json5
+    
   fms-forwarder:
     command: "zenoh -m client"
-    
+     
   fms-consumer:
     command: "zenoh -m client"
-    image: "fms-consumer:custom"
+    image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-consumer:main"
     build:
       context: "./components"
       dockerfile: "Dockerfile.fms-consumer"
@@ -38,9 +39,6 @@ services:
     - "./influxdb/fms-demo.env"
     environment:
       INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
-      #INFLUXDB_URI: "http://influxdb:8086"
-      #INFLUXDB_ORG: "sdv"
-      #INFLUXDB_BUCKET: "demo"
       RUST_LOG: "${FMS_CONSUMER_LOG_CONFIG:-info,fms_consumer=debug,influx_client=debug}"
     volumes:
     - type: "volume"

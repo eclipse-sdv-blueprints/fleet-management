@@ -19,9 +19,8 @@
 
 services:
   fms-consumer:
-    #image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-consumer:main"
     command: "kafka"
-    image: "fms-consumer:custom"
+    image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-consumer:main"
     build:
       context: "./components"
       dockerfile: "Dockerfile.fms-consumer"
