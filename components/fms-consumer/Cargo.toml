@@ -40,7 +40,7 @@ rdkafka = { version = "0.36", default-features = false, features = ["libz", "tok
 log = { workspace = true }
 protobuf = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
-zenoh = {version = "0.10.1-rc"}
+zenoh = { workspace = true }
 
 [build-dependencies]
 # see https://github.com/fede1024/rust-rdkafka/issues/572#issuecomment-1529316876
