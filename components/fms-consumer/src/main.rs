@@ -320,7 +320,7 @@ async fn run_async_processor_zenoh(args: &ArgMatches) {
 
     let subscriber = session.declare_subscriber(KEY_EXPR).res().await.unwrap();
 
-    println!("Enter 'q' to quit...");
+    info!("Enter 'q' to quit...");
     let mut stdin = async_std::io::stdin();
     let mut input = [0_u8];
     loop {
