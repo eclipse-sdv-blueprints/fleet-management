@@ -98,31 +98,26 @@ of an Eclipse Hono instance as shown in the diagram below.
    The second compose file specified on the command line will also start the [FMS Consumer](./components/fms-consumer)
    back end component which receives vehicle data via Hono's north bound Kafka based Telemetry API and writes it to the
    Influx DB.
-
+   
 # Using Zenoh Router to geographically distribute the vehicle data
 
 [Eclipse Zenoh](https://zenoh.io/) offers an exceptionally efficient wire protocol, lightweight discovery, and adaptive routing algorithms that prove highly responsive in dynamic environments and topology changes.
-This results in seamless session migration and ensures optimal latency and resource consumption for devices in decentralized systems, even in the face of mobility. 
+These results in seamless session migration and ensures optimal latency and resource consumption for devices in decentralized systems, even in the face of mobility. 
 
 Deploying the Fleet Management system over the Zenoh Router allows consumers to access data through the closest path, promoting significant decentralization and improved mobility that are critical to managing a Fleet.
-Zenoh Router provides a plugin mechanism to other protocols and here we allow FMS forwarder to send data over Zenoh / MQTT.
+Zenoh Router provides a plugin mechanism to other protocols and here we allow FMS forwarder to send data over Zenoh / MQTT and receive by FMS Consumer as shown in the diagram below.
 
 <img src="img/architecture-zenoh.drawio.svg">
 
-We now provide the instructions on how you can test the communication using Zenoh
+Start up the zenoh router and other services using Docker Compose files in the top level (fleet-management/) folder:
 
-1. Create a local docker image for FMS Forworder to support the zenoh communication, run the below command from  fleet-management/components/ directory:
-   ```sh
-   docker build -t fms-forwarder:custom -f Dockerfile.fms-forwarder .
-   ```
-2. Create a local docker image for FMS Consumer to support the zenoh communication, run the below command from  fleet-management/components/ directory:
-   ```sh
-   docker build -t fms-consumer:custom -f Dockerfile.fms-consumer .
-   ```
-3. Start up the zenoh router and back end services using Docker Compose files in the top level (fleet-management/) folder:
-   ```sh
-   docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.yaml up --detach
-   ```
+```sh
+docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.yaml up --detach
+```
+
+Once all services have been started, the current vehicle status can be viewed on a [Grafana dashboard](http://127.0.0.1:3000),
+using *admin*/*admin* as username and password for logging in.
+
 # Manual configuration
 
 All information required for setting up the networks, volumes, configs and containers is contained in the
