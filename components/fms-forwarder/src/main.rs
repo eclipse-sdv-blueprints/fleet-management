@@ -31,6 +31,8 @@ use zenoh_publisher::ZenohPublisher;
 mod hono_publisher;
 mod mqtt_connection;
 mod zenoh_publisher;
+mod status_publishing;
+mod vehicle_abstraction;
 
 const SUBCOMMAND_HONO: &str = "hono";
 const SUBCOMMAND_INFLUX: &str = "influx";
@@ -81,7 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     process::exit(1);
                 }
             }
-        },
+        }
         Some(SUBCOMMAND_ZENOH) => {
             let zenoh_args = args.subcommand_matches(SUBCOMMAND_ZENOH).unwrap();
             match ZenohPublisher::new(zenoh_args).await {
@@ -91,11 +93,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     process::exit(1);
                 }
             }
-        },
+        }
         Some(_) => {
             // cannot happen because subcommand is required
             process::exit(1);
-        }
+        },
         None => {
             // cannot happen because subcommand is required
             process::exit(1);

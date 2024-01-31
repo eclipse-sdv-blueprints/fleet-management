@@ -30,7 +30,7 @@ readme.workspace = true
 
 [dependencies]
 async-trait = { workspace = true }
-async-std = {features = ["attributes"] }
+async-std = {workspace = true, features = ["attributes"] }
 clap = { workspace = true, features = ["std", "env", "color", "help", "usage", "error-context", "suggestions"] }
 env_logger = { workspace = true }
 fms-proto = { workspace = true }
