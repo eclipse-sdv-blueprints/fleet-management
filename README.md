@@ -101,11 +101,8 @@ of an Eclipse Hono instance as shown in the diagram below.
    
 # Using Zenoh Router to geographically distribute the vehicle data
 
-[Eclipse Zenoh](https://zenoh.io/) offers an exceptionally efficient wire protocol, lightweight discovery, and adaptive routing algorithms that prove highly responsive in dynamic environments and topology changes.
-These results in seamless session migration and ensures optimal latency and resource consumption for devices in decentralized systems, even in the face of mobility. 
-
-Deploying the Fleet Management system over the Zenoh Router allows consumers to access data through the closest path, promoting significant decentralization and improved mobility that are critical to managing a Fleet.
-Zenoh Router provides a plugin mechanism to other protocols and here we allow FMS forwarder to send data over Zenoh / MQTT and receive by FMS Consumer as shown in the diagram below.
+The blueprint supports configuring the FMS Forwarder to send vehicle data to the Eclipse Zenoh router of an [Eclipse Zenoh](https://zenoh.io/) instance as shown in the diagram below.
+Zenoh Router provides a plugin mechanism to other protocols to enable the Vehicle to anything communication.
 
 <img src="img/architecture-zenoh.drawio.svg">
 
