@@ -139,7 +139,7 @@ pub fn add_command_line_args(command_line: Command) -> Command {
         )
         .arg(
             Arg::new(PARAM_TIMER_INTERVAL)
-                .value_parser(duration_str::parse)
+                .value_parser(|s: &str| duration_str::parse(s))
                 .long(PARAM_TIMER_INTERVAL)
                 .alias("timer")
                 .help("The time period to wait after polling FMS snapshot data from the kuksa.val Databroker, e.g 5m10s or 1h15m.")
