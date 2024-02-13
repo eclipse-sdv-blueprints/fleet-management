@@ -229,9 +229,9 @@ async fn run_async_processor_hono(args: &ArgMatches) {
         Arc::new,
     );
 
-    let kafka_args = args.subcommand_matches(SUBCOMMAND_HONO).unwrap();
+    let hono_args = args.subcommand_matches(SUBCOMMAND_HONO).unwrap();
     let mut client_config = get_kafka_client_config(
-        kafka_args
+        hono_args
             .get_one::<String>(PARAM_KAFKA_PROPERTIES_FILE)
             .unwrap(),
     )
@@ -249,7 +249,7 @@ async fn run_async_processor_hono(args: &ArgMatches) {
             process::exit(1);
         });
 
-    let topic_name = kafka_args
+    let topic_name = hono_args
         .get_one::<String>(PARAM_KAFKA_TOPIC_NAME)
         .unwrap();
 
@@ -366,8 +366,8 @@ pub async fn main() {
             Arg::new(PARAM_KAFKA_PROPERTIES_FILE)
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .long(PARAM_KAFKA_PROPERTIES_FILE)
-                .help("The path to a file containing Kafka client properties for connecting to the Kafka broker(s).")                
-                .action(ArgAction::Set)
+                .help("The path to a file containing Kafka client properties for connecting to the Kafka broker(s).")
+		.action(ArgAction::Set)
                 .value_name("PATH")
                 .env("KAFKA_PROPERTIES_FILE")
                 .required(true),
