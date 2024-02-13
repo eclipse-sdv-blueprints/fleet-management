@@ -112,8 +112,8 @@ crate/cratesio/-/proc-macro-crate/1.3.1, MIT OR Apache-2.0, approved, clearlydef
 crate/cratesio/-/prost/0.12.1, Apache-2.0, approved, #10594
 crate/cratesio/-/prost-derive/0.12.1, Apache-2.0, approved, #11612
 crate/cratesio/-/prost-types/0.12.1, Apache-2.0 AND BSD-3-Clause, approved, #10593
-crate/cratesio/-/protobuf/3.2.0, MIT, approved, clearlydefined
-crate/cratesio/-/protobuf-support/3.2.0, MIT, approved, clearlydefined
+crate/cratesio/-/protobuf/3.3.0, MIT, approved, clearlydefined
+crate/cratesio/-/protobuf-support/3.3.0, MIT, approved, clearlydefined
 crate/cratesio/-/quote/1.0.32, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/rand/0.8.5, MIT OR Apache-2.0, approved, clearlydefined
 crate/cratesio/-/rand_chacha/0.3.1, MIT OR Apache-2.0, approved, clearlydefined
