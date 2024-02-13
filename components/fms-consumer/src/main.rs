@@ -249,9 +249,7 @@ async fn run_async_processor_hono(args: &ArgMatches) {
             process::exit(1);
         });
 
-    let topic_name = hono_args
-        .get_one::<String>(PARAM_KAFKA_TOPIC_NAME)
-        .unwrap();
+    let topic_name = hono_args.get_one::<String>(PARAM_KAFKA_TOPIC_NAME).unwrap();
 
     match consumer.fetch_metadata(Some(topic_name), Duration::from_secs(10)) {
         Err(e) => {
