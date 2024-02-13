@@ -106,7 +106,7 @@ Zenoh Router provides a plugin mechanism to other protocols to enable the Vehicl
 
 <img src="img/architecture-zenoh.drawio.svg">
 
-Start up the vehicle and back end services using Docker Compose::
+Start up the vehicle and back end services using Docker Compose:
 
 ```sh
 docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.yaml up --detach
