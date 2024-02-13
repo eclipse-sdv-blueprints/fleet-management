@@ -30,9 +30,9 @@ use zenoh_publisher::ZenohPublisher;
 
 mod hono_publisher;
 mod mqtt_connection;
-mod zenoh_publisher;
 mod status_publishing;
 mod vehicle_abstraction;
+mod zenoh_publisher;
 
 const SUBCOMMAND_HONO: &str = "hono";
 const SUBCOMMAND_INFLUX: &str = "influx";
@@ -97,7 +97,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(_) => {
             // cannot happen because subcommand is required
             process::exit(1);
-        },
+        }
         None => {
             // cannot happen because subcommand is required
             process::exit(1);

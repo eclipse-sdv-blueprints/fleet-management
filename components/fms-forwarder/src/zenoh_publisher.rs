@@ -15,7 +15,7 @@ pub fn add_command_line_args(command: Command) -> Command {
     command
         .arg(
             Arg::new("mode")
-		.value_parser(clap::value_parser!(WhatAmI))
+                .value_parser(clap::value_parser!(WhatAmI))
                 .long("mode")
                 .short('m')
                 .help("The zenoh session mode (peer by default).")
@@ -89,7 +89,7 @@ pub fn parse_args(args: &ArgMatches) -> Config {
 }
 
 pub struct ZenohPublisher<'a> {
- // publisher
+    // publisher
     publisher: Publisher<'a>,
 }
 
