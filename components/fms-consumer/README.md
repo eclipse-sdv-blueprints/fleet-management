@@ -35,9 +35,9 @@ Please refer to the command line help for details:
 fms-consumer --help
 ```
 
-## Received data from Hono's north bound Kafka based Telemetry API 
+## Receive data from Hono's north bound Kafka based Telemetry API 
 
-The consumer can received data from Hono's north bound Kafka based Telemetry API 
+The consumer can receive data from Hono's north bound Kafka based Telemetry API 
 
 Please refer to the command line help for details:
 
@@ -46,10 +46,9 @@ fms-consumer kafka --help
 ```
 
 
-## Received data from Zenoh Router
+## Receive data from Zenoh Router
 
-The consumer can subscriber status from Zenoh Router of an [Eclipse Zenoh](https://projects.eclipse.org/projects/iot.zenoh/) instance.
-For this to work, the consumer needs to be configured with the zenoh router end points,
+The consumer can receive data from an Eclipse Zenoh Router instance.
 
 Please refer to the command line help for details:
 
