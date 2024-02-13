@@ -99,14 +99,14 @@ of an Eclipse Hono instance as shown in the diagram below.
    back end component which receives vehicle data via Hono's north bound Kafka based Telemetry API and writes it to the
    Influx DB.
    
-# Using Zenoh Router to geographically distribute the vehicle data
+# Using Eclipse Zenoh to geographically distribute the vehicle data
 
 The blueprint supports configuring the FMS Forwarder to send vehicle data to the Eclipse Zenoh router of an [Eclipse Zenoh](https://zenoh.io/) instance as shown in the diagram below.
 Zenoh Router provides a plugin mechanism to other protocols to enable the Vehicle to anything communication.
 
 <img src="img/architecture-zenoh.drawio.svg">
 
-Start up the zenoh router and other services using Docker Compose files in the top level (fleet-management/) folder:
+Start up the vehicle and back end services using Docker Compose::
 
 ```sh
 docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.yaml up --detach
