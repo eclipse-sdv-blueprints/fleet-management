@@ -42,7 +42,7 @@ The consumer can receive data from Hono's north bound Kafka based Telemetry API
 Please refer to the command line help for details:
 
 ```sh
-fms-consumer kafka --help
+fms-consumer hono --help
 ```
 
 
