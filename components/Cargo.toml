@@ -18,12 +18,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [workspace]
-members = [
-    "fms-consumer",
-    "fms-forwarder",
-    "fms-server",
-    "influx-client",
-]
+members = ["fms-consumer", "fms-forwarder", "fms-server", "influx-client"]
 resolver = "2"
 
 [workspace.package]
@@ -44,7 +39,6 @@ fms-proto = { path = "fms-proto" }
 influx-client = { path = "influx-client", default-features = false }
 influxrs = { version = "2.0" }
 log = { version = "0.4" }
-openssl-sys = { version = "0.9.92", default-features = false }
 protobuf = { version = "3" }
 protobuf-codegen = { version = "3" }
 protoc-bin-vendored = { version = "3" }
@@ -58,9 +52,8 @@ tonic = { version = "0.10", default-features = false }
 tonic-build = { version = "0.10", default-features = false }
 
 [profile.release]
-lto = true                 # Link time optimization (dead code removal etc...)
+lto = true          # Link time optimization (dead code removal etc...)
 opt-level = "s"
 codegen-units = 1
 incremental = false
 strip = true
-
