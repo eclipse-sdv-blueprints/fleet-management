@@ -49,7 +49,7 @@ const HEADER_NAME_ORIG_ADDRESS: &str = "orig_address";
 const PARAM_KAFKA_PROPERTIES_FILE: &str = "kafka-properties-file";
 const PARAM_KAFKA_TOPIC_NAME: &str = "kafka-topic";
 
-const SUBCOMMAND_KAFKA: &str = "kafka";
+const SUBCOMMAND_HONO: &str = "hono";
 const SUBCOMMAND_ZENOH: &str = "zenoh";
 
 const KEY_EXPR: &str = "fms/vehicleStatus";
@@ -220,7 +220,7 @@ async fn process_kafka_message(m: &BorrowedMessage<'_>, influx_writer: Arc<Influ
     }
 }
 
-async fn run_async_processor_kafka(args: &ArgMatches) {
+async fn run_async_processor_hono(args: &ArgMatches) {
     let influx_writer = InfluxWriter::new(args).map_or_else(
         |e| {
             error!("failed to create InfluxDB writer: {e}");
@@ -229,7 +229,7 @@ async fn run_async_processor_kafka(args: &ArgMatches) {
         Arc::new,
     );
 
-    let kafka_args = args.subcommand_matches(SUBCOMMAND_KAFKA).unwrap();
+    let kafka_args = args.subcommand_matches(SUBCOMMAND_HONO).unwrap();
     let mut client_config = get_kafka_client_config(
         kafka_args
             .get_one::<String>(PARAM_KAFKA_PROPERTIES_FILE)
@@ -303,7 +303,7 @@ async fn run_async_processor_kafka(args: &ArgMatches) {
 }
 
 async fn run_async_processor_zenoh(args: &ArgMatches) {
-    let influx_writer = InfluxWriter::new(&args).map_or_else(
+    let influx_writer = InfluxWriter::new(args).map_or_else(
         |e| {
             error!("failed to create InfluxDB writer: {e}");
             process::exit(1);
@@ -328,7 +328,7 @@ async fn run_async_processor_zenoh(args: &ArgMatches) {
             sample = subscriber.recv_async() => {
                 let sample = sample.unwrap();
                 let cloned_writer = influx_writer.clone();
-                process_zenoh_message(&*sample.value.payload.contiguous(), cloned_writer).await
+                process_zenoh_message(&sample.value.payload.contiguous(), cloned_writer).await
 
             },
 
@@ -354,15 +354,15 @@ pub async fn main() {
     let mut parser = Command::new("FMS data consumer")
         .arg_required_else_help(true)
         .version(version)
-        .about("Receives FMS related VSS data points via Hono's Kafka based Telemetry API and writes them to an InfluxDB server");
+        .about("Receives FMS related VSS data points via Hono's Kafka based Telemetry API or Eclipse Zenoh instance and writes them to an InfluxDB server");
 
     parser = influx_client::connection::add_command_line_args(parser);
 
     parser = parser
         .subcommand_required(true)
-        .subcommand(influx_client::connection::add_command_line_args(
-            Command::new(SUBCOMMAND_KAFKA)
-                .about("Forwards VSS data to an Influx DB server from Kafka").arg(
+        .subcommand(
+            Command::new(SUBCOMMAND_HONO)
+                .about("Forwards VSS data to an Influx DB server from hono").arg(
             Arg::new(PARAM_KAFKA_PROPERTIES_FILE)
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .long(PARAM_KAFKA_PROPERTIES_FILE)
@@ -382,10 +382,10 @@ pub async fn main() {
                 .required(true)
                 .env("KAFKA_TOPIC_NAME"),
         ),
-        ))
-        .subcommand(influx_client::connection::add_command_line_args(
+        )
+        .subcommand(
             Command::new(SUBCOMMAND_ZENOH)
-                .about("Forwards VSS data to an Influx DB server from zenoh")
+                .about("Forwards VSS data to an Influx DB server from eclipse zenoh")
             .arg(
             Arg::new("mode")
 		.value_parser(clap::value_parser!(WhatAmI))
@@ -425,14 +425,14 @@ pub async fn main() {
                 .help("A configuration file.")
                 .required(false),
         ),
-        ));
+        );
 
     let args = parser.get_matches();
 
     match args.subcommand_name() {
-        Some(SUBCOMMAND_KAFKA) => {
-            info!("starting FMS data consumer for Kafka");
-            run_async_processor_kafka(&args).await
+        Some(SUBCOMMAND_HONO) => {
+            info!("starting FMS data consumer for Hono");
+            run_async_processor_hono(&args).await
         }
         Some(SUBCOMMAND_ZENOH) => {
             info!("starting FMS data consumer for Zenoh");
