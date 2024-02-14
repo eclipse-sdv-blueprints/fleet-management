@@ -23,8 +23,8 @@ services:
         condition: service_started
      
   fms-consumer:
+    command: "zenoh -m client"
     image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-consumer:main"
-    image: "fms-consumer:custom"
     build:
       context: "./components"
       dockerfile: "Dockerfile.fms-consumer"
