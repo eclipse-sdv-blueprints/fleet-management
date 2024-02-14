@@ -18,7 +18,7 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 -->
-The FMS Consumer receives vehicle data either via Hono's north bound Kafka based Telemetry API or Zenoh router and writes it to the Influx DB.
+The FMS Consumer receives vehicle data either via Hono's north bound Kafka based Telemetry API or Zenoh and writes it to the Influx DB.
 
 
 # Building
@@ -27,7 +27,7 @@ Building the consumer requires a [Rust development toolchain](https://rustup.rs/
 
 # Running
 
-The FMS Consumer receives vehicle data either via Hono's north bound Kafka based Telemetry API or Zenoh router and writes it to the Influx DB. The type of source can be selected by means of command line arguments when starting the consumer.
+The FMS Consumer receives vehicle data either via Hono's north bound Kafka based Telemetry API or Zenoh and writes it to the Influx DB. The type of source can be selected by means of command line arguments when starting the consumer.
 
 Please refer to the command line help for details:
 
@@ -46,9 +46,10 @@ fms-consumer hono --help
 ```
 
 
-## Receive data from Zenoh Router
+## Receive data from Zenoh
 
-The consumer can receive data from an Eclipse Zenoh Router instance.
+The consumer can receive data from the Zenoh router of an [Eclipse Zenoh](https://projects.eclipse.org/projects/iot.zenoh/) instance.
+For this to work, the consumer needs to be configured with the Zenoh router end points.
 
 Please refer to the command line help for details:
 
