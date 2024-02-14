@@ -36,8 +36,6 @@ use rdkafka::consumer::Consumer;
 use rdkafka::message::{BorrowedHeaders, BorrowedMessage, Headers};
 use rdkafka::{ClientConfig, Message};
 
-use async_std::task::sleep;
-use futures::prelude::*;
 use futures::select;
 use zenoh::config::Config;
 use zenoh::prelude::r#async::*;
@@ -315,29 +313,13 @@ async fn run_async_processor_zenoh(args: &ArgMatches) {
     let session = zenoh::open(config).res().await.unwrap();
 
     info!("Declaring Subscriber on '{}'...", &KEY_EXPR);
-
     let subscriber = session.declare_subscriber(KEY_EXPR).res().await.unwrap();
-
-    println!("Enter 'q' to quit...");
-    let mut stdin = async_std::io::stdin();
-    let mut input = [0_u8];
     loop {
         select!(
             sample = subscriber.recv_async() => {
                 let sample = sample.unwrap();
                 let cloned_writer = influx_writer.clone();
-                process_zenoh_message(&sample.value.payload.contiguous(), cloned_writer).await
-
-            },
-
-            _ = stdin.read_exact(&mut input).fuse() => {
-
-                match input[0] {
-                    b'q' => break,
-                    0 => sleep(Duration::from_secs(1)).await,
-                    _ => (),
-                }
-
+                process_zenoh_message(&sample.value.payload.contiguous(), cloned_writer).await;
             }
         );
     }
@@ -360,7 +342,7 @@ pub async fn main() {
         .subcommand_required(true)
         .subcommand(
             Command::new(SUBCOMMAND_HONO)
-                .about("Forwards VSS data to an Influx DB server from hono").arg(
+                .about("Forwards VSS data to an Influx DB server from Hono's north bound Kafka API").arg(
             Arg::new(PARAM_KAFKA_PROPERTIES_FILE)
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .long(PARAM_KAFKA_PROPERTIES_FILE)
@@ -383,13 +365,13 @@ pub async fn main() {
         )
         .subcommand(
             Command::new(SUBCOMMAND_ZENOH)
-                .about("Forwards VSS data to an Influx DB server from eclipse zenoh")
+                .about("Forwards VSS data to an Influx DB server from Eclipse Zenoh")
             .arg(
             Arg::new("mode")
 		.value_parser(clap::value_parser!(WhatAmI))
                 .long("mode")
                 .short('m')
-                .help("The zenoh session mode (peer by default).")
+                .help("The Zenoh session mode (peer by default).")
                 .required(false),
         )
         .arg(
@@ -410,9 +392,9 @@ pub async fn main() {
         )
         .arg(
             Arg::new("no-multicast-scouting")
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .long("no-multicast-scouting")
                 .help("Disable the multicast-based scouting mechanism.")
+                .action(clap::ArgAction::SetFalse)
                 .required(false),
         )
         .arg(
