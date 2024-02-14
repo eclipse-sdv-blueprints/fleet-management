@@ -31,19 +31,37 @@ readme.workspace = true
 [dependencies]
 async-trait = { workspace = true }
 chrono = { workspace = true, features = ["std"] }
-clap = { workspace = true, features = ["std", "env", "color", "help", "usage", "error-context", "suggestions"] }
+clap = { workspace = true, features = [
+    "std",
+    "env",
+    "color",
+    "help",
+    "usage",
+    "error-context",
+    "suggestions",
+] }
 duration-str = { workspace = true, features = ["time"] }
 env_logger = { workspace = true }
 fms-proto = { workspace = true }
 influx-client = { workspace = true, features = ["writer"] }
 log = { workspace = true }
-paho-mqtt = { version = "0.12", default-features = false, features = [ "vendored-ssl" ] }
+paho-mqtt = { version = "0.12", default-features = false, features = [
+    "vendored-ssl",
+] }
 protobuf = { workspace = true }
 prost = { workspace = true }
 prost-types = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
-tonic = { workspace = true, features = ["channel", "codegen", "tls", "prost"] }
+tonic = { version = "0.11", default-features = false, features = [
+    "channel",
+    "codegen",
+    "tls",
+    "prost",
+] }
 
 [build-dependencies]
 protoc-bin-vendored = { workspace = true }
-tonic-build = { workspace = true, features = ["prost", "transport"]}
+tonic-build = { version = "0.11", default-features = false, features = [
+    "prost",
+    "transport",
+] }
