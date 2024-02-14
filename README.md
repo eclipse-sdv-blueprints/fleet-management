@@ -102,7 +102,7 @@ of an Eclipse Hono instance as shown in the diagram below.
 # Using Eclipse Zenoh to geographically distribute the vehicle data
 
 The blueprint supports configuring the FMS Forwarder to send vehicle data to the Eclipse Zenoh router of an [Eclipse Zenoh](https://zenoh.io/) instance as shown in the diagram below.
-Zenoh Router provides a plugin mechanism to other protocols to enable the Vehicle to anything communication.
+Zenoh router provides a plugin mechanism to other protocols to enable the Vehicle to anything communication.
 
 <img src="img/architecture-zenoh.drawio.svg">
 
