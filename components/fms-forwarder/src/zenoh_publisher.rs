@@ -18,7 +18,7 @@ pub fn add_command_line_args(command: Command) -> Command {
                 .value_parser(clap::value_parser!(WhatAmI))
                 .long("mode")
                 .short('m')
-                .help("The zenoh session mode (peer by default).")
+                .help("The Zenoh session mode (peer by default).")
                 .required(false),
         )
         .arg(
@@ -39,9 +39,9 @@ pub fn add_command_line_args(command: Command) -> Command {
         )
         .arg(
             Arg::new("no-multicast-scouting")
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .long("no-multicast-scouting")
                 .help("Disable the multicast-based scouting mechanism.")
+                .action(clap::ArgAction::SetFalse)
                 .required(false),
         )
         .arg(

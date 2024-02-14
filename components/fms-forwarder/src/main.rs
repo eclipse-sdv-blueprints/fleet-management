@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Command::new(SUBCOMMAND_INFLUX).about("Forwards VSS data to an Influx DB server"),
         ))
         .subcommand(zenoh_publisher::add_command_line_args(
-            Command::new(SUBCOMMAND_ZENOH).about("Forwards VSS data to zenoh"),
+            Command::new(SUBCOMMAND_ZENOH).about("Forwards VSS data to Zenoh"),
         ));
 
     let args = parser.get_matches();
@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             match ZenohPublisher::new(zenoh_args).await {
                 Ok(writer) => Box::new(writer),
                 Err(e) => {
-                    error!("failed to create zenoh Publisher: {e}");
+                    error!("failed to create Zenoh Publisher: {e}");
                     process::exit(1);
                 }
             }
