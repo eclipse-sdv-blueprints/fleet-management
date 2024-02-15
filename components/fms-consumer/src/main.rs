@@ -199,7 +199,7 @@ async fn process_zenoh_message(payload: &[u8], influx_writer: Arc<InfluxWriter>)
     }
 }
 
-async fn process_kafka_message(m: &BorrowedMessage<'_>, influx_writer: Arc<InfluxWriter>) {
+async fn process_hono_message(m: &BorrowedMessage<'_>, influx_writer: Arc<InfluxWriter>) {
     if let Some(headers) = m.headers() {
         let message_properties = get_headers_as_map(headers);
         match (
@@ -285,7 +285,7 @@ async fn run_async_processor_hono(args: &ArgMatches) {
                 .try_for_each(|borrowed_message| {
                     let cloned_writer = influx_writer.clone();
                     async move {
-                        process_kafka_message(&borrowed_message, cloned_writer).await;
+                        process_hono_message(&borrowed_message, cloned_writer).await;
                         Ok(())
                     }
                 })
