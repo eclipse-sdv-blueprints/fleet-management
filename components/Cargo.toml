@@ -31,7 +31,6 @@ documentation = "https://eclipse-sdv-blueprints.github.io/blueprints-website/"
 
 [workspace.dependencies]
 async-trait = { version = "0.1" }
-async-std = {version = "1.12", default-features = false }
 chrono = { version = "0.4", default-features = false }
 clap = { version = "4.4", default-features = false }
 duration-str = { version = "0.7", default-features = false }

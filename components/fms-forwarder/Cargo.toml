@@ -30,7 +30,6 @@ readme.workspace = true
 
 [dependencies]
 async-trait = { workspace = true }
-async-std = {workspace = true, features = ["attributes"] }
 chrono = { workspace = true, features = ["std"] }
 clap = { workspace = true, features = [
     "std",
