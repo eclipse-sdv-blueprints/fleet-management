@@ -98,6 +98,22 @@ of an Eclipse Hono instance as shown in the diagram below.
    The second compose file specified on the command line will also start the [FMS Consumer](./components/fms-consumer)
    back end component which receives vehicle data via Hono's north bound Kafka based Telemetry API and writes it to the
    Influx DB.
+   
+# Using Eclipse Zenoh to geographically distribute the vehicle data
+
+The blueprint supports configuring the FMS Forwarder to send vehicle data to the Eclipse Zenoh router of an [Eclipse Zenoh](https://zenoh.io/) instance as shown in the diagram below.
+Zenoh router provides a plugin mechanism to other protocols to enable the Vehicle to anything communication.
+
+<img src="img/architecture-zenoh.drawio.svg">
+
+Start up the vehicle and back end services using Docker Compose:
+
+```sh
+docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.yaml up --detach
+```
+
+Once all services have been started, the current vehicle status can be viewed on a [Grafana dashboard](http://127.0.0.1:3000),
+using *admin*/*admin* as username and password for logging in.
 
 # Manual configuration
 

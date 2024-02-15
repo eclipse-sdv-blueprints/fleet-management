@@ -62,3 +62,15 @@ Please refer to the command line help for details:
 ```sh
 fms-forwarder hono --help
 ```
+
+
+## Publishing to Zenoh
+
+The forwarder can publish status information to the Zenoh router of an [Eclipse Zenoh](https://projects.eclipse.org/projects/iot.zenoh/) instance.
+For this to work, the forwarder needs to be configured with the Zenoh router end points.
+
+Please refer to the command line help for details:
+
+```sh
+fms-forwarder zenoh --help
+```

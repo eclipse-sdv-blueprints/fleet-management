@@ -36,12 +36,55 @@ use rdkafka::consumer::Consumer;
 use rdkafka::message::{BorrowedHeaders, BorrowedMessage, Headers};
 use rdkafka::{ClientConfig, Message};
 
+use futures::select;
+use zenoh::config::Config;
+use zenoh::prelude::r#async::*;
+
 const CONTENT_TYPE_PROTOBUF: &str = "application/vnd.google.protobuf";
 
 const HEADER_NAME_ORIG_ADDRESS: &str = "orig_address";
 
 const PARAM_KAFKA_PROPERTIES_FILE: &str = "kafka-properties-file";
 const PARAM_KAFKA_TOPIC_NAME: &str = "kafka-topic";
+
+const SUBCOMMAND_HONO: &str = "hono";
+const SUBCOMMAND_ZENOH: &str = "zenoh";
+
+const KEY_EXPR: &str = "fms/vehicleStatus";
+
+fn parse_zenoh_args(args: &ArgMatches) -> Config {
+    let mut config: Config = if let Some(conf_file) = args.get_one::<String>("config") {
+        Config::from_file(conf_file).unwrap()
+    } else {
+        Config::default()
+    };
+
+    if let Some(mode) = args.get_one::<WhatAmI>("mode") {
+        config.set_mode(Some(*mode)).unwrap();
+    }
+
+    if let Some(values) = args.get_many::<String>("connect") {
+        config
+            .connect
+            .endpoints
+            .extend(values.map(|v| v.parse().unwrap()))
+    }
+    if let Some(values) = args.get_many::<String>("listen") {
+        config
+            .listen
+            .endpoints
+            .extend(values.map(|v| v.parse().unwrap()))
+    }
+    if let Some(values) = args.get_one::<bool>("no-multicast-scouting") {
+        config
+            .scouting
+            .multicast
+            .set_enabled(Some(*values))
+            .unwrap();
+    }
+
+    config
+}
 
 fn add_property_bag_to_map(property_bag: String, headers: &mut HashMap<String, String>) {
     property_bag.split('&').for_each(|p| {
@@ -148,7 +191,15 @@ async fn process_protobuf_message(
     }
 }
 
-async fn process_message(m: &BorrowedMessage<'_>, influx_writer: Arc<InfluxWriter>) {
+async fn process_zenoh_message(payload: &[u8], influx_writer: Arc<InfluxWriter>) {
+    if let Some(vehicle_status) = deserialize_vehicle_status(payload) {
+        influx_writer.write_vehicle_status(&vehicle_status).await;
+    } else {
+        debug!("ignoring message without payload");
+    }
+}
+
+async fn process_hono_message(m: &BorrowedMessage<'_>, influx_writer: Arc<InfluxWriter>) {
     if let Some(headers) = m.headers() {
         let message_properties = get_headers_as_map(headers);
         match (
@@ -167,7 +218,7 @@ async fn process_message(m: &BorrowedMessage<'_>, influx_writer: Arc<InfluxWrite
     }
 }
 
-async fn run_async_processor(args: &ArgMatches) {
+async fn run_async_processor_hono(args: &ArgMatches) {
     let influx_writer = InfluxWriter::new(args).map_or_else(
         |e| {
             error!("failed to create InfluxDB writer: {e}");
@@ -176,12 +227,16 @@ async fn run_async_processor(args: &ArgMatches) {
         Arc::new,
     );
 
-    let mut client_config =
-        get_kafka_client_config(args.get_one::<String>(PARAM_KAFKA_PROPERTIES_FILE).unwrap())
-            .unwrap_or_else(|e| {
-                error!("failed to create Kafka client: {e}");
-                process::exit(1);
-            });
+    let hono_args = args.subcommand_matches(SUBCOMMAND_HONO).unwrap();
+    let mut client_config = get_kafka_client_config(
+        hono_args
+            .get_one::<String>(PARAM_KAFKA_PROPERTIES_FILE)
+            .unwrap(),
+    )
+    .unwrap_or_else(|e| {
+        error!("failed to create Kafka client: {e}");
+        process::exit(1);
+    });
 
     // Create the `StreamConsumer`, to receive the messages from the topic in form of a `Stream`.
     let consumer: StreamConsumer = client_config
@@ -192,7 +247,7 @@ async fn run_async_processor(args: &ArgMatches) {
             process::exit(1);
         });
 
-    let topic_name = args.get_one::<String>(PARAM_KAFKA_TOPIC_NAME).unwrap();
+    let topic_name = hono_args.get_one::<String>(PARAM_KAFKA_TOPIC_NAME).unwrap();
 
     match consumer.fetch_metadata(Some(topic_name), Duration::from_secs(10)) {
         Err(e) => {
@@ -230,7 +285,7 @@ async fn run_async_processor(args: &ArgMatches) {
                 .try_for_each(|borrowed_message| {
                     let cloned_writer = influx_writer.clone();
                     async move {
-                        process_message(&borrowed_message, cloned_writer).await;
+                        process_hono_message(&borrowed_message, cloned_writer).await;
                         Ok(())
                     }
                 })
@@ -243,6 +298,32 @@ async fn run_async_processor(args: &ArgMatches) {
     }
 }
 
+async fn run_async_processor_zenoh(args: &ArgMatches) {
+    let influx_writer = InfluxWriter::new(args).map_or_else(
+        |e| {
+            error!("failed to create InfluxDB writer: {e}");
+            process::exit(1);
+        },
+        Arc::new,
+    );
+    let zenoh_args = args.subcommand_matches(SUBCOMMAND_ZENOH).unwrap();
+    let config = parse_zenoh_args(zenoh_args);
+
+    info!("Opening session...");
+    let session = zenoh::open(config).res().await.unwrap();
+
+    info!("Declaring Subscriber on '{}'...", &KEY_EXPR);
+    let subscriber = session.declare_subscriber(KEY_EXPR).res().await.unwrap();
+    loop {
+        select!(
+            sample = subscriber.recv_async() => {
+                let sample = sample.unwrap();
+                let cloned_writer = influx_writer.clone();
+                process_zenoh_message(&sample.value.payload.contiguous(), cloned_writer).await;
+            }
+        );
+    }
+}
 #[tokio::main]
 pub async fn main() {
     env_logger::init();
@@ -251,14 +332,22 @@ pub async fn main() {
         .unwrap_or(option_env!("VERGEN_GIT_SHA").unwrap_or("unknown"));
 
     let mut parser = Command::new("FMS data consumer")
+        .arg_required_else_help(true)
         .version(version)
-        .about("Receives FMS related VSS data points via Hono's Kafka based Telemetry API and writes them to an InfluxDB server")
-        .arg(
+        .about("Receives FMS related VSS data points via Hono's Kafka based Telemetry API or Eclipse Zenoh instance and writes them to an InfluxDB server");
+
+    parser = influx_client::connection::add_command_line_args(parser);
+
+    parser = parser
+        .subcommand_required(true)
+        .subcommand(
+            Command::new(SUBCOMMAND_HONO)
+                .about("Forwards VSS data to an Influx DB server from Hono's north bound Kafka API").arg(
             Arg::new(PARAM_KAFKA_PROPERTIES_FILE)
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .long(PARAM_KAFKA_PROPERTIES_FILE)
                 .help("The path to a file containing Kafka client properties for connecting to the Kafka broker(s).")
-                .action(ArgAction::Set)
+		.action(ArgAction::Set)
                 .value_name("PATH")
                 .env("KAFKA_PROPERTIES_FILE")
                 .required(true),
@@ -272,10 +361,70 @@ pub async fn main() {
                 .value_name("TOPIC")
                 .required(true)
                 .env("KAFKA_TOPIC_NAME"),
+        ),
+        )
+        .subcommand(
+            Command::new(SUBCOMMAND_ZENOH)
+                .about("Forwards VSS data to an Influx DB server from Eclipse Zenoh")
+            .arg(
+            Arg::new("mode")
+		.value_parser(clap::value_parser!(WhatAmI))
+                .long("mode")
+                .short('m')
+                .help("The Zenoh session mode (peer by default).")
+                .required(false),
+        )
+        .arg(
+            Arg::new("connect")
+                .value_parser(clap::builder::NonEmptyStringValueParser::new())
+                .long("connect")
+                .short('e')
+                .help("Endpoints to connect to.")
+                .required(false),
+        )
+        .arg(
+            Arg::new("listen")
+                .value_parser(clap::builder::NonEmptyStringValueParser::new())
+                .long("listen")
+                .short('l')
+                .help("Endpoints to listen on.")
+                .required(false),
+        )
+        .arg(
+            Arg::new("no-multicast-scouting")
+                .long("no-multicast-scouting")
+                .help("Disable the multicast-based scouting mechanism.")
+                .action(clap::ArgAction::SetFalse)
+                .required(false),
+        )
+        .arg(
+            Arg::new("config")
+                .value_parser(clap::builder::NonEmptyStringValueParser::new())
+                .long("config")
+                .short('c')
+                .help("A configuration file.")
+                .required(false),
+        ),
         );
 
-    parser = influx_client::connection::add_command_line_args(parser);
     let args = parser.get_matches();
-    info!("starting FMS data consumer");
-    run_async_processor(&args).await
+
+    match args.subcommand_name() {
+        Some(SUBCOMMAND_HONO) => {
+            info!("starting FMS data consumer for Hono");
+            run_async_processor_hono(&args).await
+        }
+        Some(SUBCOMMAND_ZENOH) => {
+            info!("starting FMS data consumer for Zenoh");
+            run_async_processor_zenoh(&args).await
+        }
+        Some(_) => {
+            // cannot happen because subcommand is required
+            process::exit(1);
+        }
+        None => {
+            // cannot happen because subcommand is required
+            process::exit(1);
+        }
+    };
 }

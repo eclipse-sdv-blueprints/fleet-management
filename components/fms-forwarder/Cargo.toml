@@ -45,9 +45,8 @@ env_logger = { workspace = true }
 fms-proto = { workspace = true }
 influx-client = { workspace = true, features = ["writer"] }
 log = { workspace = true }
-paho-mqtt = { version = "0.12", default-features = false, features = [
-    "vendored-ssl",
-] }
+paho-mqtt = { version = "0.12", default-features = false, features = [ "vendored-ssl" ] }
+zenoh = { workspace = true }
 protobuf = { workspace = true }
 prost = { workspace = true }
 prost-types = { workspace = true }

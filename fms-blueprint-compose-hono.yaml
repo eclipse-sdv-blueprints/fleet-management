@@ -19,6 +19,7 @@
 
 services:
   fms-consumer:
+    command: "hono"
     image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-consumer:main"
     build:
       context: "./components"
