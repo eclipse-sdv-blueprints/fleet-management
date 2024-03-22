@@ -1,0 +1,74 @@
+# ********************************************************************************
+#  Copyright (c) 2023 Contributors to the Eclipse Foundation
+#
+#  See the NOTICE file(s) distributed with this work for additional
+#  information regarding copyright ownership.
+#
+#  This program and the accompanying materials are made available under the
+#  terms of the Apache License Version 2.0 which is available at
+#  https://www.apache.org/licenses/LICENSE-2.0
+#
+#  SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************/
+
+name: Check 3rd party dependencies
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+#    paths:
+#    - "components/Cargo.lock"
+  workflow_call:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  deps:
+    name: "Check 3rd party Rust dependencies' licenses"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Determine list of 3rd party Rust dependencies
+      working-directory: ${{github.workspace}}
+      run: |
+        cargo tree --manifest-path components/Cargo.toml -e normal --prefix none --no-dedupe --locked \
+          | sort -u \
+          | grep -v '^[[:space:]]*$' \
+          | grep -v fms- \
+          | grep -v influx-client \
+          | sed -E 's|([^ ]+) v([^ ]+).*|crate/cratesio/-/\1/\2|' \
+          > DEPS.txt
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: "temurin"
+        java-version: "17"
+    - name: "Run latest Eclipse Dash jar file"
+      id: "run-checks"
+      working-directory: ${{github.workspace}}
+      run: |
+        wget --quiet -O dash.jar "https://repo.eclipse.org/service/local/artifact/maven/redirect?r=dash-licenses&g=org.eclipse.dash&a=org.eclipse.dash.licenses&v=LATEST"
+        if java -Dorg.eclipse.dash.timeout=60 -jar dash.jar -batch 90 -summary DEPENDENCIES.txt DEPS.txt
+        then
+          echo "checks-failed=0" >> $GITHUB_OUTPUT
+          echo "License information of 3rd party dependencies has been vetted successfully." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "checks-failed=1" >> $GITHUB_OUTPUT
+          echo "License information of some 3rd party dependencies could not be vetted successfully." >> $GITHUB_STEP_SUMMARY
+          echo "A DEPENDENCIES file containing the vetted information has been attached to this workflow run." >> $GITHUB_STEP_SUMMARY
+        fi
+    - name: Upload DEPENDENCIES file
+      if: ${{ steps.run-checks.outputs.checks-failed == '1' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: 3rd-party-dependencies
+        path: DEPENDENCIES.txt
+    - name: "Determine exit code"
+      env:
+        EXIT_CODE: ${{ steps.run-checks.outputs.checks-failed }}
+      run: |
+        exit $EXIT_CODE
