@@ -18,7 +18,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [workspace]
-members = ["fms-consumer", "fms-forwarder", "fms-server", "influx-client"]
+members = [
+    "fms-consumer",
+    "fms-forwarder",
+    "covesa-cv-forwarder",
+    "fms-server",
+    "influx-client",
+]
 resolver = "2"
 
 [workspace.package]
