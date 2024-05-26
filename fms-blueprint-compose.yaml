@@ -138,6 +138,7 @@ services:
     configs:
     - "vss_overlay.json"
     environment:
+      DATA_SOURCE: "default"
       KUKSA_DATA_BROKER_ADDR: "0.0.0.0"
       KUKSA_DATA_BROKER_PORT: "55556"
       KUKSA_DATA_BROKER_METADATA_FILE: "/vss_overlay.json"
@@ -173,7 +174,7 @@ services:
       read_only: true
   csv-provider:
     image: "ghcr.io/eclipse/kuksa.val.feeders/csv-provider:main"
-    container_name: "csv-provider"
+    container_name: "csv-provider-fms"
     cap_drop: *default-drops
     networks:
     - "fms-vehicle"
