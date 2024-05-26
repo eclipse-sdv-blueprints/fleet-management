@@ -1,0 +1,52 @@
+{
+   // Use IntelliSense to learn about possible attributes.
+   // Hover to view descriptions of existing attributes.
+   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+   "version": "0.2.0",
+   "configurations": [
+      {
+         "type": "lldb",
+         "request": "launch",
+         "name": "Debug executable 'covesa-cv-forwarder'",
+         "cargo": {
+            "args": [
+               "build",
+               "--bin=covesa-cv-forwarder",
+               "--package=covesa-cv-forwarder",
+            ],
+            "filter": {
+               "name": "covesa-cv-forwarder",
+               "kind": "bin"
+            }
+         },
+         "args": [
+            "influx",
+            "--influxdb-uri",
+            "http://influxdb:8086",
+            "--influxdb-token-file",
+            "/tmp/influxdb.token",
+            "--influxdb-bucket",
+            "demo",
+         ],
+         "cwd": "${workspaceFolder}"
+      },
+      {
+         "type": "lldb",
+         "request": "launch",
+         "name": "Debug unit tests in executable 'covesa-cv-forwarder'",
+         "cargo": {
+            "args": [
+               "test",
+               "--no-run",
+               "--bin=covesa-cv-forwarder",
+               "--package=covesa-cv-forwarder"
+            ],
+            "filter": {
+               "name": "covesa-cv-forwarder",
+               "kind": "bin"
+            }
+         },
+         "args": [],
+         "cwd": "${workspaceFolder}"
+      }]
+}
