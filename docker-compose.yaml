@@ -126,7 +126,7 @@ services:
     env_file: "${FMS_FORWARDER_PROPERTIES_FILE:-./influxdb/fms-demo.env}"
     environment:
       WINDOW_CAPACITY: 10
-      CSV_FILE_PATH: "/dist/signalsGeoTabRecording.csv"
+      CSV_FILE_PATH: "/dist/signalsCovesaCvRecording.csv"
       # change to "/etc/forwarder/covesa-demo.token" once influxdb can correctly write to bucket "covesa-demo.env"
       # INFLUXDB_TOKEN_FILE: "/etc/forwarder/covesa-demo.token"
       INFLUXDB_TOKEN_FILE: "/etc/forwarder/fms-demo.token"
