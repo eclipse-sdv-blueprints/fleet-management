@@ -67,17 +67,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("starting COVESA CV forwarder");
 
     let (tx, mut rx) = mpsc::channel::<Vec<ChosenSignals>>(30);
-    let default_vin = args
-        .get_one::<String>(crate::vehicle_abstraction::PARAM_DEFAULT_VIN)
-        .unwrap()
-        .to_string();
     let window_capacity = args.get_one::<usize>(crate::vehicle_abstraction::PARAM_WINDOW_CAPACITY).unwrap();
     let actor_handle = CurveLogActorHandle::new(window_capacity.to_owned());
     vehicle_abstraction::init(&args, tx, actor_handle).await?;
     while let Some(chosen_signals_collection) = rx.recv().await {
         for signal in chosen_signals_collection {
             publisher
-                .write_chosen_signals(&signal, &default_vin)
+                .write_chosen_signals(&signal)
                 .await;
         }
     }

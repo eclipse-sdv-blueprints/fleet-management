@@ -22,17 +22,14 @@ use crate::ChosenSignals;
 
 use clap::ArgMatches;
 use influxrs::Measurement;
-use log::debug;
 use crate::vehicle_abstraction::vss;
 
 fn build_header_measurement(
-    vin: &str,
     created_date_time: u128,
     _chosen_signals: &ChosenSignals,
 ) -> Option<Measurement> {
     println!("Building header measurement...");
     let builder = Measurement::builder("header")
-        .tag("vin", vin)
         .field("createdDateTime", created_date_time);
 
     match builder.build() {
@@ -45,13 +42,11 @@ fn build_header_measurement(
 }
 
 fn build_snapshot_measurement(
-    vin: &str,
     created_date_time: u128,
     chosen_signals: &ChosenSignals,
 ) -> Option<Measurement> {
     log::info!("Building snapshot measurement...");
     let mut builder = Measurement::builder("snapshot")
-        .tag("vin", vin)
         .field("createdDateTime", created_date_time);
 
     if chosen_signals.lat.is_some() && chosen_signals.lon.is_some() {
@@ -96,15 +91,10 @@ impl InfluxWriter {
     ///
     /// The measurements are being written to the *bucket* in the *organization* that have been
     /// configured via command line arguments and/or environment variables passed in to [`self::InfluxWriter::new()`].
-    pub async fn write_chosen_signals(&self, chosen_signals: &ChosenSignals, vin: &String) {
-        if vin.is_empty() {
-            debug!("ignoring vehicle status without VIN ...");
-            return;
-        }
+    pub async fn write_chosen_signals(&self, chosen_signals: &ChosenSignals) {
         let created_timestamp: u128 = chosen_signals.time.clone().unwrap() as u128;
         let mut measurements: Vec<Measurement> = Vec::new();
         if let Some(measurement) = build_header_measurement(
-            vin.as_str(),
             created_timestamp,
             chosen_signals,
         ) {
@@ -112,7 +102,6 @@ impl InfluxWriter {
             measurements.push(measurement);
         }
         if let Some(measurement) = build_snapshot_measurement(
-            vin.as_str(),
             created_timestamp,
             chosen_signals,
         ) {

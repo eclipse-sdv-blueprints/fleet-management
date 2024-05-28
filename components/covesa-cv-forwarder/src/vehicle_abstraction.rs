@@ -78,7 +78,6 @@ const _TRIGGER_VSS_PATHS: &[&str] = &[
 ];
 
 const PARAM_DATABROKER_URI: &str = "databroker-uri";
-pub const PARAM_DEFAULT_VIN: &str = "default-vin";
 const COVESA_PARAM_TIMER_INTERVAL: &str = "timer-interval";
 pub const PARAM_WINDOW_CAPACITY: &str = "window-capacity"; 
 
@@ -153,7 +152,6 @@ pub async fn init(
 /// | long name           | environment variable | default value | description |
 /// |---------------------|----------------------|---------------|-------------|
 /// | *databroker-uri*    | *KUKSA_DATA_BROKER_URI*| `http://127.0.0.1:55555` | The HTTP(S) URI of the kuksa.val Databroker's gRPC endpoint. |
-/// | *default-vin*       | *DEFAULT_VIN*        | `YV2E4C3A5VB180691` | The default VIN to use if the kuksa.val Databroker does not contain the vehicle's VIN. The VIN is used as a tag on measurements written to the InfluxDB server. |
 /// | *timer-interval*    | *TIMER_INTERVAL*     | `5s`          | The time period to wait after polling FMS snapshot data from the kuksa.val Databroker, e.g 5m10s or 1h15m. |
 ///
 pub fn add_command_line_args(command_line: Command) -> Command {
@@ -168,16 +166,6 @@ pub fn add_command_line_args(command_line: Command) -> Command {
                 .required(false)
                 .env("KUKSA_DATA_BROKER_URI")
                 .default_value("http://127.0.0.1:55555"),
-        )
-        .arg(
-            Arg::new(PARAM_DEFAULT_VIN)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long(PARAM_DEFAULT_VIN)
-                .help("The default VIN to use if the kuksa.val Databroker does not contain the vehicle's VIN. The VIN is used as a tag on measurements written to the InfluxDB server.")
-                .value_name("IDENTIFIER")
-                .required(false)
-                .env("DEFAULT_VIN")
-                .default_value("YV2E4C3A5VB180691"),
         )
         .arg(
             Arg::new(COVESA_PARAM_TIMER_INTERVAL)
@@ -465,18 +453,12 @@ pub fn filter_relevant_signals(vss_data: HashMap<String, Value>) -> Result<Chose
 
 pub struct KuksaValDatabroker {
     client: Box<ValClient<Channel>>,
-    pub default_vin: String,
 }
 
 impl KuksaValDatabroker {
     pub async fn new(args: &ArgMatches) -> Result<Self, DatabrokerError> {
         let databroker_uri = args
             .get_one::<String>(PARAM_DATABROKER_URI)
-            .unwrap()
-            .to_owned();
-
-        let default_vin = args
-            .get_one::<String>(PARAM_DEFAULT_VIN)
             .unwrap()
             .to_owned();
 
@@ -499,7 +481,6 @@ impl KuksaValDatabroker {
                 let client = ValClient::new(channel);
                 KuksaValDatabroker {
                     client: Box::new(client),
-                    default_vin,
                 }
             })
     }
