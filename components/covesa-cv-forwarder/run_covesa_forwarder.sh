@@ -1,6 +1,6 @@
 #!/bin/bash
 cd ../..
-docker compose -f covesa-blueprint-compose.yaml up
+docker compose --profile covesa up
 cd components/covesa-cv-forwarder
 # Copy the token file from the running influxdb container to local host:
 docker exec -it influxDB cat /tmp/out/fms-demo.token > /tmp/influxdb.token

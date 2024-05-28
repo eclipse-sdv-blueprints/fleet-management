@@ -44,15 +44,15 @@ If you are running the forwarder for the first time, run:
 
 otherwise, run:
 
-`docker compose -f covesa-blueprint-compose.yaml up`
+`docker compose --profile covesa up`
 
 Before executing this script, make sure to have built the Docker images required for the services defined in covesa-blueprint-compose.yaml file by running:
 
-`docker compose -f covesa-blueprint-compose.yaml build`
+`docker compose --profile covesa build`
 
 or 
 
 if you want to make sure that the latest changes were taken into account:
-`docker compose -f covesa-blueprint-compose.yaml build --no-cache`
+`docker compose --profile covesa build --no-cache`
 
 
