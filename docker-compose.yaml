@@ -104,6 +104,53 @@ services:
       RUST_LOG: "info"
     # for the time being, we do not use TLS secured connections to Databroker
     command: "--insecure"
+  grafana:
+    image: "docker.io/grafana/grafana:9.5.14"
+    profiles: ["fms"]
+    container_name: "grafana"
+    cap_drop: *default-drops
+    ports:
+    - "127.0.0.1:3000:3000"
+    networks:
+    - "fms-backend"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    configs:
+    - source: "grafana_dashboards_from_fs.yaml"
+      target: "/etc/grafana/provisioning/dashboards/grafana_dashboards_from_fs.yaml"
+    - source: "grafana_fms_dashboard.json"
+      target: "/etc/dashboards/grafana_fms_dashboard.json"
+      mode: 0644
+    volumes:
+    - type: "volume"
+      source: "grafana-datasources"
+      target: "/etc/grafana/provisioning/datasources"
+      read_only: true
+  fms-server:
+    image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-server:main"
+    profiles: ["fms"]
+    build:
+      context: "./components"
+      dockerfile: "Dockerfile.fms-server"
+    container_name: "fms-server"
+    cap_drop: *default-drops
+    networks:
+    - "fms-backend"
+    ports:
+    - "127.0.0.1:8081:8081"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    env_file: "./influxdb/fms-demo.env"
+    environment:
+      INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
+      RUST_LOG: "info"
+    volumes:
+    - type: "volume"
+      source: "influxdb-auth"
+      target: "/tmp"
+      read_only: true
   covesa-cv-forwarder:
     image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/covesa-cv-forwarder:main"
     profiles: ["covesa"]
