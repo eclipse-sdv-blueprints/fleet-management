@@ -80,6 +80,7 @@ const _TRIGGER_VSS_PATHS: &[&str] = &[
 const PARAM_DATABROKER_URI: &str = "databroker-uri";
 pub const PARAM_DEFAULT_VIN: &str = "default-vin";
 const COVESA_PARAM_TIMER_INTERVAL: &str = "timer-interval";
+pub const PARAM_WINDOW_CAPACITY: &str = "window-capacity"; 
 
 const TELL_TALE_NAME_ECT: &str = "ENGINE_COOLANT_TEMPERATURE";
 const TELL_TALE_NAME_ENGINE_OIL: &str = "ENGINE_OIL";
@@ -188,6 +189,16 @@ pub fn add_command_line_args(command_line: Command) -> Command {
                 .required(false)
                 .env("TIMER_INTERVAL")
                 .default_value("1s"),
+        )
+        .arg(
+            Arg::new(PARAM_WINDOW_CAPACITY)
+                .value_parser(clap::value_parser!(usize))
+                .long(PARAM_WINDOW_CAPACITY)
+                .help("The capacity of the window for data processing.")
+                .value_name("CAPACITY")
+                .required(false)
+                .env("WINDOW_CAPACITY")
+                .default_value("10"),
         )
 }
 

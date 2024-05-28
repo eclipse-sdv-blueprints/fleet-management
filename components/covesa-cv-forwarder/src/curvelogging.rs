@@ -213,6 +213,7 @@ impl ChosenSignals {
 
 #[derive(Debug)]
 struct CurveLogActor {
+    window_cap: usize,
     is_reduced: bool,
     time_tracker: i64,
     receiver: mpsc::Receiver<ActorMessage>,
@@ -231,14 +232,16 @@ enum ActorMessage {
 }
 
 impl CurveLogActor {
-    fn new(receiver: mpsc::Receiver<ActorMessage>, _vin: String) -> Self {
+    fn new(receiver: mpsc::Receiver<ActorMessage>, window_capacity: usize) -> Self {
+        let window_cap = window_capacity;
         let is_reduced = false;
         let time_tracker = 0;
-        let speed_dps = Vec::with_capacity(WINDOW_CAPACITY);
-        let lon_dps = Vec::with_capacity(WINDOW_CAPACITY);
-        let lat_dps = Vec::with_capacity(WINDOW_CAPACITY);
+        let speed_dps = Vec::with_capacity(window_capacity);
+        let lon_dps = Vec::with_capacity(window_capacity);
+        let lat_dps = Vec::with_capacity(window_capacity);
         let time_dps = VecDeque::new();
         CurveLogActor {
+            window_cap,
             is_reduced,
             speed_dps,
             lon_dps,
@@ -255,7 +258,7 @@ impl CurveLogActor {
                 if self.is_reduced == true {
                     log::info!("Repackaging of result back into an SLLT...");
                     let mut ret: Vec<ChosenSignals> = Vec::new();
-                    for i in 0..WINDOW_CAPACITY - 1 {
+                    for i in 0..self.window_cap - 1 {
                         let mut sllt = ChosenSignals::new();
                         if let Some(speed) = self.speed_dps.get(i) {
                             sllt.add_speed(*speed);
@@ -291,7 +294,7 @@ impl CurveLogActor {
                 self.time_dps.push_back(self.time_tracker);
                 self.time_tracker += 1;
                 log::info!("\t\tChecking for curvelogging...");
-                if self.speed_dps.len() == WINDOW_CAPACITY {
+                if self.speed_dps.len() == self.window_cap {
                     log::info!("\t\tReady to curve");
                     let reduced_scalar_dps =
                         process_speed_window(&mut self.speed_dps, &mut self.time_dps.clone()).await;
@@ -338,9 +341,10 @@ pub struct CurveLogActorHandle {
 }
 
 impl CurveLogActorHandle {
-    pub fn new(vin: String) -> Self {
+    pub fn new(window_cap: usize) -> Self {
         let (sender, receiver) = mpsc::channel(8);
-        let actor = CurveLogActor::new(receiver, vin);
+        log::info!("Window capacity set to: {}", window_cap);
+        let actor = CurveLogActor::new(receiver, window_cap);
         tokio::spawn(run_my_actor(actor));
 
         Self { sender }
@@ -427,7 +431,7 @@ pub async fn process_lon_lat_window(
         longitude_dps.get_mut(0).unwrap().to_owned() as f32,
     );
 
-    for _i in 0..WINDOW_CAPACITY {
+    for _i in 0..speed_times.len() {
         let lat = latitude_dps.pop().unwrap().to_owned() as f32;
         let lon = longitude_dps.pop().unwrap().to_owned() as f32;
         let time = DateTime::from_timestamp(speed_times.pop_front().unwrap(), 0).unwrap();

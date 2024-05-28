@@ -16,7 +16,7 @@
 // limitations under the License.
 //
 // SPDX-License-Identifier: Apache-2.0
-
+// use std::env;
 use std::process;
 use clap::Command;
 use curvelogging::*;
@@ -34,7 +34,6 @@ const SUBCOMMAND_INFLUX: &str = "influx";
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     env_logger::init();
-
     let version = option_env!("VERGEN_GIT_SEMVER_LIGHTWEIGHT")
         .unwrap_or(option_env!("VERGEN_GIT_SHA").unwrap_or("unknown"));
 
@@ -44,7 +43,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .about("Forwards VSS data points to a back end system after applying a curvelogging algorithm to remove unnecessary values");
 
     parser = vehicle_abstraction::add_command_line_args(parser);
-
     parser = parser
         .subcommand_required(true)
         .subcommand(influx_client::connection::add_command_line_args(
@@ -52,7 +50,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ));
 
     let args = parser.get_matches();
-
     let publisher = if let Some(SUBCOMMAND_INFLUX) = args.subcommand_name() {
         let influx_args = args.subcommand_matches(SUBCOMMAND_INFLUX).unwrap();
         match CovesaInfluxWriter::new(influx_args) {
@@ -74,7 +71,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .get_one::<String>(crate::vehicle_abstraction::PARAM_DEFAULT_VIN)
         .unwrap()
         .to_string();
-    let actor_handle = CurveLogActorHandle::new(default_vin.clone());
+    let window_capacity = args.get_one::<usize>(crate::vehicle_abstraction::PARAM_WINDOW_CAPACITY).unwrap();
+    let actor_handle = CurveLogActorHandle::new(window_capacity.to_owned());
     vehicle_abstraction::init(&args, tx, actor_handle).await?;
     while let Some(chosen_signals_collection) = rx.recv().await {
         for signal in chosen_signals_collection {

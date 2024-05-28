@@ -20,6 +20,7 @@
             }
          },
          "args": [
+            "default",
             "influx",
             "--influxdb-uri",
             "http://influxdb:8086",
@@ -29,24 +30,6 @@
             "demo",
          ],
          "cwd": "${workspaceFolder}"
-      },
-      {
-         "type": "lldb",
-         "request": "launch",
-         "name": "Debug unit tests in executable 'covesa-cv-forwarder'",
-         "cargo": {
-            "args": [
-               "test",
-               "--no-run",
-               "--bin=covesa-cv-forwarder",
-               "--package=covesa-cv-forwarder"
-            ],
-            "filter": {
-               "name": "covesa-cv-forwarder",
-               "kind": "bin"
-            }
-         },
-         "args": [],
-         "cwd": "${workspaceFolder}"
-      }]
+      }
+   ]
 }
