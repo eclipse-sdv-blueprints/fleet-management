@@ -24,29 +24,12 @@ use clap::ArgMatches;
 use influxrs::Measurement;
 use crate::vehicle_abstraction::vss;
 
-fn build_header_measurement(
-    created_date_time: u128,
-    _chosen_signals: &ChosenSignals,
-) -> Option<Measurement> {
-    println!("Building header measurement...");
-    let builder = Measurement::builder("header")
-        .field("createdDateTime", created_date_time);
-
-    match builder.build() {
-        Ok(measurement) => Some(measurement),
-        Err(e) => {
-            log::debug!("failed to create header Measurement: {e}");
-            None
-        }
-    }
-}
-
-fn build_snapshot_measurement(
+fn build_measurement(
     created_date_time: u128,
     chosen_signals: &ChosenSignals,
 ) -> Option<Measurement> {
-    log::info!("Building snapshot measurement...");
-    let mut builder = Measurement::builder("snapshot")
+    log::info!("Building measurement...");
+    let mut builder = Measurement::builder("curvelogging")
         .field("createdDateTime", created_date_time);
 
     if chosen_signals.lat.is_some() && chosen_signals.lon.is_some() {
@@ -67,7 +50,7 @@ fn build_snapshot_measurement(
     match builder.build() {
         Ok(measurement) => Some(measurement),
         Err(e) => {
-            log::debug!("failed to create snapshot Measurement: {e}");
+            log::debug!("failed to create curvelogging Measurement: {e}");
             None
         }
     }
@@ -87,21 +70,14 @@ impl InfluxWriter {
         CovesaInfluxConnection::new(args).map(|con| InfluxWriter { influx_con: con })
     }
 
-    /// Writes Vehicle status information as measurements to the InfluxDB server.
+    /// Writes Curvelogging information as measurements to the InfluxDB server.
     ///
     /// The measurements are being written to the *bucket* in the *organization* that have been
     /// configured via command line arguments and/or environment variables passed in to [`self::InfluxWriter::new()`].
     pub async fn write_chosen_signals(&self, chosen_signals: &ChosenSignals) {
         let created_timestamp: u128 = chosen_signals.time.clone().unwrap() as u128;
         let mut measurements: Vec<Measurement> = Vec::new();
-        if let Some(measurement) = build_header_measurement(
-            created_timestamp,
-            chosen_signals,
-        ) {
-            log::info!("writing header measurement to influxdb: {:?}\n\n", measurement);
-            measurements.push(measurement);
-        }
-        if let Some(measurement) = build_snapshot_measurement(
+        if let Some(measurement) = build_measurement(
             created_timestamp,
             chosen_signals,
         ) {
