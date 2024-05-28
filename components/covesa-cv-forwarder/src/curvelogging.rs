@@ -18,7 +18,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use chrono::{DateTime, Timelike, Utc};
-use geotab_curve::{self, Curve, Sample};
+use geotab_curve::{self, Curve, Sample, Valid, Save, Position, ScalarValue, ScalarValueCurve, CurveSaveIter, PositionCurve};
 use std::collections::VecDeque;
 use std::fmt;
 use tokio::sync::{mpsc, oneshot};
@@ -59,13 +59,13 @@ impl Sample for PositionSample {
     }
 }
 
-impl geotab_curve::Valid for PositionSample {
+impl Valid for PositionSample {
     fn is_valid(&self) -> bool {
         self.valid
     }
 }
 
-impl geotab_curve::Save for PositionSample {
+impl Save for PositionSample {
     fn is_save(&self) -> bool {
         self.save
     }
@@ -75,7 +75,7 @@ impl geotab_curve::Save for PositionSample {
     }
 }
 
-impl geotab_curve::Position<f32> for PositionSample {
+impl Position<f32> for PositionSample {
     fn latitude(&self) -> f32 {
         self.lat
     }
@@ -118,7 +118,7 @@ impl fmt::Debug for ScalarSample {
     }
 }
 
-impl geotab_curve::Sample for ScalarSample {
+impl Sample for ScalarSample {
     fn time(&self) -> DateTime<Utc> {
         self.time
     }
@@ -128,13 +128,13 @@ impl geotab_curve::Sample for ScalarSample {
     }
 }
 
-impl geotab_curve::Valid for ScalarSample {
+impl Valid for ScalarSample {
     fn is_valid(&self) -> bool {
         self.valid
     }
 }
 
-impl geotab_curve::Save for ScalarSample {
+impl Save for ScalarSample {
     fn is_save(&self) -> bool {
         self.save
     }
@@ -144,7 +144,7 @@ impl geotab_curve::Save for ScalarSample {
     }
 }
 
-impl geotab_curve::ScalarValue<f32> for ScalarSample {
+impl ScalarValue<f32> for ScalarSample {
     fn value(&self) -> f32 {
         self.value
     }
@@ -369,7 +369,7 @@ pub async fn process_speed_window(
     speed_times: &mut VecDeque<i64>,
 ) -> Vec<ScalarSample> {
     log::info!("Starting Scalar and Positional Curlog\n");
-    pub type SampleCurve = geotab_curve::ScalarValueCurve<ScalarSample, f32, { CAP_VALUE }>;
+    pub type SampleCurve = ScalarValueCurve<ScalarSample, f32, { CAP_VALUE }>;
 
     let mut curve = SampleCurve::new();
     let mut saved: Vec<ScalarSample> = Vec::new();
@@ -386,10 +386,10 @@ pub async fn process_speed_window(
         let sample = ScalarSample::new(time, speed.to_owned());
         curve.add_value(sample);
         if curve.is_full() {
-            let reduced: geotab_curve::CurveSaveIter<
+            let reduced: CurveSaveIter<
                 '_,
                 ScalarSample,
-                geotab_curve::ScalarValueCurve<ScalarSample, f32, { CAP_VALUE }>,
+                ScalarValueCurve<ScalarSample, f32, { CAP_VALUE }>,
             > = curve.reduce(SCALAR_ALLOWED_ERROR, true, true).unwrap();
             saved.extend(reduced);
             log::info!("Reduced curve");
@@ -413,7 +413,7 @@ pub async fn process_lon_lat_window(
     latitude_dps: &mut Vec<f64>,
     speed_times: &mut VecDeque<i64>,
 ) -> Vec<PositionSample> {
-    type SampleCurve = geotab_curve::PositionCurve<PositionSample, f32, 5>;
+    type SampleCurve = PositionCurve<PositionSample, f32, 5>;
     let mut curve = SampleCurve::new();
     let mut saved = vec![];
     log::info!(
