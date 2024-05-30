@@ -118,7 +118,7 @@ pub async fn init(
                     match filter_relevant_signals(vss_data) {
                         Ok(sllt) => actor_handle.send_data(sllt).await,
                         Err(e) => {
-                            println!("{}", e);
+                            log::info!("{}", e);
                             std::process::exit(1);
                         }
                     }
@@ -415,7 +415,6 @@ impl TryFrom<DataEntry> for FmsTrigger {
 pub fn filter_relevant_signals(vss_data: HashMap<String, Value>) -> Result<ChosenSignals, String> {
     let mut sllt = ChosenSignals::new();
     for path in SLLT_VSS_PATHS.iter().map(|path| path.to_string()) {
-        log::info!("looping...");
         if vss_data.contains_key(&path) {
             if path == vss::VSS_VEHICLE_SPEED.to_string() {
                 let value = vss_data
@@ -423,7 +422,6 @@ pub fn filter_relevant_signals(vss_data: HashMap<String, Value>) -> Result<Chose
                     .unwrap()
                     .to_owned();
                 let speed = f64::try_from(value).unwrap();
-                log::info!("Speed signal value: {}", speed);
                 sllt.add_speed(speed as f32);
             } else if path == vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE.to_string() {
                 let value = vss_data
@@ -431,7 +429,6 @@ pub fn filter_relevant_signals(vss_data: HashMap<String, Value>) -> Result<Chose
                     .unwrap()
                     .to_owned();
                 let lat = f64::try_from(value).unwrap();
-                log::info!("Latitude signal value: {}", lat);
                 sllt.add_lat(lat);
             } else if path == vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE.to_string() {
                 let value = vss_data
@@ -439,7 +436,6 @@ pub fn filter_relevant_signals(vss_data: HashMap<String, Value>) -> Result<Chose
                     .unwrap()
                     .to_owned();
                 let lon = f64::try_from(value).unwrap();
-                log::info!("Longitude signal value: {}", lon);
                 sllt.add_lon(lon);
             }
         }
@@ -505,14 +501,14 @@ impl KuksaValDatabroker {
             .map(|res| res.into_inner())
         {
             Err(status) => {
-                println!("failed to retrieve snapshot data points from Databroker {status}");
+                log::info!("failed to retrieve snapshot data points from Databroker {status}");
                 Err(DatabrokerError {
                     description: format!("status code {}", status.code()),
                 })
             }
             Ok(get_response) => {
                 if let Some(error) = get_response.error {
-                    println!(
+                    log::info!(
                         "response from Databroker contains global error [code: {}, message: {}]",
                         error.code, error.message
                     );
@@ -522,7 +518,7 @@ impl KuksaValDatabroker {
                         .into_iter()
                         .for_each(|data_entry_error| {
                             if let Some(err) = data_entry_error.error {
-                                println!(
+                                log::info!(
                                     "response from Databroker contains error [path: {}, error: {:?}]",
                                     data_entry_error.path, err
                                 );
@@ -571,7 +567,7 @@ impl KuksaValDatabroker {
                                         }
                                     }
                                     None => {
-                                        println!(
+                                        log::info!(
                                             "ignoring notification from Databroker containing no data"
                                         );
                                     }
@@ -583,7 +579,7 @@ impl KuksaValDatabroker {
                 Ok(())
             }
             Err(e) => {
-                println!("failed to register triggers for signals: {}", e);
+                log::info!("failed to register triggers for signals: {}", e);
                 Err(DatabrokerError {
                     description: e.message().to_string(),
                 })
