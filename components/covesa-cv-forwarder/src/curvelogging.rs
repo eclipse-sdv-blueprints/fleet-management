@@ -18,7 +18,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use chrono::{DateTime, Timelike, Utc};
-use geotab_curve::{self, Curve, Sample, Valid, Save, Position, ScalarValue, ScalarValueCurve, CurveSaveIter, PositionCurve};
+use geotab_curve::{
+    self, Curve, Position, PositionCurve, Sample, Save, ScalarValue,
+    ScalarValueCurve, Valid,
+};
 use std::collections::VecDeque;
 use std::fmt;
 use tokio::sync::{mpsc, oneshot};
@@ -255,8 +258,8 @@ impl CurveLogActor {
     async fn handle_message(&mut self, msg: ActorMessage) {
         match msg {
             ActorMessage::GetCurvedResult { respond_to } => {
+                log::info!("Getting curved result...");
                 if self.is_reduced == true {
-                    log::info!("Repackaging of result back into an SLLT...");
                     let mut ret: Vec<ChosenSignals> = Vec::new();
                     for i in 0..self.window_cap - 1 {
                         let mut sllt = ChosenSignals::new();
@@ -281,6 +284,23 @@ impl CurveLogActor {
                         ret.push(sllt);
                     }
                     self.is_reduced = false;
+                    //RESETTING ACTOR
+                    if let Some(last) = self.speed_dps.last().cloned() {
+                        self.speed_dps.clear();
+                        self.speed_dps.push(last);
+                    }
+                    if let Some(last) = self.lon_dps.last().cloned() {
+                        self.lon_dps.clear();
+                        self.lon_dps.push(last);
+                    }
+                    if let Some(last) = self.lat_dps.last().cloned() {
+                        self.lat_dps.clear();
+                        self.lat_dps.push(last);
+                    }
+                    if let Some(last) = self.time_dps.back().cloned() {
+                        self.time_dps.clear();
+                        self.time_dps.push_back(last);
+                    }
                     let _ = respond_to.send(Some(ret));
                 } else {
                     let _ = respond_to.send(None);
@@ -294,7 +314,10 @@ impl CurveLogActor {
                 self.time_dps.push_back(self.time_tracker);
                 self.time_tracker += 1;
                 log::info!("\t\tChecking for curvelogging...");
-                if self.speed_dps.len() == self.window_cap {
+                if self.speed_dps.len() == self.window_cap
+                    && self.lon_dps.len() == self.window_cap
+                    && self.lat_dps.len() == self.window_cap
+                {
                     log::info!("\t\tReady to curve");
                     let reduced_scalar_dps =
                         process_speed_window(&mut self.speed_dps, &mut self.time_dps.clone()).await;
@@ -386,13 +409,10 @@ pub async fn process_speed_window(
         let sample = ScalarSample::new(time, speed.to_owned());
         curve.add_value(sample);
         if curve.is_full() {
-            let reduced: CurveSaveIter<
-                '_,
-                ScalarSample,
-                ScalarValueCurve<ScalarSample, f32, { CAP_VALUE }>,
-            > = curve.reduce(SCALAR_ALLOWED_ERROR, true, true).unwrap();
-            saved.extend(reduced);
-            log::info!("Reduced curve");
+            if let Some(reduced) = curve.reduce(SCALAR_ALLOWED_ERROR, true, true) {
+                saved.extend(reduced);
+                log::info!("Reduced curve");
+            }
         }
     }
     let reduced = curve.reduce(SCALAR_ALLOWED_ERROR, false, true);
@@ -416,13 +436,6 @@ pub async fn process_lon_lat_window(
     type SampleCurve = PositionCurve<PositionSample, f32, 5>;
     let mut curve = SampleCurve::new();
     let mut saved = vec![];
-    log::info!(
-        "\t\tStarting curvelogging of positional signals: \nLON {:#?} \nLAT{:#?}, \nTIMES: {:#?}",
-        longitude_dps,
-        latitude_dps,
-        speed_times
-    );
-
     //handle first element manually
     let datetime = DateTime::from_timestamp(speed_times.get_mut(0).unwrap().to_owned(), 0).unwrap();
     let first_element = PositionSample::new(
@@ -431,7 +444,8 @@ pub async fn process_lon_lat_window(
         longitude_dps.get_mut(0).unwrap().to_owned() as f32,
     );
 
-    for _i in 0..speed_times.len() {
+    let iterations = latitude_dps.len() - 1;
+    for _i in 0..iterations {
         let lat = latitude_dps.pop().unwrap().to_owned() as f32;
         let lon = longitude_dps.pop().unwrap().to_owned() as f32;
         let time = DateTime::from_timestamp(speed_times.pop_front().unwrap(), 0).unwrap();
