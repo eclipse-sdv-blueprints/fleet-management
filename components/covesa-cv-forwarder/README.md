@@ -39,20 +39,18 @@ For this to work, the forwarder needs to be configured with the URI of the Influ
 
 To run the COVESA CV Forwarder you can run the following script:
 
-If you are running the forwarder for the first time, run:
+If you are running the forwarder for the first time or if you want to make sure that the latest changes were taken into account, run:
+The build command:
+`docker compose --profile covesa build --no-cache`
+and execute the run script:
 `./run_covesa_forwarder.sh`
 
 otherwise, run:
-
+`docker compose --profile covesa build`
+then
 `docker compose --profile covesa up`
 
-Before executing this script, make sure to have built the Docker images required for the services defined in covesa-blueprint-compose.yaml file by running:
+## Log Output
 
-`docker compose --profile covesa build`
-
-or 
-
-if you want to make sure that the latest changes were taken into account:
-`docker compose --profile covesa build --no-cache`
-
-
+To see the output of the program, run:
+`docker compose logs -f covesa-cv-forwarder influxDB csv-provider-covesa databroker`

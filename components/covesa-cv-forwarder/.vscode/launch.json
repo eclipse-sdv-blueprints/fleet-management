@@ -8,6 +8,7 @@
          "type": "lldb",
          "request": "launch",
          "name": "Debug executable 'covesa-cv-forwarder'",
+         "preLaunchTask": "Run covesa-cv-forwarder",
          "cargo": {
             "args": [
                "build",
@@ -20,7 +21,6 @@
             }
          },
          "args": [
-            "default",
             "influx",
             "--influxdb-uri",
             "http://influxdb:8086",
@@ -28,6 +28,23 @@
             "/tmp/influxdb.token",
             "--influxdb-bucket",
             "demo",
+         ],
+         "cwd": "${workspaceFolder}"
+      },
+      {
+         "type": "lldb",
+         "request": "launch",
+         "name": "Run covesa-cv-forwarder",
+         "preLaunchTask": "Run covesa-cv-forwarder",
+         "program": "${workspaceFolder}/components/covesa-cv-forwarder/target/debug/covesa-cv-forwarder",
+         "args": [
+            "influx",
+            "--influxdb-uri",
+            "http://influxdb:8086",
+            "--influxdb-token-file",
+            "/tmp/influxdb.token",
+            "--influxdb-bucket",
+            "demo"
          ],
          "cwd": "${workspaceFolder}"
       }
