@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Contributors to the Eclipse Foundation
+// SPDX-FileCopyrightText: 2024 Contributors to the Eclipse Foundation
 //
 // See the NOTICE file(s) distributed with this work for additional
 // information regarding copyright ownership.
@@ -16,11 +16,9 @@
 // limitations under the License.
 //
 // SPDX-License-Identifier: Apache-2.0
-
-use std::process;
 use clap::Command;
 use curvelogging::*;
-use log::{error, info};
+use log::info;
 use status_publishing::InfluxWriter as CovesaInfluxWriter;
 use tokio::sync::mpsc;
 
@@ -32,9 +30,7 @@ const SUBCOMMAND_INFLUX: &str = "influx";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     env_logger::init();
-
     let version = option_env!("VERGEN_GIT_SEMVER_LIGHTWEIGHT")
         .unwrap_or(option_env!("VERGEN_GIT_SHA").unwrap_or("unknown"));
 
@@ -44,43 +40,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .about("Forwards VSS data points to a back end system after applying a curvelogging algorithm to remove unnecessary values");
 
     parser = vehicle_abstraction::add_command_line_args(parser);
-
-    parser = parser
-        .subcommand_required(true)
-        .subcommand(influx_client::connection::add_command_line_args(
+    parser = parser.subcommand_required(true).subcommand(
+        influx_client::connection::add_command_line_args(
             Command::new(SUBCOMMAND_INFLUX).about("Forwards VSS data to an Influx DB server"),
-        ));
+        ),
+    );
 
     let args = parser.get_matches();
-
-    let publisher = if let Some(SUBCOMMAND_INFLUX) = args.subcommand_name() {
-        let influx_args = args.subcommand_matches(SUBCOMMAND_INFLUX).unwrap();
-        match CovesaInfluxWriter::new(influx_args) {
-            Ok(writer) => Box::new(writer),
-            Err(e) => {
-                error!("failed to create InfluxDB writer: {e}");
-                process::exit(1);
-            }
-        }
-    } else {
-        error!("failed to create InfluxDB writer");
-        process::exit(1);
-    };
+    let influx_args = args.subcommand_matches(SUBCOMMAND_INFLUX).unwrap();
+    let publisher = Box::new(CovesaInfluxWriter::new(influx_args).unwrap());
 
     info!("starting COVESA CV forwarder");
 
     let (tx, mut rx) = mpsc::channel::<Vec<ChosenSignals>>(30);
-    let default_vin = args
-        .get_one::<String>(crate::vehicle_abstraction::PARAM_DEFAULT_VIN)
-        .unwrap()
-        .to_string();
-    let actor_handle = CurveLogActorHandle::new(default_vin.clone());
-    vehicle_abstraction::init(&args, tx, actor_handle).await?;
+    let window_capacity = args
+        .get_one::<usize>(crate::curvelogging::PARAM_WINDOW_CAPACITY)
+        .unwrap();
+    let curve_log_handler = CurveLogActorHandler::new(window_capacity.to_owned(), tx.clone());
+    vehicle_abstraction::init(&args, curve_log_handler).await?;
     while let Some(chosen_signals_collection) = rx.recv().await {
         for signal in chosen_signals_collection {
-            publisher
-                .write_chosen_signals(&signal, &default_vin)
-                .await;
+            // collected all of the chosen signals incoming Vec
+            publisher.write_chosen_signals(&signal).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(1)).await;
         }
     }
 

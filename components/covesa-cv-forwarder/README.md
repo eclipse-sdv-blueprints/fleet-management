@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 Contributors to the Eclipse Foundation
+SPDX-FileCopyrightText: 2024 Contributors to the Eclipse Foundation
 
 See the NOTICE file(s) distributed with this work for additional
 information regarding copyright ownership.
@@ -18,8 +18,8 @@ limitations under the License.
 
 SPDX-License-Identifier: Apache-2.0
 -->
-The COVESA CV Forwarder polls scalar and positiona data from a [kuksa.val Databroker](https://github.com/eclipse/kuksa.val/tree/master/kuksa_databroker)
-and HTTP POSTs the data as a set of *measurements* to an InfluxDB server.
+
+The COVESA CV Forwarder polls the signals Vehicle.Speed, Vehicle.CurrentLocation.{Latitude, Longitude, Altitude} from a [kuksa.val Databroker](https://github.com/eclipse/kuksa.val/tree/master/kuksa_databroker) and HTTP POSTs the data as a set of *measurements* to an InfluxDB server.
 
 The implementation uses the proto definition for [kuksa.val.v1](https://github.com/eclipse/kuksa.val/tree/master/proto/kuksa/val/v1)
 which has been copied to [/proto/kuksa/val/v1](/proto/kuksa/val/v1/).
@@ -39,20 +39,19 @@ For this to work, the forwarder needs to be configured with the URI of the Influ
 
 To run the COVESA CV Forwarder you can run the following script:
 
-If you are running the forwarder for the first time, run:
-`./run_covesa_forwarder.sh`
+If you are running the forwarder for the first time or if you want to make sure that the latest changes were taken into account, run:
+the build command:
+`docker compose --profile covesa build --no-cache`
+
+To run the covesa forwarder, you can use the .vscode/launch.json configuration 
 
 otherwise, run:
+`docker compose --profile covesa build`
 
-`docker compose -f covesa-blueprint-compose.yaml up`
+then
+`docker compose --profile covesa up`
 
-Before executing this script, make sure to have built the Docker images required for the services defined in covesa-blueprint-compose.yaml file by running:
+## Log Output
 
-`docker compose -f covesa-blueprint-compose.yaml build`
-
-or 
-
-if you want to make sure that the latest changes were taken into account:
-`docker compose -f covesa-blueprint-compose.yaml build --no-cache`
-
-
+To see the output of the program, run:
+`docker compose logs -f covesa-cv-forwarder influxDB csv-provider-covesa databroker`

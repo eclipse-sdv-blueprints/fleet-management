@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Contributors to the Eclipse Foundation
+# SPDX-FileCopyrightText: 2024 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -49,7 +49,7 @@ influxrs.workspace = true
 
 [build-dependencies]
 protoc-bin-vendored = { workspace = true }
-tonic-build = { workspace = true, features = ["prost", "transport"]}
+tonic-build = {version = "0.11", workspace = true, features = ["prost", "transport"]}
 
 [[bin]]
 name = "covesa-cv-forwarder"

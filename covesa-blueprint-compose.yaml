@@ -27,8 +27,6 @@ networks:
 
 configs:
   influxdb_init.sh:
-    # change to "./influxdb/init-scripts/create-covesa-token.sh" when writing to influxdb covesa-demo bucket is possible
-    # file: "./influxdb/init-scripts/create-covesa-token.sh"
     file: "./influxdb/init-scripts/create-fms-token.sh"
   grafana_dashboards_from_fs.yaml:
     file: "./grafana/provisioning/dashboards/dashboards_from_filesystem.yaml"
@@ -57,8 +55,6 @@ services:
     - CAP_NET_RAW
     - CAP_AUDIT_WRITE
     command: influxd
-    # change to "./influxdb/covesa-demo.env" once influxdb can correctly write to bucket "covesa-demo.env"
-    # env_file: "./influxdb/covesa-demo.env"
     env_file: "./influxdb/fms-demo.env"
     environment:
       DOCKER_INFLUXDB_INIT_MODE: "setup"
@@ -97,7 +93,6 @@ services:
     configs:
     - "vss_overlay.json"
     environment:
-      DATA_SOURCE: "default"
       KUKSA_DATA_BROKER_ADDR: "0.0.0.0"
       KUKSA_DATA_BROKER_PORT: "55556"
       KUKSA_DATA_BROKER_METADATA_FILE: "/vss_overlay.json"
@@ -112,8 +107,8 @@ services:
     container_name: "covesa-cv-forwarder"
     cap_drop: *default-drops
     networks:
-    - "fms-backend"
-    - "fms-vehicle"
+      - "fms-backend"
+      - "fms-vehicle"
     depends_on:
       influxdb:
         condition: service_healthy
@@ -124,7 +119,8 @@ services:
     # env_file: "${FMS_FORWARDER_PROPERTIES_FILE:-./influxdb/covesa-demo.env}"
     env_file: "${FMS_FORWARDER_PROPERTIES_FILE:-./influxdb/fms-demo.env}"
     environment:
-      CSV_FILE_PATH: "/dist/signalsGeoTabRecording.csv"
+      WINDOW_CAPACITY: 25
+      CSV_FILE_PATH: "/dist/signalsCovesaCvRecording.csv"
       # change to "/etc/forwarder/covesa-demo.token" once influxdb can correctly write to bucket "covesa-demo.env"
       # INFLUXDB_TOKEN_FILE: "/etc/forwarder/covesa-demo.token"
       INFLUXDB_TOKEN_FILE: "/etc/forwarder/fms-demo.token"
@@ -132,11 +128,11 @@ services:
       RUST_LOG: "${FMS_FORWARDER_LOG_CONFIG:-info,covesa_forwarder=info,influx_client=info}"
       TRUST_STORE_PATH: "${FMS_FORWARDER_TRUST_STORE_PATH:-/etc/ssl/certs/ca-certificates.crt}"
     volumes:
-    - type: "volume"
-      source: "influxdb-auth"
-      target: "/etc/forwarder"
-      read_only: true
-  csv-provider:
+      - type: "volume"
+        source: "influxdb-auth"
+        target: "/etc/forwarder"
+        read_only: true
+  csv-provider-covesa:
     image: "ghcr.io/eclipse/kuksa.val.feeders/csv-provider:main"
     container_name: "csv-provider-covesa"
     cap_drop: *default-drops
@@ -146,7 +142,7 @@ services:
       databroker:
         condition: service_started
     volumes:
-      - "./csv-provider/signalsGeoTabRecording.csv:/dist/signals.csv"
+      - "./csv-provider/signalsCovesaCvRecording.csv:/dist/signals.csv"
     environment:
       PROVIDER_INFINITE: 1
       PROVIDER_LOG_LEVEL: "INFO"

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Contributors to the Eclipse Foundation
+// SPDX-FileCopyrightText: 2024 Contributors to the Eclipse Foundation
 //
 // See the NOTICE file(s) distributed with this work for additional
 // information regarding copyright ownership.
@@ -21,24 +21,34 @@
 //! [Eclipse kuksa.val Databroker](https://github.com/eclipse/kuksa.val).
 //!
 use clap::{Arg, ArgMatches, Command};
-use influxrs::InfluxClient;
-use log::{error, info, warn};
-use std::fmt;
-use tokio::sync::mpsc::Sender;
+use log::{error, info};
+use std::{
+    fmt,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
-use std::{collections::HashMap, error::Error, fmt::Display};
+use std::{error::Error, fmt::Display};
 
-use crate::curvelogging::{ChosenSignals, CurveLogActorHandle};
+use crate::curvelogging::CurveLogActorHandler;
 use tonic::{
     transport::{Channel, Endpoint},
     Request,
 };
 
-pub use fms_proto::fms::{TellTaleInfo, Trigger};
-use kuksa::{datapoint::Value, val_client::ValClient, EntryRequest, Field, GetRequest, View};
+use kuksa::{val_client::ValClient, EntryRequest, Field, GetRequest, View};
 
-use self::kuksa::{DataEntry, SubscribeEntry, SubscribeRequest, UnsupportedValueTypeError};
+use self::kuksa::{DataEntry, SubscribeEntry};
 use tokio::time::Duration;
+
+pub struct FetchedSignals {
+    speed: Option<f32>,
+    longitude: Option<f64>,
+    latitude: Option<f64>,
+}
+
+pub enum Trigger {
+    Timer,
+}
 
 impl fmt::Display for SubscribeEntry {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -50,42 +60,14 @@ impl fmt::Display for SubscribeEntry {
     }
 }
 
-const PARAM_INFLUXDB_BUCKET: &str = "influxdb-bucket";
-const PARAM_INFLUXDB_ORG: &str = "influxdb-org";
-const PARAM_INFLUXDB_URI: &str = "influxdb-uri";
-const PARAM_INFLUXDB_TOKEN: &str = "influxdb-token";
-const PARAM_INFLUXDB_TOKEN_FILE: &str = "influxdb-token-file";
-
 pub const SLLT_VSS_PATHS: &[&str] = &[
     vss::VSS_VEHICLE_SPEED,
     vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE,
     vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE,
-    vss::VSS_VEHICLE_CURRENTLOCATION_TIMESTAMP,
-];
-
-const _TRIGGER_VSS_PATHS: &[&str] = &[
-    vss::FMS_VEHICLE_CABIN_TELLTALE_ECT_STATUS,
-    vss::FMS_VEHICLE_CABIN_TELLTALE_ENGINEOIL_STATUS,
-    vss::FMS_VEHICLE_CABIN_TELLTALE_ENGINE_STATUS,
-    vss::FMS_VEHICLE_CABIN_TELLTALE_FUELLEVEL_STATUS,
-    vss::FMS_VEHICLE_CABIN_TELLTALE_PARKINGBRAKE_STATUS,
-    vss::VSS_VEHICLE_CHASSIS_PARKINGBRAKE_ISENGAGED,
-    vss::VSS_VEHICLE_POWERTRAIN_COMBUSTIONENGINE_ISRUNNING,
-    vss::FMS_VEHICLE_TACHOGRAPH_DRIVER1_ISCARDPRESENT,
-    vss::FMS_VEHICLE_TACHOGRAPH_DRIVER1_WORKINGSTATE,
-    vss::FMS_VEHICLE_TACHOGRAPH_DRIVER2_ISCARDPRESENT,
-    vss::FMS_VEHICLE_TACHOGRAPH_DRIVER2_WORKINGSTATE,
 ];
 
 const PARAM_DATABROKER_URI: &str = "databroker-uri";
-pub const PARAM_DEFAULT_VIN: &str = "default-vin";
 const COVESA_PARAM_TIMER_INTERVAL: &str = "timer-interval";
-
-const TELL_TALE_NAME_ECT: &str = "ENGINE_COOLANT_TEMPERATURE";
-const TELL_TALE_NAME_ENGINE_OIL: &str = "ENGINE_OIL";
-const TELL_TALE_NAME_ENGINE_MIL_INDICATOR: &str = "ENGINE_MIL_INDICATOR";
-const TELL_TALE_NAME_FUEL_LEVEL: &str = "FUEL_LEVEL";
-const TELL_TALE_NAME_PARKING_BRAKE: &str = "PARKING_BRAKE";
 
 pub mod kuksa;
 pub mod vss;
@@ -98,47 +80,35 @@ pub mod vss;
 ///
 pub async fn init(
     args: &ArgMatches,
-    publisher_channel: Sender<Vec<ChosenSignals>>,
-    actor_handle: CurveLogActorHandle,
+    curve_log_handler: CurveLogActorHandler,
 ) -> Result<(), DatabrokerError> {
     let mut databroker = KuksaValDatabroker::new(args).await?;
-    let (tx, mut rx) = tokio::sync::mpsc::channel::<FmsTrigger>(50);
-    let _ = &databroker.register_sllt_vss_triggers(tx.clone()).await?;
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<Trigger>(50);
 
     tokio::task::spawn(async move {
-        while let Some(_fms_trigger) = rx.recv().await {
-            match databroker.fetch_data().await {
-                Err(e) => {
-                    warn!(
-                        "failed to retrieve signals from databroker: {}",
-                        e
-                    );
-                }
-                Ok(vss_data) => {
-                    match filter_relevant_signals(vss_data) {
-                        Ok(sllt) => actor_handle.send_data(sllt).await,
-                        Err(e) => {
-                            println!("{}", e);
-                            std::process::exit(1);
-                        }
-                    }
-                    if let Some(reduced_signals) = actor_handle.get_curved_results().await {
-                        match publisher_channel.send(reduced_signals).await {
-                            Ok(_) => {}
-                            Err(e) => {
-                                warn!("failed to send curvelogged signlas via channel: {}", e);
-                            }
-                        }
-                    }
-                }
-            }
+        while let Some(_trigger) = rx.recv().await {
+            //get  DataEntry directly from databroker
+            let signals = databroker.fetch_data().await.unwrap();
+            let current_time = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis();
+            log::info!("UPDATED!");
+            curve_log_handler
+                .send_signals(
+                    signals.speed,
+                    signals.longitude,
+                    signals.latitude,
+                    current_time,
+                )
+                .await;
         }
     });
     let timer_sender = tx.clone();
     tokio::task::spawn(async move {
         loop {
             tokio::time::sleep(Duration::from_secs(1)).await;
-            let _ = timer_sender.send(FmsTrigger::Timer).await;
+            let _ = timer_sender.send(Trigger::Timer).await;
         }
     });
     Ok(())
@@ -152,7 +122,6 @@ pub async fn init(
 /// | long name           | environment variable | default value | description |
 /// |---------------------|----------------------|---------------|-------------|
 /// | *databroker-uri*    | *KUKSA_DATA_BROKER_URI*| `http://127.0.0.1:55555` | The HTTP(S) URI of the kuksa.val Databroker's gRPC endpoint. |
-/// | *default-vin*       | *DEFAULT_VIN*        | `YV2E4C3A5VB180691` | The default VIN to use if the kuksa.val Databroker does not contain the vehicle's VIN. The VIN is used as a tag on measurements written to the InfluxDB server. |
 /// | *timer-interval*    | *TIMER_INTERVAL*     | `5s`          | The time period to wait after polling FMS snapshot data from the kuksa.val Databroker, e.g 5m10s or 1h15m. |
 ///
 pub fn add_command_line_args(command_line: Command) -> Command {
@@ -169,18 +138,8 @@ pub fn add_command_line_args(command_line: Command) -> Command {
                 .default_value("http://127.0.0.1:55555"),
         )
         .arg(
-            Arg::new(PARAM_DEFAULT_VIN)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long(PARAM_DEFAULT_VIN)
-                .help("The default VIN to use if the kuksa.val Databroker does not contain the vehicle's VIN. The VIN is used as a tag on measurements written to the InfluxDB server.")
-                .value_name("IDENTIFIER")
-                .required(false)
-                .env("DEFAULT_VIN")
-                .default_value("YV2E4C3A5VB180691"),
-        )
-        .arg(
             Arg::new(COVESA_PARAM_TIMER_INTERVAL)
-                .value_parser(duration_str::parse)
+                .value_parser(|s: &_| duration_str::parse(s))
                 .long(COVESA_PARAM_TIMER_INTERVAL)
                 .alias("timer")
                 .help("The time period to wait after polling FMS snapshot data from the kuksa.val Databroker, e.g 5m10s or 1h15m.")
@@ -189,80 +148,17 @@ pub fn add_command_line_args(command_line: Command) -> Command {
                 .env("TIMER_INTERVAL")
                 .default_value("1s"),
         )
+        .arg(
+            Arg::new(crate::curvelogging::PARAM_WINDOW_CAPACITY)
+                .value_parser(clap::value_parser!(usize))
+                .long(crate::curvelogging::PARAM_WINDOW_CAPACITY)
+                .help("The capacity of the window for data processing.")
+                .value_name("CAPACITY")
+                .required(false)
+                .env("WINDOW_CAPACITY")
+                .default_value("25"),
+        )
 }
-
-fn read_token_from_file(filename: &str) -> std::io::Result<String> {
-    info!("reading token from file {filename}");
-    std::fs::read_to_string(filename)
-        .map(|s| s.trim().to_string())
-        .map_err(|e| {
-            error!("failed to read token from file [{filename}]: {e}");
-            e
-        })
-}
-
-/// A connection to an InfluxDB server.
-pub struct CovesaInfluxConnection {
-    pub client: InfluxClient,
-    pub bucket: String,
-}
-
-impl CovesaInfluxConnection {
-    /// Creates a new connection to an InfluxDB server.
-    ///
-    /// Determines the parameters necessary for creating the connection from values specified on
-    /// the command line or via environment variables as defined by [`add_command_line_args`].
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use clap::Command;
-    /// use influx_client::connection::InfluxConnection;
-    ///
-    /// let command = influx_client::connection::add_command_line_args(Command::new("influx_client"));
-    /// let matches = command.get_matches_from(vec![
-    ///     "influx_client",
-    ///     "--influxdb-uri", "http://my-influx.io",
-    ///     "--influxdb-token", "some-token",
-    ///     "--influxdb-bucket", "the-bucket",
-    /// ]);
-    /// let connection = InfluxConnection::new(&matches)?;
-    /// assert_eq!(connection.bucket, "the-bucket".to_string());
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
-    /// ```
-    pub fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
-        let influx_uri = args
-            .get_one::<String>(PARAM_INFLUXDB_URI)
-            .unwrap()
-            .to_owned();
-        let influx_token = match args.get_one::<String>(PARAM_INFLUXDB_TOKEN) {
-            Some(token) => token.to_string(),
-            None => {
-                let file_name = args.get_one::<String>(PARAM_INFLUXDB_TOKEN_FILE).unwrap();
-                match read_token_from_file(file_name) {
-                    Ok(token) => token,
-                    Err(e) => return Err(Box::new(e)),
-                }
-            }
-        };
-        let influx_org = args
-            .get_one::<String>(PARAM_INFLUXDB_ORG)
-            .unwrap()
-            .to_owned();
-        let influx_bucket = args
-            .get_one::<String>(PARAM_INFLUXDB_BUCKET)
-            .unwrap()
-            .to_owned();
-        let client = InfluxClient::builder(influx_uri, influx_token, influx_org)
-            .build()
-            .unwrap();
-        Ok(CovesaInfluxConnection {
-            client,
-            bucket: influx_bucket,
-        })
-    }
-}
-
 
 /// Indicates a problem while invoking a Databroker operation.
 #[derive(Debug)]
@@ -282,190 +178,14 @@ impl Display for DatabrokerError {
     }
 }
 
-pub enum FmsTrigger {
-    Timer,
-    Driver1Login,
-    Driver1Logout,
-    Driver1WorkingStateChanged(String),
-    Driver2Login,
-    Driver2Logout,
-    Driver2WorkingStateChanged(String),
-    EngineOn,
-    EngineOff,
-    ParkingBreakSwitchChanged(bool),
-    TellTale(TellTaleInfo),
-}
-
-impl FmsTrigger {
-    fn _new_trigger(type_: &str) -> Trigger {
-        let mut trigger = Trigger::new();
-        trigger.context = "RFMS".to_string();
-        trigger.type_ = type_.to_string();
-        trigger
-    }
-
-    fn new_tell_tale_trigger(
-        data_entry: DataEntry,
-        name: &str,
-    ) -> Result<FmsTrigger, UnsupportedValueTypeError> {
-        if let Some(value) = data_entry.clone().value.and_then(|v| v.value) {
-            match String::try_from(value) {
-                Ok(status) => {
-                    let mut tell_tale_info = TellTaleInfo::new();
-                    tell_tale_info.tell_tale = name.to_string();
-                    tell_tale_info.status = status;
-                    Ok(FmsTrigger::TellTale(tell_tale_info))
-                }
-                Err(e) => Err(e),
-            }
-        } else {
-            Err(UnsupportedValueTypeError {})
-        }
-    }
-
-    fn new_boolean_trigger<P: FnOnce(bool) -> FmsTrigger>(
-        data_entry: DataEntry,
-        trigger_producer: P,
-    ) -> Result<FmsTrigger, UnsupportedValueTypeError> {
-        if let Some(data_point) = data_entry.clone().value {
-            bool::try_from(data_point.value.unwrap()).map(trigger_producer)
-        } else {
-            Err(UnsupportedValueTypeError {})
-        }
-    }
-
-    fn new_string_value_trigger<P: FnOnce(String) -> FmsTrigger>(
-        data_entry: DataEntry,
-        trigger_producer: P,
-    ) -> Result<FmsTrigger, UnsupportedValueTypeError> {
-        if let Some(data_point) = data_entry.clone().value {
-            String::try_from(data_point.value.unwrap()).map(trigger_producer)
-        } else {
-            Err(UnsupportedValueTypeError {})
-        }
-    }
-}
-
-impl TryFrom<DataEntry> for FmsTrigger {
-    type Error = UnsupportedValueTypeError;
-
-    fn try_from(data_entry: DataEntry) -> Result<Self, Self::Error> {
-        match data_entry.path.as_str() {
-            vss::FMS_VEHICLE_CABIN_TELLTALE_ECT_STATUS => {
-                FmsTrigger::new_tell_tale_trigger(data_entry, TELL_TALE_NAME_ECT)
-            }
-            vss::FMS_VEHICLE_CABIN_TELLTALE_ENGINEOIL_STATUS => {
-                FmsTrigger::new_tell_tale_trigger(data_entry, TELL_TALE_NAME_ENGINE_OIL)
-            }
-            vss::FMS_VEHICLE_CABIN_TELLTALE_ENGINE_STATUS => {
-                FmsTrigger::new_tell_tale_trigger(data_entry, TELL_TALE_NAME_ENGINE_MIL_INDICATOR)
-            }
-            vss::FMS_VEHICLE_CABIN_TELLTALE_FUELLEVEL_STATUS => {
-                FmsTrigger::new_tell_tale_trigger(data_entry, TELL_TALE_NAME_FUEL_LEVEL)
-            }
-            vss::FMS_VEHICLE_CABIN_TELLTALE_PARKINGBRAKE_STATUS => {
-                FmsTrigger::new_tell_tale_trigger(data_entry, TELL_TALE_NAME_PARKING_BRAKE)
-            }
-            vss::VSS_VEHICLE_CHASSIS_PARKINGBRAKE_ISENGAGED => {
-                FmsTrigger::new_boolean_trigger(data_entry, FmsTrigger::ParkingBreakSwitchChanged)
-            }
-            vss::VSS_VEHICLE_POWERTRAIN_COMBUSTIONENGINE_ISRUNNING => {
-                FmsTrigger::new_boolean_trigger(data_entry, |is_running| {
-                    if is_running {
-                        FmsTrigger::EngineOn
-                    } else {
-                        FmsTrigger::EngineOff
-                    }
-                })
-            }
-            vss::FMS_VEHICLE_TACHOGRAPH_DRIVER1_ISCARDPRESENT => {
-                FmsTrigger::new_boolean_trigger(data_entry, |card_is_present| {
-                    if card_is_present {
-                        FmsTrigger::Driver1Login
-                    } else {
-                        FmsTrigger::Driver1Logout
-                    }
-                })
-            }
-            vss::FMS_VEHICLE_TACHOGRAPH_DRIVER1_WORKINGSTATE => {
-                FmsTrigger::new_string_value_trigger(
-                    data_entry,
-                    FmsTrigger::Driver1WorkingStateChanged,
-                )
-            }
-            vss::FMS_VEHICLE_TACHOGRAPH_DRIVER2_ISCARDPRESENT => {
-                FmsTrigger::new_boolean_trigger(data_entry, |card_is_present| {
-                    if card_is_present {
-                        FmsTrigger::Driver2Login
-                    } else {
-                        FmsTrigger::Driver2Logout
-                    }
-                })
-            }
-            vss::FMS_VEHICLE_TACHOGRAPH_DRIVER2_WORKINGSTATE => {
-                FmsTrigger::new_string_value_trigger(
-                    data_entry,
-                    FmsTrigger::Driver2WorkingStateChanged,
-                )
-            }
-            _ => Err(UnsupportedValueTypeError {}),
-        }
-    }
-}
-
-pub fn filter_relevant_signals(vss_data: HashMap<String, Value>) -> Result<ChosenSignals, String> {
-    let mut sllt = ChosenSignals::new();
-    for path in SLLT_VSS_PATHS.iter().map(|path| path.to_string()) {
-        log::info!("looping...");
-        if vss_data.contains_key(&path) {
-            if path == vss::VSS_VEHICLE_SPEED.to_string() {
-                let value = vss_data
-                    .get(&vss::VSS_VEHICLE_SPEED.to_string())
-                    .unwrap()
-                    .to_owned();
-                let speed = f64::try_from(value).unwrap();
-                log::info!("Speed signal value: {}", speed);
-                sllt.add_speed(speed as f32);
-            } else if path == vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE.to_string() {
-                let value = vss_data
-                    .get(&vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE.to_string())
-                    .unwrap()
-                    .to_owned();
-                let lat = f64::try_from(value).unwrap();
-                log::info!("Latitude signal value: {}", lat);
-                sllt.add_lat(lat);
-            } else if path == vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE.to_string() {
-                let value = vss_data
-                    .get(&vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE.to_string())
-                    .unwrap()
-                    .to_owned();
-                let lon = f64::try_from(value).unwrap();
-                log::info!("Longitude signal value: {}", lon);
-                sllt.add_lon(lon);
-            }
-        }
-    }
-
-    match sllt.is_full() {
-        false => Err("Databroker could not extract all the relevant signals".to_string()),
-        true => Ok(sllt),
-    }
-}
-
 pub struct KuksaValDatabroker {
     client: Box<ValClient<Channel>>,
-    pub default_vin: String,
 }
 
 impl KuksaValDatabroker {
     pub async fn new(args: &ArgMatches) -> Result<Self, DatabrokerError> {
         let databroker_uri = args
             .get_one::<String>(PARAM_DATABROKER_URI)
-            .unwrap()
-            .to_owned();
-
-        let default_vin = args
-            .get_one::<String>(PARAM_DEFAULT_VIN)
             .unwrap()
             .to_owned();
 
@@ -488,12 +208,14 @@ impl KuksaValDatabroker {
                 let client = ValClient::new(channel);
                 KuksaValDatabroker {
                     client: Box::new(client),
-                    default_vin,
                 }
             })
     }
 
-    pub async fn fetch_data(&mut self) -> Result<HashMap<String, Value>, DatabrokerError> {
+    pub async fn fetch_data(&mut self) -> Result<FetchedSignals, DatabrokerError> {
+        let mut speed: Option<f32> = None;
+        let mut latitude: Option<f64> = None;
+        let mut longitude: Option<f64> = None;
         let entry_requests: Vec<EntryRequest> = SLLT_VSS_PATHS
             .iter()
             .map(|path| EntryRequest {
@@ -503,7 +225,7 @@ impl KuksaValDatabroker {
             })
             .collect();
 
-        let mut vss_data: HashMap<String, Value> = HashMap::new();
+        let mut vss_data: Vec<DataEntry> = Vec::new();
         match self
             .client
             .get(Request::new(GetRequest {
@@ -513,16 +235,17 @@ impl KuksaValDatabroker {
             .map(|res| res.into_inner())
         {
             Err(status) => {
-                println!("failed to retrieve snapshot data points from Databroker {status}");
+                log::info!("failed to retrieve snapshot data points from Databroker {status}");
                 Err(DatabrokerError {
                     description: format!("status code {}", status.code()),
                 })
             }
             Ok(get_response) => {
                 if let Some(error) = get_response.error {
-                    println!(
+                    log::info!(
                         "response from Databroker contains global error [code: {}, message: {}]",
-                        error.code, error.message
+                        error.code,
+                        error.message
                     );
                 } else {
                     get_response
@@ -530,71 +253,42 @@ impl KuksaValDatabroker {
                         .into_iter()
                         .for_each(|data_entry_error| {
                             if let Some(err) = data_entry_error.error {
-                                println!(
+                                log::info!(
                                     "response from Databroker contains error [path: {}, error: {:?}]",
                                     data_entry_error.path, err
                                 );
                             }
                         });
                     get_response.entries.into_iter().for_each(|data_entry| {
-                        let name = data_entry.path.to_owned();
-                        if let Some(value) = data_entry.value.and_then(|dp| dp.value) {
-                            vss_data.insert(name, value);
-                        }
+                        vss_data.push(data_entry);
                     });
                 }
-                Ok(vss_data)
-            }
-        }
-    }
-
-    pub async fn register_sllt_vss_triggers(
-        &mut self,
-        sender: Sender<FmsTrigger>,
-    ) -> Result<(), DatabrokerError> {
-        let subscribe_entries: Vec<SubscribeEntry> = SLLT_VSS_PATHS
-            .iter()
-            .map(|path| SubscribeEntry {
-                path: path.to_string(),
-                view: View::CurrentValue as i32,
-                fields: vec![Field::Value as i32],
-            })
-            .collect();
-
-        let req = SubscribeRequest {
-            entries: subscribe_entries,
-        };
-
-        match self.client.subscribe(req).await {
-            Ok(response) => {
-                let mut stream = response.into_inner();
-                tokio::task::spawn(async move {
-                    while let Ok(message) = stream.message().await {
-                        if let Some(response) = message {
-                            for update in response.updates {
-                                match update.entry {
-                                    Some(data_entry) => {
-                                        if let Ok(trigger) = FmsTrigger::try_from(data_entry) {
-                                            let _ = sender.send(trigger).await;
-                                        }
-                                    }
-                                    None => {
-                                        println!(
-                                            "ignoring notification from Databroker containing no data"
-                                        );
-                                    }
-                                }
-                            }
+                // loop trough dataentries to extract speed,lat,lon
+                // reforfm into matching statement
+                for entry in vss_data {
+                    if entry.path == *vss::VSS_VEHICLE_SPEED {
+                        if let Some(ref _value) = entry.value {
+                            let speed_as_value = entry.value.and_then(|dp| dp.value).unwrap();
+                            speed = Some(f64::try_from(speed_as_value).unwrap() as f32);
+                        }
+                    } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE {
+                        if let Some(ref _value) = entry.value {
+                            let latitude_as_value = entry.value.and_then(|dp| dp.value).unwrap();
+                            latitude = Some(f64::try_from(latitude_as_value).unwrap());
+                        }
+                    } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE {
+                        if let Some(ref _value) = entry.value {
+                            let longitude_as_value = entry.value.and_then(|dp| dp.value).unwrap();
+                            longitude = Some(f64::try_from(longitude_as_value).unwrap());
                         }
                     }
-                });
-                Ok(())
-            }
-            Err(e) => {
-                println!("failed to register triggers for signals: {}", e);
-                Err(DatabrokerError {
-                    description: e.message().to_string(),
-                })
+                }
+                let signals = FetchedSignals {
+                    speed,
+                    longitude,
+                    latitude,
+                };
+                Ok(signals)
             }
         }
     }

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Contributors to the Eclipse Foundation
+// SPDX-FileCopyrightText: 2024 Contributors to the Eclipse Foundation
 //
 // See the NOTICE file(s) distributed with this work for additional
 // information regarding copyright ownership.
@@ -17,62 +17,122 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::vehicle_abstraction::CovesaInfluxConnection;
-use crate::ChosenSignals;
-
-use clap::ArgMatches;
-use influxrs::Measurement;
-use log::debug;
 use crate::vehicle_abstraction::vss;
+use crate::ChosenSignals;
+use clap::ArgMatches;
+use influxrs::InfluxClient;
+use influxrs::Measurement;
+use tokio::time::Duration;
 
-fn build_header_measurement(
-    vin: &str,
-    created_date_time: u128,
-    _chosen_signals: &ChosenSignals,
-) -> Option<Measurement> {
-    println!("Building header measurement...");
-    let builder = Measurement::builder("header")
-        .tag("vin", vin)
-        .field("createdDateTime", created_date_time);
+pub const PARAM_INFLUXDB_BUCKET: &str = "influxdb-bucket";
+pub const PARAM_INFLUXDB_ORG: &str = "influxdb-org";
+pub const PARAM_INFLUXDB_URI: &str = "influxdb-uri";
+pub const PARAM_INFLUXDB_TOKEN: &str = "influxdb-token";
+pub const PARAM_INFLUXDB_TOKEN_FILE: &str = "influxdb-token-file";
 
-    match builder.build() {
-        Ok(measurement) => Some(measurement),
-        Err(e) => {
-            log::debug!("failed to create header Measurement: {e}");
-            None
-        }
+/// A connection to an InfluxDB server.
+pub struct CovesaInfluxConnection {
+    pub client: InfluxClient,
+    pub bucket: String,
+}
+
+impl CovesaInfluxConnection {
+    /// Creates a new connection to an InfluxDB server.
+    ///
+    /// Determines the parameters necessary for creating the connection from values specified on
+    /// the command line or via environment variables as defined by [`add_command_line_args`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use clap::Command;
+    /// use influx_client::connection::InfluxConnection;
+    ///
+    /// let command = influx_client::connection::add_command_line_args(Command::new("influx_client"));
+    /// let matches = command.get_matches_from(vec![
+    ///     "influx_client",
+    ///     "--influxdb-uri", "http://my-influx.io",
+    ///     "--influxdb-token", "some-token",
+    ///     "--influxdb-bucket", "the-bucket",
+    /// ]);
+    /// let connection = InfluxConnection::new(&matches)?;
+    /// assert_eq!(connection.bucket, "the-bucket".to_string());
+    /// # Ok::<(), Box<dyn std::error::Error>>(())
+    /// ```
+    pub fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
+        let influx_uri = args
+            .get_one::<String>(crate::status_publishing::PARAM_INFLUXDB_URI)
+            .unwrap()
+            .to_owned();
+        let influx_token =
+            match args.get_one::<String>(crate::status_publishing::PARAM_INFLUXDB_TOKEN) {
+                Some(token) => token.to_string(),
+                None => {
+                    let file_name = args
+                        .get_one::<String>(crate::status_publishing::PARAM_INFLUXDB_TOKEN_FILE)
+                        .unwrap();
+                    match read_token_from_file(file_name) {
+                        Ok(token) => token,
+                        Err(e) => return Err(Box::new(e)),
+                    }
+                }
+            };
+        let influx_org = args
+            .get_one::<String>(crate::status_publishing::PARAM_INFLUXDB_ORG)
+            .unwrap()
+            .to_owned();
+        let influx_bucket = args
+            .get_one::<String>(crate::status_publishing::PARAM_INFLUXDB_BUCKET)
+            .unwrap()
+            .to_owned();
+        let client = InfluxClient::builder(influx_uri, influx_token, influx_org)
+            .build()
+            .unwrap();
+        Ok(CovesaInfluxConnection {
+            client,
+            bucket: influx_bucket,
+        })
     }
 }
 
-fn build_snapshot_measurement(
-    vin: &str,
-    created_date_time: u128,
-    chosen_signals: &ChosenSignals,
-) -> Option<Measurement> {
-    log::info!("Building snapshot measurement...");
-    let mut builder = Measurement::builder("snapshot")
-        .tag("vin", vin)
-        .field("createdDateTime", created_date_time);
+fn read_token_from_file(filename: &str) -> std::io::Result<String> {
+    log::info!("reading token from file {filename}");
+    std::fs::read_to_string(filename)
+        .map(|s| s.trim().to_string())
+        .map_err(|e| {
+            log::error!("failed to read token from file [{filename}]: {e}");
+            e
+        })
+}
+
+fn build_measurement(chosen_signals: &ChosenSignals) -> Option<Measurement> {
+    log::info!("Building measurement...");
+    let mut builder = Measurement::builder("curvelogging");
 
     if chosen_signals.lat.is_some() && chosen_signals.lon.is_some() {
         builder = builder
-            .field(vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE, chosen_signals.lat.unwrap())
-            .field(vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE, chosen_signals.lon.unwrap());
+            .field(
+                vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE,
+                chosen_signals.lat.unwrap(),
+            )
+            .field(
+                vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE,
+                chosen_signals.lon.unwrap(),
+            );
     }
     if chosen_signals.speed.is_some() {
-        builder = builder.field(vss::VSS_VEHICLE_SPEED, chosen_signals.speed.unwrap());
+        builder = builder.field(
+            "Vehicle.CurrentLocation.Speed",
+            chosen_signals.speed.unwrap(),
+        );
     }
 
-    if chosen_signals.time.is_some() {
-        builder = builder.field(vss::VSS_VEHICLE_CURRENTLOCATION_TIMESTAMP, chosen_signals.time.unwrap());
-    } else {
-        log::error!("ERROR: Each measurement must contain at least one signal positionDateTime");
-    }
+    builder = builder.timestamp_ms(chosen_signals.time);
 
     match builder.build() {
         Ok(measurement) => Some(measurement),
         Err(e) => {
-            log::debug!("failed to create snapshot Measurement: {e}");
+            log::debug!("failed to create curvelogging Measurement: {e}");
             None
         }
     }
@@ -92,34 +152,20 @@ impl InfluxWriter {
         CovesaInfluxConnection::new(args).map(|con| InfluxWriter { influx_con: con })
     }
 
-    /// Writes Vehicle status information as measurements to the InfluxDB server.
+    /// Writes Curvelogging information as measurements to the InfluxDB server.
     ///
     /// The measurements are being written to the *bucket* in the *organization* that have been
     /// configured via command line arguments and/or environment variables passed in to [`self::InfluxWriter::new()`].
-    pub async fn write_chosen_signals(&self, chosen_signals: &ChosenSignals, vin: &String) {
-        if vin.is_empty() {
-            debug!("ignoring vehicle status without VIN ...");
-            return;
-        }
-        let created_timestamp: u128 = chosen_signals.time.clone().unwrap() as u128;
+    pub async fn write_chosen_signals(&self, chosen_signals: &ChosenSignals) {
         let mut measurements: Vec<Measurement> = Vec::new();
-        if let Some(measurement) = build_header_measurement(
-            vin.as_str(),
-            created_timestamp,
-            chosen_signals,
-        ) {
-            log::info!("writing header measurement to influxdb: {:?}\n\n", measurement);
+        if let Some(measurement) = build_measurement(chosen_signals) {
+            println!(
+                "writing snapshot measurement to influxdb: {:#?}\n\n",
+                measurement
+            );
             measurements.push(measurement);
         }
-        if let Some(measurement) = build_snapshot_measurement(
-            vin.as_str(),
-            created_timestamp,
-            chosen_signals,
-        ) {
-            log::info!("writing snapshot measurement to influxdb: {:#?}\n\n", measurement);
-            measurements.push(measurement);
-        }
-
+        tokio::time::sleep(Duration::from_secs(1)).await;
         if !measurements.is_empty() {
             if let Err(e) = self
                 .influx_con
@@ -130,7 +176,9 @@ impl InfluxWriter {
                 )
                 .await
             {
-                log::info!("failed to write data to influx: {e}");
+                println!("failed to write data to influx: {e}");
+            } else {
+                println!("successfully wrote data to influx");
             }
         }
     }

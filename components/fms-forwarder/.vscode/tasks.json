@@ -1,0 +1,14 @@
+{
+   "version": "2.0.0",
+   "tasks": [
+      {
+         "label": "Run fms-forwarder",
+         "type": "shell",
+         "command": "bash",
+         "args": [
+            "-c",
+            "cd ../.. && docker compose --profile fms up --detach && docker compose logs -f fms-forwarder influxDB csv-provider-fms databroker && cd components/fms-forwarder && docker exec -it influxDB cat /tmp/out/fms-demo.token > /tmp/influxdb.token && cargo run --bin fms-forwarder influx --influxdb-uri http://influxdb:8086 --influxdb-token-file /tmp/influxdb.token"
+         ]
+      }
+   ]
+}

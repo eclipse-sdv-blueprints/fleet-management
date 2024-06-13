@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Contributors to the Eclipse Foundation
+// SPDX-FileCopyrightText: 2024 Contributors to the Eclipse Foundation
 //
 // See the NOTICE file(s) distributed with this work for additional
 // information regarding copyright ownership.
@@ -19,14 +19,7 @@
 
 tonic::include_proto!("kuksa.val.v1");
 
-use log::debug;
-use protobuf::{well_known_types::timestamp::Timestamp, MessageField};
-
-use std::collections::HashMap;
-
 use self::datapoint::Value;
-use crate::vehicle_abstraction::vss;
-use fms_proto::fms::VehicleStatus;
 
 #[derive(Debug)]
 pub struct UnsupportedValueTypeError {}
