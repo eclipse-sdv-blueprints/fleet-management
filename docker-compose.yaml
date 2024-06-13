@@ -1,8 +1,8 @@
-# SPDX-FileCopyrightText: 2024 Contributors to the Eclipse Foundation
+# SPDX-FileCopyrightText: 2023 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -27,6 +27,8 @@ networks:
 
 configs:
   influxdb_init.sh:
+    # change to "./influxdb/init-scripts/create-covesa-token.sh" when writing to influxdb covesa-demo bucket is possible
+    # file: "./influxdb/init-scripts/create-covesa-token.sh"
     file: "./influxdb/init-scripts/create-fms-token.sh"
   grafana_dashboards_from_fs.yaml:
     file: "./grafana/provisioning/dashboards/dashboards_from_filesystem.yaml"
@@ -43,6 +45,7 @@ volumes:
 
 services:
   influxdb:
+    profiles: ["fms", "covesa"]
     image: "docker.io/library/influxdb:2.7"
     container_name: "influxDB"
     healthcheck:
@@ -51,10 +54,12 @@ services:
       timeout: 3s
       start_period: 5s
     cap_drop: &default-drops
-    - CAP_MKNOD
-    - CAP_NET_RAW
-    - CAP_AUDIT_WRITE
+      - CAP_MKNOD
+      - CAP_NET_RAW
+      - CAP_AUDIT_WRITE
     command: influxd
+    # change to "./influxdb/covesa-demo.env" once influxdb can correctly write to bucket "covesa-demo.env"
+    # env_file: "./influxdb/covesa-demo.env"
     env_file: "./influxdb/fms-demo.env"
     environment:
       DOCKER_INFLUXDB_INIT_MODE: "setup"
@@ -63,44 +68,128 @@ services:
       DOCKER_INFLUXDB_INIT_RETENTION: "1w"
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: "fms-backend-admin-token"
     networks:
-    - "fms-backend"
+      - "fms-backend"
     ports:
-    - "0.0.0.0:8086:8086"
+      - "0.0.0.0:8086:8086"
     configs:
-    - source: "influxdb_init.sh"
-      target: "/docker-entrypoint-initdb.d/influxdb_init.sh"
+      - source: "influxdb_init.sh"
+        target: "/docker-entrypoint-initdb.d/influxdb_init.sh"
     volumes:
-    - type: "volume"
-      source: "influxdb-data"
-      target: "/var/lib/influxdb2"
-    - type: "volume"
-      source: "influxdb-config"
-      target: "/etc/influxdb2"
-    - type: "volume"
-      source: "influxdb-auth"
-      target: "/tmp/out"
-    - type: "volume"
-      source: "grafana-datasources"
-      target: "/tmp/influxdb-datasources"
+      - type: "volume"
+        source: "influxdb-data"
+        target: "/var/lib/influxdb2"
+      - type: "volume"
+        source: "influxdb-config"
+        target: "/etc/influxdb2"
+      - type: "volume"
+        source: "influxdb-auth"
+        target: "/tmp/out"
+      - type: "volume"
+        source: "grafana-datasources"
+        target: "/tmp/influxdb-datasources"
+
   databroker:
+    profiles: ["fms", "covesa"]
     image: "ghcr.io/eclipse/kuksa.val/databroker:0.4.1"
     container_name: "databroker"
     cap_drop: *default-drops
     networks:
-    - "fms-vehicle"
+      - "fms-vehicle"
     ports:
-    - "127.0.0.1:55555:55556"
+      - "127.0.0.1:55555:55556"
     configs:
-    - "vss_overlay.json"
+      - "vss_overlay.json"
     environment:
+      DATA_SOURCE: "default"
       KUKSA_DATA_BROKER_ADDR: "0.0.0.0"
       KUKSA_DATA_BROKER_PORT: "55556"
       KUKSA_DATA_BROKER_METADATA_FILE: "/vss_overlay.json"
       RUST_LOG: "info"
     # for the time being, we do not use TLS secured connections to Databroker
     command: "--insecure"
+
+  grafana:
+    image: "docker.io/grafana/grafana:9.5.14"
+    profiles: ["fms"]
+    container_name: "grafana"
+    cap_drop: *default-drops
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - "fms-backend"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    configs:
+      - source: "grafana_dashboards_from_fs.yaml"
+        target: "/etc/grafana/provisioning/dashboards/grafana_dashboards_from_fs.yaml"
+      - source: "grafana_fms_dashboard.json"
+        target: "/etc/dashboards/grafana_fms_dashboard.json"
+        mode: 644
+    volumes:
+      - type: "volume"
+        source: "grafana-datasources"
+        target: "/etc/grafana/provisioning/datasources"
+        read_only: true
+
+  fms-server:
+    image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-server:main"
+    profiles:  ["fms"]
+    build:
+      context: "./components"
+      dockerfile: "Dockerfile.fms-server"
+    container_name: "fms-server"
+    cap_drop: *default-drops
+    networks:
+      - "fms-backend"
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    env_file: "./influxdb/fms-demo.env"
+    environment:
+      INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
+      RUST_LOG: "info"
+    volumes:
+      - type: "volume"
+        source: "influxdb-auth"
+        target: "/tmp"
+        read_only: true
+
+  fms-forwarder:
+    profiles:
+      - fms
+    image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-forwarder:main"
+    build: &fms-forwarder-build
+      context: "./components"
+      dockerfile: "Dockerfile.fms-forwarder"
+    container_name: "fms-forwarder"
+    cap_drop: *default-drops
+    networks:
+      - "fms-backend"
+      - "fms-vehicle"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+      databroker:
+        condition: service_started
+    command: "influx"
+    env_file: "${FMS_FORWARDER_PROPERTIES_FILE:-./influxdb/fms-demo.env}"
+    environment:
+      INFLUXDB_TOKEN_FILE: "/etc/forwarder/fms-demo.token"
+      KUKSA_DATA_BROKER_URI: "http://databroker:55556"
+      RUST_LOG: "${FMS_FORWARDER_LOG_CONFIG:-info,fms_forwarder=info,influx_client=info}"
+      TRUST_STORE_PATH: "${FMS_FORWARDER_TRUST_STORE_PATH:-/etc/ssl/certs/ca-certificates.crt}"
+    volumes:
+      - type: "volume"
+        source: "influxdb-auth"
+        target: "/etc/forwarder"
+        read_only: true
+
   covesa-cv-forwarder:
     image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/covesa-cv-forwarder:main"
+    profiles: ["covesa"]
     build: &covesa-cv-forwarder-build
       context: "./components"
       dockerfile: "Dockerfile.covesa-cv-forwarder"
@@ -132,7 +221,27 @@ services:
         source: "influxdb-auth"
         target: "/etc/forwarder"
         read_only: true
+
+  csv-provider-fms:
+    image: "ghcr.io/eclipse/kuksa.val.feeders/csv-provider:main"
+    profiles: ["fms"]
+    container_name: "csv-provider-fms"
+    cap_drop: *default-drops
+    networks:
+      - "fms-vehicle"
+    depends_on:
+      databroker:
+        condition: service_started
+    volumes:
+      - "./csv-provider/signalsFmsRecording.csv:/dist/signals.csv"
+    environment:
+      PROVIDER_INFINITE: 1
+      PROVIDER_LOG_LEVEL: "INFO"
+      KUKSA_DATA_BROKER_ADDR: "databroker"
+      KUKSA_DATA_BROKER_PORT: "55556"
+
   csv-provider-covesa:
+    profiles: ["covesa"]
     image: "ghcr.io/eclipse/kuksa.val.feeders/csv-provider:main"
     container_name: "csv-provider-covesa"
     cap_drop: *default-drops
