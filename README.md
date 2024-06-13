@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 Contributors to the Eclipse Foundation
+SPDX-FileCopyrightText: 2023, 2024 Contributors to the Eclipse Foundation
 
 See the NOTICE file(s) distributed with this work for additional
 information regarding copyright ownership.
@@ -67,7 +67,7 @@ By default, Docker Compose will run the fms-forwarder which forwards the vss dat
 
 To run Covesa CV Forwarder, you can build it first with the following command:
 
-`docker compose --profile covesa build`
+`docker compose -f ./covesa-blueprint-compose.yaml build`
 
 Then, you can take advantage of the provided configuration to run the program:
 
