@@ -21,23 +21,23 @@
 //! [Eclipse kuksa.val Databroker](https://github.com/eclipse/kuksa.val).
 //!
 use clap::{Arg, ArgMatches, Command};
-use log::{error, info};
+pub use kuksa::proto::v1::datapoint::Value::{Double, Float};
+use kuksa::DataEntry;
+use log::error;
 use std::{
-    fmt,
+    str::FromStr,
     time::{SystemTime, UNIX_EPOCH},
 };
+// use databroker_proto::kuksa::val::v1::DataEntry;
 
 use std::{error::Error, fmt::Display};
 
 use crate::curvelogging::CurveLogActorHandler;
-use tonic::{
-    transport::{Channel, Endpoint},
-    Request,
-};
 
-use kuksa::{val_client::ValClient, EntryRequest, Field, GetRequest, View};
+pub use kuksa::KuksaClient;
+// {val_client::ValClient, EntryRequest, Field, GetRequest, View};
 
-use self::kuksa::{DataEntry, SubscribeEntry};
+// use self::kuksa::{DataEntry, SubscribeEntry};
 use tokio::time::Duration;
 
 pub struct FetchedSignals {
@@ -50,15 +50,15 @@ pub enum Trigger {
     Timer,
 }
 
-impl fmt::Display for SubscribeEntry {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Write strictly the first element into the supplied output
-        // stream: `f`. Returns `fmt::Result` which indicates whether the
-        // operation succeeded or failed. Note that `write!` uses syntax which
-        // is very similar to `println!`.
-        write!(f, "{}", self.path)
-    }
-}
+// impl fmt::Display for SubscribeEntry {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         // Write strictly the first element into the supplied output
+//         // stream: `f`. Returns `fmt::Result` which indicates whether the
+//         // operation succeeded or failed. Note that `write!` uses syntax which
+//         // is very similar to `println!`.
+//         write!(f, "{}", self.path)
+//     }
+// }
 
 pub const SLLT_VSS_PATHS: &[&str] = &[
     vss::VSS_VEHICLE_SPEED,
@@ -69,7 +69,7 @@ pub const SLLT_VSS_PATHS: &[&str] = &[
 const PARAM_DATABROKER_URI: &str = "databroker-uri";
 const COVESA_PARAM_TIMER_INTERVAL: &str = "timer-interval";
 
-pub mod kuksa;
+// pub mod kuksa;
 pub mod vss;
 
 /// Sets up a connection to the Databroker and registers callbacks for
@@ -82,18 +82,28 @@ pub async fn init(
     args: &ArgMatches,
     curve_log_handler: CurveLogActorHandler,
 ) -> Result<(), DatabrokerError> {
-    let mut databroker = KuksaValDatabroker::new(args).await?;
+    let databroker_uri = args
+        .get_one::<String>(PARAM_DATABROKER_URI)
+        .unwrap()
+        .to_owned();
+    let uri = tonic::transport::Uri::from_str(&databroker_uri).unwrap();
+
+    let mut databroker = KuksaClient::new(uri);
     let (tx, mut rx) = tokio::sync::mpsc::channel::<Trigger>(50);
 
     tokio::task::spawn(async move {
         while let Some(_trigger) = rx.recv().await {
             //get  DataEntry directly from databroker
-            let signals = databroker.fetch_data().await.unwrap();
+            let paths = SLLT_VSS_PATHS
+                .iter()
+                .map(|path| path.to_string())
+                .collect::<Vec<String>>();
+            let vss_data = databroker.get_current_values(paths).await.unwrap();
+            let signals = fetch_data(vss_data).await.unwrap();
             let current_time = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_millis();
-            log::info!("UPDATED!");
             curve_log_handler
                 .send_signals(
                     signals.speed,
@@ -160,6 +170,68 @@ pub fn add_command_line_args(command_line: Command) -> Command {
         )
 }
 
+pub async fn fetch_data(vss_data: Vec<DataEntry>) -> Result<FetchedSignals, DatabrokerError> {
+    let mut speed: Option<f32> = None;
+    let mut latitude: Option<f64> = None;
+    let mut longitude: Option<f64> = None;
+
+    // loop trough dataentries to extract speed,lat,lon
+    for entry in vss_data {
+        if entry.path == *vss::VSS_VEHICLE_SPEED {
+            if let Some(ref _value) = entry.value {
+                let speed_as_value = entry.value.and_then(|dp| dp.value);
+                match speed_as_value {
+                    Some(Float(value)) => {
+                        speed = Some(value);
+                    }
+                    Some(Double(value)) => {
+                        speed = Some(value as f32);
+                    }
+                    _ => {
+                        error!("Invalid value type for speed");
+                    }
+                }
+            }
+        } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE {
+            if let Some(ref _value) = entry.value {
+                let latitude_as_value = entry.value.and_then(|dp| dp.value);
+                match latitude_as_value {
+                    Some(Float(value)) => {
+                        latitude = Some(value as f64);
+                    }
+                    Some(Double(value)) => {
+                        latitude = Some(value);
+                    }
+                    _ => {
+                        error!("Invalid value type for latitude");
+                    }
+                }
+            }
+        } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE {
+            if let Some(ref _value) = entry.value {
+                let longitude_as_value = entry.value.and_then(|dp| dp.value);
+                match longitude_as_value {
+                    Some(Float(value)) => {
+                        longitude = Some(value as f64);
+                    }
+                    Some(Double(value)) => {
+                        longitude = Some(value);
+                    }
+                    _ => {
+                        error!("Invalid value type for longitude");
+                    }
+                }
+            }
+        }
+    }
+    let signals = FetchedSignals {
+        speed,
+        longitude,
+        latitude,
+    };
+    Ok(signals)
+}
+
 /// Indicates a problem while invoking a Databroker operation.
 #[derive(Debug)]
 pub struct DatabrokerError {
@@ -178,118 +250,37 @@ impl Display for DatabrokerError {
     }
 }
 
-pub struct KuksaValDatabroker {
-    client: Box<ValClient<Channel>>,
-}
+// pub struct KuksaValDatabroker {
+//     client: Box<ValClient<Channel>>,
+// }
 
-impl KuksaValDatabroker {
-    pub async fn new(args: &ArgMatches) -> Result<Self, DatabrokerError> {
-        let databroker_uri = args
-            .get_one::<String>(PARAM_DATABROKER_URI)
-            .unwrap()
-            .to_owned();
+// impl KuksaValDatabroker {
+//     pub async fn new(args: &ArgMatches) -> Result<Self, DatabrokerError> {
+//         let databroker_uri = args
+//             .get_one::<String>(PARAM_DATABROKER_URI)
+//             .unwrap()
+//             .to_owned();
 
-        info!(
-            "creating client for kuksa.val Databroker at {}",
-            databroker_uri
-        );
-        Endpoint::from_shared(databroker_uri.to_owned())
-            .map_err(|e| {
-                error!("invalid Databroker URI: {}", e);
-                DatabrokerError {
-                    description: e.to_string(),
-                }
-            })
-            .map(|builder| {
-                let channel = builder
-                    .connect_timeout(Duration::from_secs(5))
-                    .timeout(Duration::from_secs(5))
-                    .connect_lazy();
-                let client = ValClient::new(channel);
-                KuksaValDatabroker {
-                    client: Box::new(client),
-                }
-            })
-    }
-
-    pub async fn fetch_data(&mut self) -> Result<FetchedSignals, DatabrokerError> {
-        let mut speed: Option<f32> = None;
-        let mut latitude: Option<f64> = None;
-        let mut longitude: Option<f64> = None;
-        let entry_requests: Vec<EntryRequest> = SLLT_VSS_PATHS
-            .iter()
-            .map(|path| EntryRequest {
-                path: path.to_string(),
-                view: View::CurrentValue as i32,
-                fields: vec![Field::Value as i32],
-            })
-            .collect();
-
-        let mut vss_data: Vec<DataEntry> = Vec::new();
-        match self
-            .client
-            .get(Request::new(GetRequest {
-                entries: entry_requests,
-            }))
-            .await
-            .map(|res| res.into_inner())
-        {
-            Err(status) => {
-                log::info!("failed to retrieve snapshot data points from Databroker {status}");
-                Err(DatabrokerError {
-                    description: format!("status code {}", status.code()),
-                })
-            }
-            Ok(get_response) => {
-                if let Some(error) = get_response.error {
-                    log::info!(
-                        "response from Databroker contains global error [code: {}, message: {}]",
-                        error.code,
-                        error.message
-                    );
-                } else {
-                    get_response
-                        .errors
-                        .into_iter()
-                        .for_each(|data_entry_error| {
-                            if let Some(err) = data_entry_error.error {
-                                log::info!(
-                                    "response from Databroker contains error [path: {}, error: {:?}]",
-                                    data_entry_error.path, err
-                                );
-                            }
-                        });
-                    get_response.entries.into_iter().for_each(|data_entry| {
-                        vss_data.push(data_entry);
-                    });
-                }
-                // loop trough dataentries to extract speed,lat,lon
-                // reforfm into matching statement
-                for entry in vss_data {
-                    if entry.path == *vss::VSS_VEHICLE_SPEED {
-                        if let Some(ref _value) = entry.value {
-                            let speed_as_value = entry.value.and_then(|dp| dp.value).unwrap();
-                            speed = Some(f64::try_from(speed_as_value).unwrap() as f32);
-                        }
-                    } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE {
-                        if let Some(ref _value) = entry.value {
-                            let latitude_as_value = entry.value.and_then(|dp| dp.value).unwrap();
-                            latitude = Some(f64::try_from(latitude_as_value).unwrap());
-                        }
-                    } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE {
-                        if let Some(ref _value) = entry.value {
-                            let longitude_as_value = entry.value.and_then(|dp| dp.value).unwrap();
-                            longitude = Some(f64::try_from(longitude_as_value).unwrap());
-                        }
-                    }
-                }
-                let signals = FetchedSignals {
-                    speed,
-                    longitude,
-                    latitude,
-                };
-                Ok(signals)
-            }
-        }
-    }
-}
+//         info!(
+//             "creating client for kuksa.val Databroker at {}",
+//             databroker_uri
+//         );
+//         Endpoint::from_shared(databroker_uri.to_owned())
+//             .map_err(|e| {
+//                 error!("invalid Databroker URI: {}", e);
+//                 DatabrokerError {
+//                     description: e.to_string(),
+//                 }
+//             })
+//             .map(|builder| {
+//                 let channel = builder
+//                     .connect_timeout(Duration::from_secs(5))
+//                     .timeout(Duration::from_secs(5))
+//                     .connect_lazy();
+//                 let client = ValClient::new(channel);
+//                 KuksaValDatabroker {
+//                     client: Box::new(client),
+//                 }
+//             })
+//     }
+// }
