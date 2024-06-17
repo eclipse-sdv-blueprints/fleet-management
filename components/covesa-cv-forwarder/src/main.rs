@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("starting COVESA CV forwarder");
 
-    let (tx, mut rx) = mpsc::channel::<Vec<ChosenSignals>>(30);
+    let (tx, mut rx) = mpsc::channel::<Vec<Option<ChosenSignals>>>(30);
     let window_capacity = args
         .get_one::<usize>(crate::curvelogging::PARAM_WINDOW_CAPACITY)
         .unwrap();
@@ -61,7 +61,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     while let Some(chosen_signals_collection) = rx.recv().await {
         for signal in chosen_signals_collection {
             // collected all of the chosen signals incoming Vec
-            publisher.write_chosen_signals(&signal).await;
+            if signal.is_some() {
+                publisher.write_chosen_signals(&signal.unwrap()).await;
+            }
             tokio::time::sleep(tokio::time::Duration::from_millis(1)).await;
         }
     }
