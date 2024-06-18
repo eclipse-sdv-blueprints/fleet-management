@@ -20,25 +20,20 @@
 //! An abstraction of a vehicle's (current) status based on
 //! [Eclipse kuksa.val Databroker](https://github.com/eclipse/kuksa.val).
 //!
+use crate::curvelogging::CurveLogActorHandler;
 use clap::{Arg, ArgMatches, Command};
 pub use kuksa::proto::v1::datapoint::Value::{Double, Float};
 use kuksa::DataEntry;
+pub use kuksa::KuksaClient;
 use log::error;
+use std::{error::Error, fmt::Display};
 use std::{
     str::FromStr,
     time::{SystemTime, UNIX_EPOCH},
 };
-// use databroker_proto::kuksa::val::v1::DataEntry;
-
-use std::{error::Error, fmt::Display};
-
-use crate::curvelogging::CurveLogActorHandler;
-
-pub use kuksa::KuksaClient;
-// {val_client::ValClient, EntryRequest, Field, GetRequest, View};
-
-// use self::kuksa::{DataEntry, SubscribeEntry};
 use tokio::time::Duration;
+
+pub mod vss;
 
 pub struct FetchedSignals {
     speed: Option<f32>,
@@ -50,16 +45,6 @@ pub enum Trigger {
     Timer,
 }
 
-// impl fmt::Display for SubscribeEntry {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         // Write strictly the first element into the supplied output
-//         // stream: `f`. Returns `fmt::Result` which indicates whether the
-//         // operation succeeded or failed. Note that `write!` uses syntax which
-//         // is very similar to `println!`.
-//         write!(f, "{}", self.path)
-//     }
-// }
-
 pub const SLLT_VSS_PATHS: &[&str] = &[
     vss::VSS_VEHICLE_SPEED,
     vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE,
@@ -68,9 +53,6 @@ pub const SLLT_VSS_PATHS: &[&str] = &[
 
 const PARAM_DATABROKER_URI: &str = "databroker-uri";
 const COVESA_PARAM_TIMER_INTERVAL: &str = "timer-interval";
-
-// pub mod kuksa;
-pub mod vss;
 
 /// Sets up a connection to the Databroker and registers callbacks for
 /// signals that trigger the reporting of the vehicle's current status.
@@ -82,34 +64,35 @@ pub async fn init(
     args: &ArgMatches,
     curve_log_handler: CurveLogActorHandler,
 ) -> Result<(), DatabrokerError> {
-    let databroker_uri = args
-        .get_one::<String>(PARAM_DATABROKER_URI)
-        .unwrap()
-        .to_owned();
-    let uri = tonic::transport::Uri::from_str(&databroker_uri).unwrap();
-
-    let mut databroker = KuksaClient::new(uri);
+    let mut databroker = KuksaClient::new(
+        tonic::transport::Uri::from_str(
+            &args
+                .get_one::<String>(PARAM_DATABROKER_URI)
+                .unwrap()
+                .to_owned(),
+        )
+        .unwrap(),
+    );
     let (tx, mut rx) = tokio::sync::mpsc::channel::<Trigger>(50);
 
     tokio::task::spawn(async move {
         while let Some(_trigger) = rx.recv().await {
-            //get  DataEntry directly from databroker
-            let paths = SLLT_VSS_PATHS
+            let value_paths = SLLT_VSS_PATHS
                 .iter()
                 .map(|path| path.to_string())
                 .collect::<Vec<String>>();
-            let vss_data = databroker.get_current_values(paths).await.unwrap();
-            let signals = fetch_data(vss_data).await.unwrap();
-            let current_time = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis();
+            let signals = fetch_data(databroker.get_current_values(value_paths).await.unwrap())
+                .await
+                .unwrap();
             curve_log_handler
                 .send_signals(
                     signals.speed,
                     signals.longitude,
                     signals.latitude,
-                    current_time,
+                    SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis(),
                 )
                 .await;
         }
@@ -175,7 +158,7 @@ pub async fn fetch_data(vss_data: Vec<DataEntry>) -> Result<FetchedSignals, Data
     let mut latitude: Option<f64> = None;
     let mut longitude: Option<f64> = None;
 
-    // loop trough dataentries to extract speed,lat,lon
+    // loop trough DataEntries to extract signals
     for entry in vss_data {
         if entry.path == *vss::VSS_VEHICLE_SPEED {
             if let Some(ref _value) = entry.value {
@@ -186,6 +169,9 @@ pub async fn fetch_data(vss_data: Vec<DataEntry>) -> Result<FetchedSignals, Data
                     }
                     Some(Double(value)) => {
                         speed = Some(value as f32);
+                    }
+                    None => {
+                        log::warn!("No Speed signal found!");
                     }
                     _ => {
                         error!("Invalid value type for speed");
@@ -202,6 +188,9 @@ pub async fn fetch_data(vss_data: Vec<DataEntry>) -> Result<FetchedSignals, Data
                     Some(Double(value)) => {
                         latitude = Some(value);
                     }
+                    None => {
+                        log::warn!("No Latitude signal found!");
+                    }
                     _ => {
                         error!("Invalid value type for latitude");
                     }
@@ -216,6 +205,9 @@ pub async fn fetch_data(vss_data: Vec<DataEntry>) -> Result<FetchedSignals, Data
                     }
                     Some(Double(value)) => {
                         longitude = Some(value);
+                    }
+                    None => {
+                        log::warn!("No Longitude signal found!");
                     }
                     _ => {
                         error!("Invalid value type for longitude");
@@ -249,38 +241,3 @@ impl Display for DatabrokerError {
         write!(f, "error invoking Databroker: {:?}", self.description)
     }
 }
-
-// pub struct KuksaValDatabroker {
-//     client: Box<ValClient<Channel>>,
-// }
-
-// impl KuksaValDatabroker {
-//     pub async fn new(args: &ArgMatches) -> Result<Self, DatabrokerError> {
-//         let databroker_uri = args
-//             .get_one::<String>(PARAM_DATABROKER_URI)
-//             .unwrap()
-//             .to_owned();
-
-//         info!(
-//             "creating client for kuksa.val Databroker at {}",
-//             databroker_uri
-//         );
-//         Endpoint::from_shared(databroker_uri.to_owned())
-//             .map_err(|e| {
-//                 error!("invalid Databroker URI: {}", e);
-//                 DatabrokerError {
-//                     description: e.to_string(),
-//                 }
-//             })
-//             .map(|builder| {
-//                 let channel = builder
-//                     .connect_timeout(Duration::from_secs(5))
-//                     .timeout(Duration::from_secs(5))
-//                     .connect_lazy();
-//                 let client = ValClient::new(channel);
-//                 KuksaValDatabroker {
-//                     client: Box::new(client),
-//                 }
-//             })
-//     }
-// }

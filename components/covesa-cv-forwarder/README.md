@@ -41,15 +41,15 @@ To run the COVESA CV Forwarder you can run the following script:
 
 If you are running the forwarder for the first time or if you want to make sure that the latest changes were taken into account, run:
 the build command:
-`docker compose --profile covesa build --no-cache`
+`docker compose -f covesa-blueprint-compose.yaml build --no-cache`
 
 To run the covesa forwarder, you can use the .vscode/launch.json configuration 
 
 otherwise, run:
-`docker compose --profile covesa build`
+`docker compose -f covesa-blueprint-compose.yaml build`
 
 then
-`docker compose --profile covesa up`
+`docker compose -f covesa-blueprint-compose.yaml up`
 
 ## Log Output
 

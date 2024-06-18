@@ -59,11 +59,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let curve_log_handler = CurveLogActorHandler::new(window_capacity.to_owned(), tx.clone());
     vehicle_abstraction::init(&args, curve_log_handler).await?;
     while let Some(chosen_signals_collection) = rx.recv().await {
+        // here we intercept the processed buffer which contains signals (timestamp and at least speed or position or both)
+        // the collection contains None datapoints which represent the signals who have no survived both curvelogging
         for signal in chosen_signals_collection {
-            // collected all of the chosen signals incoming Vec
             if signal.is_some() {
                 publisher.write_chosen_signals(&signal.unwrap()).await;
             }
+            //sleep 1 milliseconds for ensuring writing of each signals at different millesimal timestamps to Influx
             tokio::time::sleep(tokio::time::Duration::from_millis(1)).await;
         }
     }

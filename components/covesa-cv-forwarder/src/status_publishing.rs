@@ -107,7 +107,7 @@ fn read_token_from_file(filename: &str) -> std::io::Result<String> {
 
 fn build_measurement(chosen_signals: &ChosenSignals) -> Option<Measurement> {
     log::info!("Building measurement...");
-    let mut builder = Measurement::builder("curvelogging");
+    let mut builder = Measurement::builder("Curvelogging");
 
     if chosen_signals.lat.is_some() && chosen_signals.lon.is_some() {
         builder = builder

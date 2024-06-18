@@ -19,5 +19,4 @@
 
 pub const VSS_VEHICLE_CURRENTLOCATION_LATITUDE: &str = "Vehicle.CurrentLocation.Latitude";
 pub const VSS_VEHICLE_CURRENTLOCATION_LONGITUDE: &str = "Vehicle.CurrentLocation.Longitude";
-// pub const VSS_VEHICLE_CURRENTLOCATION_TIMESTAMP: &str = "Vehicle.CurrentLocation.Timestamp";
 pub const VSS_VEHICLE_SPEED: &str = "Vehicle.Speed";

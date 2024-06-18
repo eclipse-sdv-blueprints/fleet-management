@@ -22,7 +22,6 @@ use geotab_curve::{
     self, Curve, Position, PositionCurve, Sample, Save, ScalarValue, ScalarValueCurve, Valid,
 };
 use std::collections::HashSet;
-
 use std::collections::VecDeque;
 use std::fmt;
 use tokio::sync::mpsc;
@@ -111,13 +110,7 @@ impl ScalarSample {
 
 impl fmt::Debug for ScalarSample {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(
-            f,
-            "Scalar Data {{ time: {} minutes and {} seconds, value: {} }}\n",
-            self.time.minute(),
-            self.time.second(),
-            self.value
-        )
+        writeln!(f, "Curved Speed value: {}\n", self.value)
     }
 }
 
@@ -184,22 +177,18 @@ impl ChosenSignals {
     }
 
     pub fn add_speed(&mut self, value: Option<f32>) {
-        log::debug!("\n\tAdding speed signal");
         self.speed = value;
     }
 
     pub fn add_lat(&mut self, value: Option<f64>) {
-        log::debug!("\n\tAdding latitude signal");
         self.lat = value;
     }
 
     pub fn add_lon(&mut self, value: Option<f64>) {
-        log::debug!("\n\tAdding longitude signal");
         self.lon = value;
     }
 
     pub fn add_time(&mut self, value: u128) {
-        log::debug!("\n\tAdding Time signal");
         self.time = value;
     }
 }
@@ -216,7 +205,6 @@ struct CurveLogActor {
 }
 enum ActorMessage {
     SendSignals { signal: Signal },
-    // SendLongitudeAndLatitude { position: PositionSignal },
 }
 
 impl CurveLogActor {
@@ -243,66 +231,52 @@ impl CurveLogActor {
     async fn handle_message(&mut self, msg: ActorMessage) {
         match msg {
             ActorMessage::SendSignals { signal } => {
-                let mut reduced_speed_collection: Vec<Option<ChosenSignals>> = Vec::new();
+                let mut curvelogged_buffer: Vec<Option<ChosenSignals>> = Vec::new();
                 self.speed_datapoints.push(Some(signal.speed));
                 self.lon_datapoints.push(signal.lon);
                 self.lat_datapoints.push(signal.lat);
                 self.time_speed_datapoints.push_back(Some(signal.time));
                 if self.speed_datapoints.len() == self.window_capacity {
-                    log::info!("Enough elements to Scalar Curvelog!");
-                    println!(
-                        "Curving scalarly: {:?}\n Len: {}\n Times: {:?}\n Len: {}\n LON: {:?}\n LAT{:?}",
+                    log::debug!(
+                        "Executing Curvelogging!\nCurving scalarly:\nSpeed:\n\t{:?}\nTimestamps:\n\t{:?}\nCurvelogging positionally:\nLongitudes:\n\t{:?}\nLatitudes:\n\t{:?}",
                         self.speed_datapoints,
-                        self.speed_datapoints.len(),
                         self.time_speed_datapoints,
-                        self.time_speed_datapoints.len(),
                         self.lon_datapoints,
                         self.lat_datapoints,
                     );
-                    let original_time_scalar_datapoints_len = &self.time_speed_datapoints.len();
                     let reduced_scalar_datapoints = process_speed_window(
                         &self.speed_datapoints,
-                        &self.time_speed_datapoints.clone(),
+                        &mut self.time_speed_datapoints,
                     )
                     .await;
                     let reduced_position_datapoints = process_lon_lat_window(
-                        &self.lon_datapoints,
-                        &self.lat_datapoints,
-                        &self.time_speed_datapoints.clone(),
+                        &mut self.lon_datapoints,
+                        &mut self.lat_datapoints,
+                        &mut self.time_speed_datapoints,
                     )
                     .await;
-                    println!(
-                        "Curved Scalar result: {:?}\n Len: {}\n",
+                    log::debug!(
+                        "Curved Scalar result: {:?}\n Len: {}\nReduction Percentage: {:?}\n Curved Position result: {:?}\n Len {}\nReduction Percentage: {:?}\n",
                         reduced_scalar_datapoints,
                         reduced_scalar_datapoints.len(),
-                    );
-                    println!(
-                        "Curved Position result: {:?}\n Len: {}\n",
+                        get_reduction_percentage(
+                            count_some(&self.speed_datapoints),
+                            self.window_capacity,
+                        ),
                         reduced_position_datapoints,
                         reduced_position_datapoints.len(),
+                        get_reduction_percentage(
+                            count_some(&self.lon_datapoints),
+                            self.window_capacity,
+                        )
                     );
-                    repackage_scalar(
+                    repackage(
                         &mut self.speed_datapoints,
                         &mut self.lon_datapoints,
                         &mut self.lat_datapoints,
                         &mut self.time_speed_datapoints,
-                        reduced_scalar_datapoints.clone(),
-                        reduced_position_datapoints.clone(),
-                    );
-                    let reduction_percentage = get_reduction_percentage(
-                        count_some(&self.speed_datapoints),
-                        original_time_scalar_datapoints_len.to_owned(),
-                    );
-                    println!(
-                        "Curved Scalar: {:?}, Len: {}\n Reduction percentage: {}\n, Time: {:?}, Len {}\n, Lon: {:?}\n, Lat: {:?}\n, POSITION LEN: {:?}\n",
-                        self.speed_datapoints,
-                        self.speed_datapoints.len(),
-                        reduction_percentage,
-                        self.time_speed_datapoints,
-                        self.time_speed_datapoints.len(),
-                        self.lon_datapoints,
-                        self.lat_datapoints,
-                        self.lat_datapoints.len(),
+                        reduced_scalar_datapoints,
+                        reduced_position_datapoints,
                     );
                     log::debug!("Sending for publishing...");
                     let mut counter = 0;
@@ -320,9 +294,9 @@ impl CurveLogActor {
                             if let Some(lat) = self.lat_datapoints.get(counter).unwrap() {
                                 sllt.add_lat(Some(lat.to_owned()));
                             };
-                            reduced_speed_collection.push(Some(sllt));
+                            curvelogged_buffer.push(Some(sllt));
                         } else {
-                            reduced_speed_collection.push(None);
+                            curvelogged_buffer.push(None);
                         }
                         counter += 1;
                     }
@@ -332,7 +306,7 @@ impl CurveLogActor {
                         &mut self.lon_datapoints,
                         &mut self.lat_datapoints,
                     );
-                    match self.publisher_sender.send(reduced_speed_collection).await {
+                    match self.publisher_sender.send(curvelogged_buffer).await {
                         Ok(_) => {}
                         Err(e) => {
                             log::warn!("failed to send curvelogged speed via channel: {}", e);
@@ -376,7 +350,7 @@ impl CurveLogActorHandler {
     ) {
         if let Some(speed) = speed {
             log::debug!(
-                "Getting new Speed km/h signal: {} at position LON: {:?} LAT: {:?} at {}",
+                "Getting new signals from databroker!\nScalar:\nSpeed in km/h {}\nPositional:\nLongitude:\n\t{:?}Latitude:\n\t{:?}\nTime:\n\t{}",
                 speed,
                 lon,
                 lat,
@@ -396,20 +370,15 @@ impl CurveLogActorHandler {
 
 pub async fn process_speed_window(
     speed_datapoints: &Vec<Option<f32>>,
-    speed_times: &VecDeque<Option<u128>>,
+    speed_times: &mut VecDeque<Option<u128>>,
 ) -> Vec<ScalarSample> {
     pub type SampleCurve = ScalarValueCurve<ScalarSample, f32, SCALAR_CAP>;
     let mut speed_datapoints_copy = speed_datapoints.to_owned().clone();
-    let mut speed_times_datapoints = speed_times.clone();
 
     let mut curve = SampleCurve::new();
     let mut saved = vec![];
 
-    let time = speed_times_datapoints
-        .get_mut(0)
-        .unwrap()
-        .to_owned()
-        .unwrap() as u64;
+    let time = speed_times.get_mut(0).unwrap().to_owned().unwrap() as u64;
     let datetime = convert_timestamp(time);
     //adding first element manually
     let first_element = ScalarSample::new(
@@ -440,19 +409,16 @@ pub async fn process_speed_window(
 }
 
 pub async fn process_lon_lat_window(
-    longitude_datapoints: &Vec<Option<f64>>,
-    latitude_datapoints: &Vec<Option<f64>>,
-    time_position_datapoints: &VecDeque<Option<u128>>,
+    longitude_datapoints: &mut [Option<f64>],
+    latitude_datapoints: &mut [Option<f64>],
+    time_position_datapoints: &mut VecDeque<Option<u128>>,
 ) -> Vec<PositionSample> {
     type SampleCurve = PositionCurve<PositionSample, f32, POSITIONAL_CAP>;
-    let mut lon_datapoints_copy = longitude_datapoints.to_owned().clone();
-    let mut lat_datapoints_copy = latitude_datapoints.to_owned().clone();
-    let mut position_times_datapoints = time_position_datapoints.clone();
 
     let mut curve = SampleCurve::new();
     let mut saved = vec![];
 
-    let time = position_times_datapoints
+    let time = time_position_datapoints
         .get_mut(0)
         .unwrap()
         .to_owned()
@@ -460,13 +426,13 @@ pub async fn process_lon_lat_window(
     let datetime = convert_timestamp(time);
     let first_element = PositionSample::new(
         datetime,
-        lat_datapoints_copy.get_mut(0).unwrap().to_owned().unwrap() as f32,
-        lon_datapoints_copy.get_mut(0).unwrap().to_owned().unwrap() as f32,
+        latitude_datapoints.get_mut(0).unwrap().to_owned().unwrap() as f32,
+        longitude_datapoints.get_mut(0).unwrap().to_owned().unwrap() as f32,
     );
 
-    for (i, lat) in lat_datapoints_copy.iter_mut().enumerate() {
+    for (i, lat) in latitude_datapoints.iter_mut().enumerate() {
         let lat = lat.to_owned().unwrap() as f32;
-        let lon = lon_datapoints_copy.get_mut(i).unwrap().to_owned().unwrap() as f32;
+        let lon = longitude_datapoints.get_mut(i).unwrap().to_owned().unwrap() as f32;
         let time = DateTime::<Utc>::MIN_UTC + Duration::seconds(i as i64);
         let sample = PositionSample::new(time, lat, lon);
         curve.add_value(sample);
@@ -532,15 +498,14 @@ pub fn get_reduction_percentage(
     (reduction * 100) / before
 }
 
-pub fn repackage_scalar(
-    original_speed_dps: &mut Vec<Option<f32>>,
-    original_lon_dps: &mut Vec<Option<f64>>,
-    original_lat_dps: &mut Vec<Option<f64>>,
+pub fn repackage(
+    original_speed_dps: &mut [Option<f32>],
+    original_lon_dps: &mut [Option<f64>],
+    original_lat_dps: &mut [Option<f64>],
     original_time_dps: &mut VecDeque<Option<u128>>,
     survived_scalar: Vec<ScalarSample>,
     survived_position: Vec<PositionSample>,
 ) {
-    println!("repackaging...");
     // extract indexes of the survived scalar values
     let mut matching_scalar_indexes: Vec<usize> = survived_scalar
         .iter()
@@ -550,19 +515,13 @@ pub fn repackage_scalar(
         .iter()
         .map(|x| x.time.second() as usize)
         .collect();
+    // overwrite first element index to 0 as it is set by default to an undefined value
     matching_scalar_indexes[0] = 0;
     matching_position_indexes[0] = 0;
+    // Any position and scalar datapoint that survives must have its own timestamp or at least share it with the other signals that survived in the same timestamp
+    // Therefore, matching_time_indexes represent the union between the indexes of the survived scalar values and the survived positional values
     let matching_time_indexes = merge_indexes(&matching_scalar_indexes, &matching_position_indexes);
-    // matching_time_indexes[0] = 0;
-    println!("Matching scalar indexes: {:?}", matching_scalar_indexes);
-    println!("Matching position indexes: {:?}", matching_position_indexes);
-    println!("Matching time indexes: {:?}", matching_time_indexes);
-    println!("Speeds before: \n{:?}\n", original_speed_dps);
-    println!(
-        "Position before: \nLON{:?}\nLAT: {:?}\n",
-        original_lon_dps, original_lat_dps
-    );
-    //set all the speed values that are not in the matching indexes to None
+    //set all the Speed, Longitude and Latitude values that are not in the matching indexes to None
     for (i, speed) in original_speed_dps.iter_mut().enumerate() {
         if !matching_scalar_indexes.contains(&i) {
             *speed = None;
@@ -583,10 +542,6 @@ pub fn repackage_scalar(
             *time = None;
         }
     }
-    println!("Speeds: {:?}", original_speed_dps);
-    println!("Lon: {:?}", original_lon_dps);
-    println!("Lat: {:?}", original_lat_dps);
-    println!("TIME: {:?}", original_time_dps);
 }
 
 pub fn drain_all_elements_but_last(

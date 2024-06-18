@@ -25,7 +25,7 @@
          "command": "bash",
          "args": [
             "-c",
-            "cd ../.. && docker compose --profile covesa up --detach && docker compose logs -f covesa-cv-forwarder influxDB csv-provider-covesa databroker && cd components/covesa-cv-forwarder && docker exec -it influxDB cat /tmp/out/fms-demo.token > /tmp/influxdb.token && cargo run --bin covesa-cv-forwarder influx --influxdb-uri http://influxdb:8086 --influxdb-token-file /tmp/influxdb.token --influxdb-bucket demo"
+            "cd ../.. && docker compose -f covesa-blueprint-compose.yaml up --detach && docker compose logs -f covesa-cv-forwarder influxDB csv-provider-covesa databroker && cd components/covesa-cv-forwarder && docker exec -it influxDB cat /tmp/out/fms-demo.token > /tmp/influxdb.token && cargo run --bin covesa-cv-forwarder influx --influxdb-uri http://influxdb:8086 --influxdb-token-file /tmp/influxdb.token --influxdb-bucket demo"
          ]
       }
    ]
