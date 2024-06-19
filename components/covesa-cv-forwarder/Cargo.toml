@@ -61,7 +61,8 @@ tokio = { workspace = true, features = [
 ] }
 tonic = { workspace = true, features = ["channel", "codegen", "tls", "prost"] }
 influxrs.workspace = true
-kuksa = { git = "https://github.com/noci0001/kuksa-databroker-with-exposed_value", branch = "expose_value"}
+#Uncomment this when kuksa-databroker compiles with rustc 1.79.0
+# kuksa = { git = "https://github.com/eclipse-kuksa/kuksa-databroker", branch = "main"}
 http = { version = "1.1.0"}
 
 [build-dependencies]

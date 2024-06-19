@@ -22,9 +22,13 @@
 //!
 use crate::curvelogging::CurveLogActorHandler;
 use clap::{Arg, ArgMatches, Command};
-pub use kuksa::proto::v1::datapoint::Value::{Double, Float};
-use kuksa::DataEntry;
-pub use kuksa::KuksaClient;
+// Uncomment this when kuksa-databroker compiles with rustc 1.79.0
+// pub use kuksa::proto::v1::datapoint::Value::{Double, Float};
+// use kuksa::DataEntry;
+// pub use kuksa::KuksaClient;
+pub mod kuksa;
+use self::kuksa::{DataEntry, SubscribeEntry};
+use kuksa::{val_client::ValClient, EntryRequest, Field, GetRequest, View};
 use log::error;
 use std::{error::Error, fmt::Display};
 use std::{
@@ -32,6 +36,10 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 use tokio::time::Duration;
+use tonic::{
+    transport::{Channel, Endpoint},
+    Request,
+};
 
 pub mod vss;
 
@@ -64,26 +72,31 @@ pub async fn init(
     args: &ArgMatches,
     curve_log_handler: CurveLogActorHandler,
 ) -> Result<(), DatabrokerError> {
-    let mut databroker = KuksaClient::new(
-        tonic::transport::Uri::from_str(
-            &args
-                .get_one::<String>(PARAM_DATABROKER_URI)
-                .unwrap()
-                .to_owned(),
-        )
-        .unwrap(),
-    );
+    // Uncomment this when kuksa-databroker compiles with rustc 1.79.0
+    // let mut databroker = KuksaClient::new(
+    //     tonic::transport::Uri::from_str(
+    //         &args
+    //             .get_one::<String>(PARAM_DATABROKER_URI)
+    //             .unwrap()
+    //             .to_owned(),
+    //     )
+    //     .unwrap(),
+    // );
+    let mut databroker = KuksaValDatabroker::new(args).await?;
+
     let (tx, mut rx) = tokio::sync::mpsc::channel::<Trigger>(50);
 
     tokio::task::spawn(async move {
         while let Some(_trigger) = rx.recv().await {
-            let value_paths = SLLT_VSS_PATHS
-                .iter()
-                .map(|path| path.to_string())
-                .collect::<Vec<String>>();
-            let signals = fetch_data(databroker.get_current_values(value_paths).await.unwrap())
-                .await
-                .unwrap();
+            // let value_paths = SLLT_VSS_PATHS
+            //     .iter()
+            //     .map(|path| path.to_string())
+            //     .collect::<Vec<String>>();
+            // let signals = fetch_data(databroker.get_current_values(value_paths).await.unwrap())
+            //     .await
+            //     .unwrap();
+            let signals = databroker.fetch_data().await.unwrap();
+
             curve_log_handler
                 .send_signals(
                     signals.speed,
@@ -153,76 +166,77 @@ pub fn add_command_line_args(command_line: Command) -> Command {
         )
 }
 
-pub async fn fetch_data(vss_data: Vec<DataEntry>) -> Result<FetchedSignals, DatabrokerError> {
-    let mut speed: Option<f32> = None;
-    let mut latitude: Option<f64> = None;
-    let mut longitude: Option<f64> = None;
+// Uncomment this when kuksa-databroker compiles with rustc 1.79.0
+// pub async fn fetch_data(vss_data: Vec<DataEntry>) -> Result<FetchedSignals, DatabrokerError> {
+//     let mut speed: Option<f32> = None;
+//     let mut latitude: Option<f64> = None;
+//     let mut longitude: Option<f64> = None;
 
-    // loop trough DataEntries to extract signals
-    for entry in vss_data {
-        if entry.path == *vss::VSS_VEHICLE_SPEED {
-            if let Some(ref _value) = entry.value {
-                let speed_as_value = entry.value.and_then(|dp| dp.value);
-                match speed_as_value {
-                    Some(Float(value)) => {
-                        speed = Some(value);
-                    }
-                    Some(Double(value)) => {
-                        speed = Some(value as f32);
-                    }
-                    None => {
-                        log::warn!("No Speed signal found!");
-                    }
-                    _ => {
-                        error!("Invalid value type for speed");
-                    }
-                }
-            }
-        } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE {
-            if let Some(ref _value) = entry.value {
-                let latitude_as_value = entry.value.and_then(|dp| dp.value);
-                match latitude_as_value {
-                    Some(Float(value)) => {
-                        latitude = Some(value as f64);
-                    }
-                    Some(Double(value)) => {
-                        latitude = Some(value);
-                    }
-                    None => {
-                        log::warn!("No Latitude signal found!");
-                    }
-                    _ => {
-                        error!("Invalid value type for latitude");
-                    }
-                }
-            }
-        } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE {
-            if let Some(ref _value) = entry.value {
-                let longitude_as_value = entry.value.and_then(|dp| dp.value);
-                match longitude_as_value {
-                    Some(Float(value)) => {
-                        longitude = Some(value as f64);
-                    }
-                    Some(Double(value)) => {
-                        longitude = Some(value);
-                    }
-                    None => {
-                        log::warn!("No Longitude signal found!");
-                    }
-                    _ => {
-                        error!("Invalid value type for longitude");
-                    }
-                }
-            }
-        }
-    }
-    let signals = FetchedSignals {
-        speed,
-        longitude,
-        latitude,
-    };
-    Ok(signals)
-}
+//     // loop trough DataEntries to extract signals
+//     for entry in vss_data {
+//         if entry.path == *vss::VSS_VEHICLE_SPEED {
+//             if let Some(ref _value) = entry.value {
+//                 let speed_as_value = entry.value.and_then(|dp| dp.value);
+//                 match speed_as_value {
+//                     Some(Float(value)) => {
+//                         speed = Some(value);
+//                     }
+//                     Some(Double(value)) => {
+//                         speed = Some(value as f32);
+//                     }
+//                     None => {
+//                         log::warn!("No Speed signal found!");
+//                     }
+//                     _ => {
+//                         error!("Invalid value type for speed");
+//                     }
+//                 }
+//             }
+//         } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE {
+//             if let Some(ref _value) = entry.value {
+//                 let latitude_as_value = entry.value.and_then(|dp| dp.value);
+//                 match latitude_as_value {
+//                     Some(Float(value)) => {
+//                         latitude = Some(value as f64);
+//                     }
+//                     Some(Double(value)) => {
+//                         latitude = Some(value);
+//                     }
+//                     None => {
+//                         log::warn!("No Latitude signal found!");
+//                     }
+//                     _ => {
+//                         error!("Invalid value type for latitude");
+//                     }
+//                 }
+//             }
+//         } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE {
+//             if let Some(ref _value) = entry.value {
+//                 let longitude_as_value = entry.value.and_then(|dp| dp.value);
+//                 match longitude_as_value {
+//                     Some(Float(value)) => {
+//                         longitude = Some(value as f64);
+//                     }
+//                     Some(Double(value)) => {
+//                         longitude = Some(value);
+//                     }
+//                     None => {
+//                         log::warn!("No Longitude signal found!");
+//                     }
+//                     _ => {
+//                         error!("Invalid value type for longitude");
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     let signals = FetchedSignals {
+//         speed,
+//         longitude,
+//         latitude,
+//     };
+//     Ok(signals)
+// }
 
 /// Indicates a problem while invoking a Databroker operation.
 #[derive(Debug)]
@@ -239,5 +253,121 @@ impl Error for DatabrokerError {
 impl Display for DatabrokerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "error invoking Databroker: {:?}", self.description)
+    }
+}
+
+pub struct KuksaValDatabroker {
+    client: Box<ValClient<Channel>>,
+}
+
+impl KuksaValDatabroker {
+    pub async fn new(args: &ArgMatches) -> Result<Self, DatabrokerError> {
+        let databroker_uri = args
+            .get_one::<String>(PARAM_DATABROKER_URI)
+            .unwrap()
+            .to_owned();
+
+        log::info!(
+            "creating client for kuksa.val Databroker at {}",
+            databroker_uri
+        );
+        Endpoint::from_shared(databroker_uri.to_owned())
+            .map_err(|e| {
+                error!("invalid Databroker URI: {}", e);
+                DatabrokerError {
+                    description: e.to_string(),
+                }
+            })
+            .map(|builder| {
+                let channel = builder
+                    .connect_timeout(Duration::from_secs(5))
+                    .timeout(Duration::from_secs(5))
+                    .connect_lazy();
+                let client = ValClient::new(channel);
+                KuksaValDatabroker {
+                    client: Box::new(client),
+                }
+            })
+    }
+
+    pub async fn fetch_data(&mut self) -> Result<FetchedSignals, DatabrokerError> {
+        let mut speed: Option<f32> = None;
+        let mut latitude: Option<f64> = None;
+        let mut longitude: Option<f64> = None;
+        let entry_requests: Vec<EntryRequest> = SLLT_VSS_PATHS
+            .iter()
+            .map(|path| EntryRequest {
+                path: path.to_string(),
+                view: View::CurrentValue as i32,
+                fields: vec![Field::Value as i32],
+            })
+            .collect();
+
+        let mut vss_data: Vec<DataEntry> = Vec::new();
+        match self
+            .client
+            .get(Request::new(GetRequest {
+                entries: entry_requests,
+            }))
+            .await
+            .map(|res| res.into_inner())
+        {
+            Err(status) => {
+                log::info!("failed to retrieve snapshot data points from Databroker {status}");
+                Err(DatabrokerError {
+                    description: format!("status code {}", status.code()),
+                })
+            }
+            Ok(get_response) => {
+                if let Some(error) = get_response.error {
+                    log::info!(
+                        "response from Databroker contains global error [code: {}, message: {}]",
+                        error.code,
+                        error.message
+                    );
+                } else {
+                    get_response
+                        .errors
+                        .into_iter()
+                        .for_each(|data_entry_error| {
+                            if let Some(err) = data_entry_error.error {
+                                log::info!(
+                                    "response from Databroker contains error [path: {}, error: {:?}]",
+                                    data_entry_error.path, err
+                                );
+                            }
+                        });
+                    get_response.entries.into_iter().for_each(|data_entry| {
+                        vss_data.push(data_entry);
+                    });
+                }
+                // loop trough dataentries to extract speed,lat,lon
+                // reforfm into matching statement
+                for entry in vss_data {
+                    if entry.path == *vss::VSS_VEHICLE_SPEED {
+                        if let Some(ref _value) = entry.value {
+                            let speed_as_value = entry.value.and_then(|dp| dp.value).unwrap();
+                            speed = Some(f64::try_from(speed_as_value).unwrap() as f32);
+                        }
+                    } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE {
+                        if let Some(ref _value) = entry.value {
+                            let latitude_as_value = entry.value.and_then(|dp| dp.value).unwrap();
+                            latitude = Some(f64::try_from(latitude_as_value).unwrap());
+                        }
+                    } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE {
+                        if let Some(ref _value) = entry.value {
+                            let longitude_as_value = entry.value.and_then(|dp| dp.value).unwrap();
+                            longitude = Some(f64::try_from(longitude_as_value).unwrap());
+                        }
+                    }
+                }
+                let signals = FetchedSignals {
+                    speed,
+                    longitude,
+                    latitude,
+                };
+                Ok(signals)
+            }
+        }
     }
 }

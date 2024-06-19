@@ -372,15 +372,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c4b4d0bd25bd0b74681c0ad21497610ce1b7c91b1022cd21c80c6fbdd9476b0"
 
 [[package]]
-name = "autotools"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef941527c41b0fc0dd48511a8154cd5fc7e29200a0ff8b7203c5d777dbc795cf"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "axum"
 version = "0.6.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -706,7 +697,6 @@ dependencies = [
  "http 1.1.0",
  "influx-client",
  "influxrs",
- "kuksa",
  "log",
  "num-traits",
  "paho-mqtt",
@@ -802,18 +792,6 @@ dependencies = [
  "pkg-config",
  "vcpkg",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "databroker-proto"
-version = "0.4.6"
-source = "git+https://github.com/noci0001/kuksa-databroker-with-exposed_value?branch=expose_value#8b6d205a45bb281d82797e29ef7edc1a224a5c08"
-dependencies = [
- "prost",
- "prost-types",
- "protobuf-src",
- "tonic",
- "tonic-build",
 ]
 
 [[package]]
@@ -1878,31 +1856,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "kuksa"
-version = "0.4.6"
-source = "git+https://github.com/noci0001/kuksa-databroker-with-exposed_value?branch=expose_value#8b6d205a45bb281d82797e29ef7edc1a224a5c08"
-dependencies = [
- "databroker-proto",
- "http 0.2.12",
- "kuksa-common",
- "tokio",
- "tokio-stream",
- "tonic",
-]
-
-[[package]]
-name = "kuksa-common"
-version = "0.4.6"
-source = "git+https://github.com/noci0001/kuksa-databroker-with-exposed_value?branch=expose_value#8b6d205a45bb281d82797e29ef7edc1a224a5c08"
-dependencies = [
- "databroker-proto",
- "http 0.2.12",
- "tokio",
- "tokio-stream",
- "tonic",
-]
-
-[[package]]
 name = "kv-log-macro"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2594,15 +2547,6 @@ dependencies = [
  "tempfile",
  "thiserror",
  "which",
-]
-
-[[package]]
-name = "protobuf-src"
-version = "1.1.0+21.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7ac8852baeb3cc6fb83b93646fb93c0ffe5d14bf138c945ceb4b9948ee0e3c1"
-dependencies = [
- "autotools",
 ]
 
 [[package]]
@@ -3349,7 +3293,6 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
- "tokio-util",
 ]
 
 [[package]]
