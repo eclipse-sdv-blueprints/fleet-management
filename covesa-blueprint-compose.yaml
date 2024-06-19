@@ -28,10 +28,6 @@ networks:
 configs:
   influxdb_init.sh:
     file: "./influxdb/init-scripts/create-fms-token.sh"
-  grafana_dashboards_from_fs.yaml:
-    file: "./grafana/provisioning/dashboards/dashboards_from_filesystem.yaml"
-  grafana_fms_dashboard.json:
-    file: "./grafana/dashboards/FMS-Fleet.json"
   vss_overlay.json:
     file: "./spec/overlay/vss.json"
 
@@ -39,7 +35,6 @@ volumes:
   influxdb-data:
   influxdb-config:
   influxdb-auth:
-  grafana-datasources:
 
 services:
   influxdb:
@@ -79,9 +74,6 @@ services:
     - type: "volume"
       source: "influxdb-auth"
       target: "/tmp/out"
-    - type: "volume"
-      source: "grafana-datasources"
-      target: "/tmp/influxdb-datasources"
   databroker:
     image: "ghcr.io/eclipse/kuksa.val/databroker:0.4.1"
     container_name: "databroker"

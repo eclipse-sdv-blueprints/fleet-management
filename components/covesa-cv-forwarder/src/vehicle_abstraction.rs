@@ -27,14 +27,11 @@ use clap::{Arg, ArgMatches, Command};
 // use kuksa::DataEntry;
 // pub use kuksa::KuksaClient;
 pub mod kuksa;
-use self::kuksa::{DataEntry, SubscribeEntry};
+use self::kuksa::DataEntry;
 use kuksa::{val_client::ValClient, EntryRequest, Field, GetRequest, View};
 use log::error;
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::{error::Error, fmt::Display};
-use std::{
-    str::FromStr,
-    time::{SystemTime, UNIX_EPOCH},
-};
 use tokio::time::Duration;
 use tonic::{
     transport::{Channel, Endpoint},
