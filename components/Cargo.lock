@@ -706,6 +706,7 @@ dependencies = [
  "protoc-bin-vendored",
  "tokio",
  "tonic",
+ "tonic-build",
 ]
 
 [[package]]
