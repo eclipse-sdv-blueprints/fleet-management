@@ -39,6 +39,7 @@ jobs:
           | sort -u \
           | grep -v '^[[:space:]]*$' \
           | grep -v fms- \
+          | grep -v covesa- \
           | grep -v influx-client \
           | sed -E 's|([^ ]+) v([^ ]+).*|crate/cratesio/-/\1/\2|' \
           > DEPS.txt
