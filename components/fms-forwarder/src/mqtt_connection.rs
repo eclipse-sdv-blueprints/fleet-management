@@ -139,6 +139,7 @@ pub fn add_command_line_args(command: Command) -> Command {
 
 /// A connection to an MQTT endpoint.
 ///
+#[allow(dead_code)]
 pub struct MqttConnection {
     pub mqtt_client: AsyncClient,
     pub uri: String,

@@ -17,7 +17,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
 use clap::ArgMatches;
 use const_format::formatcp;
 use influx_client::connection::InfluxConnection;
@@ -73,9 +73,7 @@ fn unpack_value_bool(value: Option<&String>) -> Option<bool> {
 
 fn unpack_time(value: Option<&String>) -> Option<DateTime<Utc>> {
     let timestamp = unpack_value_i64(value)?;
-    NaiveDateTime::from_timestamp_millis(timestamp)?
-        .and_local_timezone(Utc)
-        .latest()
+    DateTime::from_timestamp_millis(timestamp)
 }
 
 fn unpack_driver_working_state(value: Option<&String>) -> Option<DriverWorkingStateProperty> {
