@@ -22,10 +22,6 @@
 //!
 use crate::curvelogging::CurveLogActorHandler;
 use clap::{Arg, ArgMatches, Command};
-// Uncomment this when kuksa-databroker compiles with rustc 1.79.0
-// pub use kuksa::proto::v1::datapoint::Value::{Double, Float};
-// use kuksa::DataEntry;
-// pub use kuksa::KuksaClient;
 pub mod kuksa;
 use self::kuksa::DataEntry;
 use kuksa::{val_client::ValClient, EntryRequest, Field, GetRequest, View};
@@ -69,29 +65,12 @@ pub async fn init(
     args: &ArgMatches,
     curve_log_handler: CurveLogActorHandler,
 ) -> Result<(), DatabrokerError> {
-    // Uncomment this when kuksa-databroker compiles with rustc 1.79.0
-    // let mut databroker = KuksaClient::new(
-    //     tonic::transport::Uri::from_str(
-    //         &args
-    //             .get_one::<String>(PARAM_DATABROKER_URI)
-    //             .unwrap()
-    //             .to_owned(),
-    //     )
-    //     .unwrap(),
-    // );
     let mut databroker = KuksaValDatabroker::new(args).await?;
 
     let (tx, mut rx) = tokio::sync::mpsc::channel::<Trigger>(50);
 
     tokio::task::spawn(async move {
         while let Some(_trigger) = rx.recv().await {
-            // let value_paths = SLLT_VSS_PATHS
-            //     .iter()
-            //     .map(|path| path.to_string())
-            //     .collect::<Vec<String>>();
-            // let signals = fetch_data(databroker.get_current_values(value_paths).await.unwrap())
-            //     .await
-            //     .unwrap();
             let signals = databroker.fetch_data().await.unwrap();
 
             curve_log_handler
@@ -162,78 +141,6 @@ pub fn add_command_line_args(command_line: Command) -> Command {
                 .default_value("25"),
         )
 }
-
-// Uncomment this when kuksa-databroker compiles with rustc 1.79.0
-// pub async fn fetch_data(vss_data: Vec<DataEntry>) -> Result<FetchedSignals, DatabrokerError> {
-//     let mut speed: Option<f32> = None;
-//     let mut latitude: Option<f64> = None;
-//     let mut longitude: Option<f64> = None;
-
-//     // loop trough DataEntries to extract signals
-//     for entry in vss_data {
-//         if entry.path == *vss::VSS_VEHICLE_SPEED {
-//             if let Some(ref _value) = entry.value {
-//                 let speed_as_value = entry.value.and_then(|dp| dp.value);
-//                 match speed_as_value {
-//                     Some(Float(value)) => {
-//                         speed = Some(value);
-//                     }
-//                     Some(Double(value)) => {
-//                         speed = Some(value as f32);
-//                     }
-//                     None => {
-//                         log::warn!("No Speed signal found!");
-//                     }
-//                     _ => {
-//                         error!("Invalid value type for speed");
-//                     }
-//                 }
-//             }
-//         } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE {
-//             if let Some(ref _value) = entry.value {
-//                 let latitude_as_value = entry.value.and_then(|dp| dp.value);
-//                 match latitude_as_value {
-//                     Some(Float(value)) => {
-//                         latitude = Some(value as f64);
-//                     }
-//                     Some(Double(value)) => {
-//                         latitude = Some(value);
-//                     }
-//                     None => {
-//                         log::warn!("No Latitude signal found!");
-//                     }
-//                     _ => {
-//                         error!("Invalid value type for latitude");
-//                     }
-//                 }
-//             }
-//         } else if entry.path == *vss::VSS_VEHICLE_CURRENTLOCATION_LONGITUDE {
-//             if let Some(ref _value) = entry.value {
-//                 let longitude_as_value = entry.value.and_then(|dp| dp.value);
-//                 match longitude_as_value {
-//                     Some(Float(value)) => {
-//                         longitude = Some(value as f64);
-//                     }
-//                     Some(Double(value)) => {
-//                         longitude = Some(value);
-//                     }
-//                     None => {
-//                         log::warn!("No Longitude signal found!");
-//                     }
-//                     _ => {
-//                         error!("Invalid value type for longitude");
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//     let signals = FetchedSignals {
-//         speed,
-//         longitude,
-//         latitude,
-//     };
-//     Ok(signals)
-// }
 
 /// Indicates a problem while invoking a Databroker operation.
 #[derive(Debug)]
