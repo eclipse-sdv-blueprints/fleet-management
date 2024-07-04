@@ -245,8 +245,8 @@ impl KuksaValDatabroker {
                         vss_data.push(data_entry);
                     });
                 }
-                // loop trough dataentries to extract speed,lat,lon
-                // reforfm into matching statement
+                // loop trough data entries to extract speed,lat,lon
+                // reformat into matching statement
                 for entry in vss_data {
                     if entry.path == *vss::VSS_VEHICLE_SPEED {
                         if let Some(ref _value) = entry.value {
