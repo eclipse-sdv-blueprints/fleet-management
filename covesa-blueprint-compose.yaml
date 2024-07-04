@@ -18,10 +18,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 networks:
-  fms-backend:
+  covesa-backend:
     driver: overlay
     attachable: true
-  fms-vehicle:
+  covesa-vehicle:
     driver: overlay
     attachable: true
 
@@ -58,7 +58,7 @@ services:
       DOCKER_INFLUXDB_INIT_RETENTION: "1w"
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: "fms-backend-admin-token"
     networks:
-    - "fms-backend"
+    - "covesa-backend"
     ports:
     - "0.0.0.0:8086:8086"
     configs:
@@ -79,7 +79,7 @@ services:
     container_name: "databroker"
     cap_drop: *default-drops
     networks:
-    - "fms-vehicle"
+    - "covesa-vehicle"
     ports:
     - "127.0.0.1:55555:55556"
     configs:
@@ -99,8 +99,8 @@ services:
     container_name: "covesa-cv-forwarder"
     cap_drop: *default-drops
     networks:
-      - "fms-backend"
-      - "fms-vehicle"
+      - "covesa-backend"
+      - "covesa-vehicle"
     depends_on:
       influxdb:
         condition: service_healthy
@@ -129,7 +129,7 @@ services:
     container_name: "csv-provider-covesa"
     cap_drop: *default-drops
     networks:
-      - "fms-vehicle"
+      - "covesa-vehicle"
     depends_on:
       databroker:
         condition: service_started
