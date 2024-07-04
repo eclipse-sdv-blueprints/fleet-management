@@ -41,24 +41,6 @@ impl CovesaInfluxConnection {
     ///
     /// Determines the parameters necessary for creating the connection from values specified on
     /// the command line or via environment variables as defined by [`add_command_line_args`].
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use clap::Command;
-    /// use influx_client::connection::InfluxConnection;
-    ///
-    /// let command = influx_client::connection::add_command_line_args(Command::new("influx_client"));
-    /// let matches = command.get_matches_from(vec![
-    ///     "influx_client",
-    ///     "--influxdb-uri", "http://my-influx.io",
-    ///     "--influxdb-token", "some-token",
-    ///     "--influxdb-bucket", "the-bucket",
-    /// ]);
-    /// let connection = InfluxConnection::new(&matches)?;
-    /// assert_eq!(connection.bucket, "the-bucket".to_string());
-    /// # Ok::<(), Box<dyn std::error::Error>>(())
-    /// ```
     pub fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
         let influx_uri = args
             .get_one::<String>(crate::status_publishing::PARAM_INFLUXDB_URI)
