@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 Contributors to the Eclipse Foundation
+SPDX-FileCopyrightText: 2023, 2024 Contributors to the Eclipse Foundation
 
 See the NOTICE file(s) distributed with this work for additional
 information regarding copyright ownership.
@@ -46,7 +46,7 @@ a Fleet Management application via the FMS Server's (HTTP based) rFMS API.
 The easiest way to set up and start the services is by means of using the Docker Compose file in the top level folder:
 
 ```sh
-docker compose -f ./fms-blueprint-compose.yaml up --detach
+docker compose up --detach
 ```
 
 This will pull or build (if necessary) the container images and create and start all components.
@@ -60,6 +60,20 @@ The rFMS API can be used to retrieve the data, e.g.
 ```sh
 curl -v -s http://127.0.0.1:8081/rfms/vehicleposition?latestOnly=true | jq
 ```
+
+# Using Covesa CV Forwarder
+
+By default, Docker Compose will run the fms-forwarder which forwards the vss data that it receives to the backend. Similarly, there is an alternative forwarder called Covesa CV Forwarder which provides on top of the default forwarder functionalities an algorithm that sifts through data that is identified as redundant and therefore unnecessary. This allows a more restrictive writing of vss data to the database thus reducing its overhead. Covesa CV Forwarder distinguish itself also for a way higher polling frequency of 1hz. Currently, the signals polled and reduced(or curvelogged) by the Covesa CV Forwarder are Speed, Latitude & Longitude.
+
+To run Covesa CV Forwarder, you can build it first with the following command:
+
+`docker compose -f ./covesa-blueprint-compose.yaml build`
+
+Then, you can take advantage of the provided configuration to run the program:
+
+Open a new workspace window at /components/covesa-cv-forwarder
+
+To run the program either press Ctrl + F5 or go to the Debug and Run section of VSCode and press the green arrow button on the top
 
 # Using Eclipse Hono to send Vehicle Data to Back End
 
@@ -126,4 +140,3 @@ Additional information can be found in the components' corresponding subfolders.
 # Contributing
 
 We are looking forward to your ideas and PRs. Each PRs triggers a GitHub action which checks the formating, performs linting and runs the test. You can performe similar check in your development environment. For more details check the respective [action](.github/workflows/lint_source_code.yaml) where the checks are listed in the bottom of the file.
-
