@@ -203,6 +203,7 @@ struct CurveLogActor {
     time_speed_datapoints: VecDeque<Option<u128>>,
     publisher_sender: tokio::sync::mpsc::Sender<Vec<Option<ChosenSignals>>>,
 }
+
 enum ActorMessage {
     SendSignals { signal: Signal },
 }
