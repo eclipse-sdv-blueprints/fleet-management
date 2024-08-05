@@ -41,7 +41,6 @@ pub enum VehiclesGetResponse {
 
 /// Optional responses for error codes, detailing the error if needed
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct ErrorObject {
     /// An identifier for this error
     #[serde(rename = "error")]
@@ -60,7 +59,6 @@ pub struct ErrorObject {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct VehicleResponseObject {
     #[serde(rename = "vehicleResponse")]
     pub vehicle_response: VehicleResponseObjectVehicleResponse,
@@ -76,7 +74,6 @@ pub struct VehicleResponseObject {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct VehicleResponseObjectVehicleResponse {
     #[serde(rename = "vehicles")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -84,7 +81,6 @@ pub struct VehicleResponseObjectVehicleResponse {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct VehicleObject {
     /// vehicle identification number. See ISO 3779 (17 characters)
     #[serde(rename = "vin")]
@@ -187,7 +183,6 @@ pub struct VehicleObject {
 
 /// Indicates when the vehicle was produced.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct VehicleObjectProductionDate {
     /// Day of the month where first day of the month is 1
     #[serde(rename = "day")]

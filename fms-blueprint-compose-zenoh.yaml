@@ -25,22 +25,20 @@ services:
     image: eclipse/zenoh:0.10.1-rc
     container_name: "fms-zenoh-router"
     networks:
-    - "fms-backend"
-    - "fms-vehicle"
+      - "fms-backend"
+      - "fms-vehicle"
     ports:
-    - 7447:7447/tcp
-    - 1883:1883/tcp
-    - 8000:8000/tcp
+      - 7447:7447/tcp
     restart: unless-stopped
     volumes:
-    - ./zenoh-config.json5:/zenoh-config.json5
-    
+      - ./zenoh-config.json5:/zenoh-config.json5
+
   fms-forwarder:
     command: "zenoh -m client"
     depends_on:
       zenoh:
         condition: service_started
-     
+
   fms-consumer:
     command: "zenoh -m client"
     image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-consumer:main"
@@ -49,23 +47,23 @@ services:
       dockerfile: "Dockerfile.fms-consumer"
     container_name: "fms-consumer"
     cap_drop:
-    - CAP_MKNOD
-    - CAP_NET_RAW
-    - CAP_AUDIT_WRITE
+      - CAP_MKNOD
+      - CAP_NET_RAW
+      - CAP_AUDIT_WRITE
     networks:
-    - "fms-backend"
+      - "fms-backend"
     depends_on:
       influxdb:
         condition: service_healthy
       zenoh:
         condition: service_started
     env_file:
-    - "./influxdb/fms-demo.env"
+      - "./influxdb/fms-demo.env"
     environment:
       INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
       RUST_LOG: "${FMS_CONSUMER_LOG_CONFIG:-info,fms_consumer=debug,influx_client=debug}"
     volumes:
-    - type: "volume"
-      source: "influxdb-auth"
-      target: "/tmp"
-      read_only: true
+      - type: "volume"
+        source: "influxdb-auth"
+        target: "/tmp"
+        read_only: true

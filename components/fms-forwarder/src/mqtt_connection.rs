@@ -27,7 +27,6 @@ const PARAM_CA_PATH: &str = "ca-path";
 const PARAM_DEVICE_CERT: &str = "device-cert";
 const PARAM_DEVICE_KEY: &str = "device-key";
 const PARAM_ENABLE_HOSTNAME_VERIFICATION: &str = "enable-hostname-verification";
-const PARAM_MQTT_CLIENT_ID: &str = "mqtt-client-id";
 const PARAM_MQTT_URI: &str = "mqtt-uri";
 const PARAM_MQTT_USERNAME: &str = "mqtt-username";
 const PARAM_MQTT_PASSWORD: &str = "mqtt-password";
@@ -40,7 +39,6 @@ const PARAM_TRUST_STORE_PATH: &str = "trust-store-path";
 ///
 /// | Long Name                    | Environment Variable         | Default Value |
 /// |------------------------------|------------------------------|---------------|
-/// | mqtt-client-id               | MQTT_CLIENT_ID               | -             |
 /// | mqtt-uri                     | MQTT_URI                     | -             |
 /// | mqtt-username                | MQTT_USERNAME                | -             |
 /// | mqtt-password                | MQTT_PASSWORD                | -             |
@@ -52,15 +50,6 @@ const PARAM_TRUST_STORE_PATH: &str = "trust-store-path";
 ///
 pub fn add_command_line_args(command: Command) -> Command {
     command
-        .arg(
-            Arg::new(PARAM_MQTT_CLIENT_ID)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long(PARAM_MQTT_CLIENT_ID)
-                .help("The client identifier to use in the MQTT Connect Packet.")
-                .value_name("ID")
-                .required(false)
-                .env("MQTT_CLIENT_ID"),
-        )
         .arg(
             Arg::new(PARAM_MQTT_URI)
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
@@ -142,7 +131,6 @@ pub fn add_command_line_args(command: Command) -> Command {
 pub struct MqttConnection {
     pub mqtt_client: AsyncClient,
     pub uri: String,
-    pub client_id: String,
 }
 
 impl MqttConnection {
@@ -221,17 +209,12 @@ impl MqttConnection {
     pub async fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
         let connect_options = MqttConnection::get_connect_options(args)?;
         let mqtt_uri = args.get_one::<String>(PARAM_MQTT_URI).unwrap().to_owned();
-        let client_id = args
-            .get_one::<String>(PARAM_MQTT_CLIENT_ID)
-            .unwrap_or(&"".to_string())
-            .to_owned();
         info!("connecting to MQTT endpoint at {}", mqtt_uri);
         match CreateOptionsBuilder::new()
             .server_uri(&mqtt_uri)
             .max_buffered_messages(50)
             .send_while_disconnected(true)
             .delete_oldest_messages(true)
-            .client_id(&client_id)
             .create_client()
         {
             Err(e) => {
@@ -247,7 +230,6 @@ impl MqttConnection {
                 Ok(MqttConnection {
                     mqtt_client: client,
                     uri: mqtt_uri,
-                    client_id,
                 })
             }
         }
@@ -289,9 +271,6 @@ mod tests {
             matches.get_one::<String>(super::PARAM_MQTT_URI).unwrap(),
             "mqtts://non-existing.host.io"
         );
-        assert!(matches
-            .get_one::<String>(super::PARAM_MQTT_CLIENT_ID)
-            .is_none());
         assert!(matches
             .get_one::<String>(super::PARAM_MQTT_USERNAME)
             .is_none());

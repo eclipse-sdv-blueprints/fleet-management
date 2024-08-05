@@ -82,7 +82,10 @@ fn parse_zenoh_args(args: &ArgMatches) -> Config {
             .set_enabled(Some(*values))
             .unwrap();
     }
-
+    if let Some(values) = args.get_one::<Duration>("session-timeout") {
+        let millis = u64::try_from(values.as_millis()).unwrap_or(u64::MAX);
+        config.scouting.set_timeout(Some(millis)).unwrap();
+    }
     config
 }
 
@@ -310,10 +313,20 @@ async fn run_async_processor_zenoh(args: &ArgMatches) {
     let config = parse_zenoh_args(zenoh_args);
 
     info!("Opening session...");
-    let session = zenoh::open(config).res().await.unwrap();
+    let session = zenoh::open(config).res().await.unwrap_or_else(|e| {
+        error!("failed to open Zenoh session: {e}");
+        process::exit(1);
+    });
 
     info!("Declaring Subscriber on '{}'...", &KEY_EXPR);
-    let subscriber = session.declare_subscriber(KEY_EXPR).res().await.unwrap();
+    let subscriber = session
+        .declare_subscriber(KEY_EXPR)
+        .res()
+        .await
+        .unwrap_or_else(|e| {
+            error!("failed to create Zenoh subscriber: {e}");
+            process::exit(1);
+        });
     loop {
         select!(
             sample = subscriber.recv_async() => {
@@ -342,69 +355,79 @@ pub async fn main() {
         .subcommand_required(true)
         .subcommand(
             Command::new(SUBCOMMAND_HONO)
-                .about("Forwards VSS data to an Influx DB server from Hono's north bound Kafka API").arg(
-            Arg::new(PARAM_KAFKA_PROPERTIES_FILE)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long(PARAM_KAFKA_PROPERTIES_FILE)
-                .help("The path to a file containing Kafka client properties for connecting to the Kafka broker(s).")
-		.action(ArgAction::Set)
-                .value_name("PATH")
-                .env("KAFKA_PROPERTIES_FILE")
-                .required(true),
-        )
-        .arg(
-            Arg::new(PARAM_KAFKA_TOPIC_NAME)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long(PARAM_KAFKA_TOPIC_NAME)
-                .alias("topic")
-                .help("The name of the Kafka topic to consume VSS data from.")
-                .value_name("TOPIC")
-                .required(true)
-                .env("KAFKA_TOPIC_NAME"),
-        ),
+                .about("Forwards VSS data to an Influx DB server from Hono's north bound Kafka API")
+                .arg(
+                    Arg::new(PARAM_KAFKA_PROPERTIES_FILE)
+                        .value_parser(clap::builder::NonEmptyStringValueParser::new())
+                        .long(PARAM_KAFKA_PROPERTIES_FILE)
+                        .help("The path to a file containing Kafka client properties for connecting to the Kafka broker(s).")
+                        .action(ArgAction::Set)
+                        .value_name("PATH")
+                        .env("KAFKA_PROPERTIES_FILE")
+                        .required(true),
+                )
+                .arg(
+                    Arg::new(PARAM_KAFKA_TOPIC_NAME)
+                        .value_parser(clap::builder::NonEmptyStringValueParser::new())
+                        .long(PARAM_KAFKA_TOPIC_NAME)
+                        .alias("topic")
+                        .help("The name of the Kafka topic to consume VSS data from.")
+                        .value_name("TOPIC")
+                        .required(true)
+                        .env("KAFKA_TOPIC_NAME"),
+                ),
         )
         .subcommand(
             Command::new(SUBCOMMAND_ZENOH)
                 .about("Forwards VSS data to an Influx DB server from Eclipse Zenoh")
-            .arg(
-            Arg::new("mode")
-		.value_parser(clap::value_parser!(WhatAmI))
-                .long("mode")
-                .short('m')
-                .help("The Zenoh session mode (peer by default).")
-                .required(false),
-        )
-        .arg(
-            Arg::new("connect")
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long("connect")
-                .short('e')
-                .help("Endpoints to connect to.")
-                .required(false),
-        )
-        .arg(
-            Arg::new("listen")
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long("listen")
-                .short('l')
-                .help("Endpoints to listen on.")
-                .required(false),
-        )
-        .arg(
-            Arg::new("no-multicast-scouting")
-                .long("no-multicast-scouting")
-                .help("Disable the multicast-based scouting mechanism.")
-                .action(clap::ArgAction::SetFalse)
-                .required(false),
-        )
-        .arg(
-            Arg::new("config")
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long("config")
-                .short('c')
-                .help("A configuration file.")
-                .required(false),
-        ),
+                .arg(
+                    Arg::new("mode")
+                        .value_parser(clap::value_parser!(WhatAmI))
+                        .long("mode")
+                        .short('m')
+                        .help("The Zenoh session mode (peer by default).")
+                        .required(false),
+                )
+                .arg(
+                    Arg::new("connect")
+                        .value_parser(clap::builder::NonEmptyStringValueParser::new())
+                        .long("connect")
+                        .short('e')
+                        .help("Endpoints to connect to.")
+                        .required(false),
+                )
+                .arg(
+                    Arg::new("listen")
+                        .value_parser(clap::builder::NonEmptyStringValueParser::new())
+                        .long("listen")
+                        .short('l')
+                        .help("Endpoints to listen on.")
+                        .required(false),
+                )
+                .arg(
+                    Arg::new("no-multicast-scouting")
+                        .long("no-multicast-scouting")
+                        .help("Disable the multicast-based scouting mechanism.")
+                        .action(clap::ArgAction::SetFalse)
+                        .required(false),
+                )
+                .arg(
+                    Arg::new("config")
+                        .value_parser(clap::builder::NonEmptyStringValueParser::new())
+                        .long("config")
+                        .short('c')
+                        .help("A configuration file.")
+                        .required(false),
+                )
+                .arg(
+                    Arg::new("session-timeout")
+                        .value_parser(|s: &str| duration_str::parse(s))
+                        .long("session-timeout")
+                        .help("The time to wait for establishment of a Zenoh session, e.g. 10s.")
+                        .value_name("DURATION_SPEC")
+                        .required(false)
+                        .default_value("20s")
+                ),
         );
 
     let args = parser.get_matches();
