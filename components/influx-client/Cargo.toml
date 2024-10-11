@@ -29,11 +29,24 @@ readme.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { workspace = true, features = ["std", "env", "color", "help", "usage", "error-context", "suggestions"]}
+clap = { workspace = true, features = [
+    "std",
+    "env",
+    "color",
+    "help",
+    "usage",
+    "error-context",
+    "suggestions",
+] }
 fms-proto = { workspace = true, optional = true }
 protobuf = { workspace = true, optional = true }
-influxrs = { workspace = true }
-isahc = { version = "1.7", default-features = false, features = ["http2", "static-ssl", "static-curl", "text-decoding"] }
+influxrs = { workspace = true, features = ["client"] }
+isahc = { version = "1.7", default-features = false, features = [
+    "http2",
+    "static-ssl",
+    "static-curl",
+    "text-decoding",
+] }
 log = { workspace = true }
 
 [features]
