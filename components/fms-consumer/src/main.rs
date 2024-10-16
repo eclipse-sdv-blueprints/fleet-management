@@ -82,7 +82,10 @@ fn parse_zenoh_args(args: &ArgMatches) -> Config {
             .set_enabled(Some(*values))
             .unwrap();
     }
-
+    if let Some(values) = args.get_one::<Duration>("session-timeout") {
+        let millis = u64::try_from(values.as_millis()).unwrap_or(u64::MAX);
+        config.scouting.set_timeout(Some(millis)).unwrap();
+    }
     config
 }
 
@@ -310,10 +313,20 @@ async fn run_async_processor_zenoh(args: &ArgMatches) {
     let config = parse_zenoh_args(zenoh_args);
 
     info!("Opening session...");
-    let session = zenoh::open(config).res().await.unwrap();
+    let session = zenoh::open(config).res().await.unwrap_or_else(|e| {
+        error!("failed to open Zenoh session: {e}");
+        process::exit(1);
+    });
 
     info!("Declaring Subscriber on '{}'...", &KEY_EXPR);
-    let subscriber = session.declare_subscriber(KEY_EXPR).res().await.unwrap();
+    let subscriber = session
+        .declare_subscriber(KEY_EXPR)
+        .res()
+        .await
+        .unwrap_or_else(|e| {
+            error!("failed to create Zenoh subscriber: {e}");
+            process::exit(1);
+        });
     loop {
         select!(
             sample = subscriber.recv_async() => {
@@ -342,7 +355,8 @@ pub async fn main() {
         .subcommand_required(true)
         .subcommand(
             Command::new(SUBCOMMAND_HONO)
-                .about("Forwards VSS data to an Influx DB server from Hono's north bound Kafka API").arg(
+                .about("Forwards VSS data to an Influx DB server from Hono's north bound Kafka API")
+                .arg(
             Arg::new(PARAM_KAFKA_PROPERTIES_FILE)
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .long(PARAM_KAFKA_PROPERTIES_FILE)
@@ -404,6 +418,15 @@ pub async fn main() {
                 .short('c')
                 .help("A configuration file.")
                 .required(false),
+                )
+                .arg(
+                    Arg::new("session-timeout")
+                        .value_parser(|s: &str| duration_str::parse(s))
+                        .long("session-timeout")
+                        .help("The time to wait for establishment of a Zenoh session, e.g. 10s.")
+                        .value_name("DURATION_SPEC")
+                        .required(false)
+                        .default_value("20s")
         ),
         );
 
