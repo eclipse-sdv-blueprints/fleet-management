@@ -20,7 +20,6 @@
 use crate::models;
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct VehicleStatusResponseObject {
     #[serde(rename = "vehicleStatusResponse")]
     pub vehicle_status_response: VehicleStatusResponseObjectVehicleStatusResponse,
@@ -40,7 +39,6 @@ pub struct VehicleStatusResponseObject {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct VehicleStatusResponseObjectVehicleStatusResponse {
     #[serde(rename = "vehicleStatuses")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -48,7 +46,6 @@ pub struct VehicleStatusResponseObjectVehicleStatusResponse {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct VehicleStatusObject {
     /// vehicle identification number. See ISO 3779 (17 characters)
     #[serde(rename = "vin")]
@@ -129,7 +126,6 @@ pub struct VehicleStatusObject {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct VehicleStatusObjectDoorStatusInner {
     // Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "DoorEnabledStatus")]
@@ -152,7 +148,6 @@ pub struct VehicleStatusObjectDoorStatusInner {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct AccumulatedDataObject {
     /// The time the vehicle speed has been over zero.
     #[serde(rename = "durationWheelbasedSpeedOverZero")]
@@ -341,7 +336,6 @@ pub struct AccumulatedDataObject {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct LabelObject {
     #[serde(rename = "label")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -369,7 +363,6 @@ pub struct LabelObject {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct FromToClassObject {
     #[serde(rename = "from")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -401,7 +394,6 @@ pub struct FromToClassObject {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct FromToClassObjectCombustion {
     #[serde(rename = "from")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -429,7 +421,6 @@ pub struct FromToClassObjectCombustion {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct FromToClassObjectElectrical {
     #[serde(rename = "from")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -453,7 +444,6 @@ pub struct FromToClassObjectElectrical {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct SnapshotDataObject {
     #[serde(rename = "gnssPosition")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -577,7 +567,6 @@ pub struct SnapshotDataObject {
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
 )]
-#[cfg_attr(feature = "conversion", derive(frunk_enum_derive::LabelledGenericEnum))]
 pub enum DriverWorkingStateProperty {
     #[serde(rename = "REST")]
     Rest,
@@ -595,7 +584,6 @@ pub enum DriverWorkingStateProperty {
 
 /// Estimated distance to empty (tanks and/or battery packs) in meters
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct SnapshotDataObjectEstimatedDistanceToEmpty {
     /// Estimated distance to empty, summarizing fuel, gas and battery in meters
     #[serde(rename = "total")]
@@ -619,7 +607,6 @@ pub struct SnapshotDataObjectEstimatedDistanceToEmpty {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct SnapshotDataObjectVehicleAxlesInner {
     /// Axle position from 1 to 15, 1 being in the front of the truck
     #[serde(rename = "vehicleAxlePosition")]
@@ -633,7 +620,6 @@ pub struct SnapshotDataObjectVehicleAxlesInner {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct SnapshotDataObjectTrailersInner {
     /// Trailer number from 1 to 5, 1 being closest to the truck, according to ISO 11992-2.
     #[serde(rename = "trailerNo")]
@@ -673,7 +659,6 @@ pub struct SnapshotDataObjectTrailersInner {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct SnapshotDataObjectTrailersInnerTrailerAxlesInner {
     /// Axle position from 1 to 15, 1 being in the front closest to the truck, according to ISO 11992-2.
     #[serde(rename = "trailerAxlePosition")]
@@ -687,7 +672,6 @@ pub struct SnapshotDataObjectTrailersInnerTrailerAxlesInner {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct UptimeDataObject {
     /// List of tell tales with the actual status for each tell tale.
     #[serde(rename = "tellTaleInfo")]
@@ -755,7 +739,6 @@ pub struct UptimeDataObject {
 
 /// The alternator status of the up to 4 alternators. Used mainly for buses.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct UptimeDataObjectAlternatorInfo {
     // Note: inline enums are not fully supported by openapi-generator
     #[serde(rename = "alternatorStatus")]
