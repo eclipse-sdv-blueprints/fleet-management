@@ -142,7 +142,6 @@ pub fn add_command_line_args(command: Command) -> Command {
 pub struct MqttConnection {
     pub mqtt_client: AsyncClient,
     pub uri: String,
-    pub client_id: String,
 }
 
 impl MqttConnection {
@@ -223,7 +222,7 @@ impl MqttConnection {
         let mqtt_uri = args.get_one::<String>(PARAM_MQTT_URI).unwrap().to_owned();
         let client_id = args
             .get_one::<String>(PARAM_MQTT_CLIENT_ID)
-            .unwrap_or(&"".to_string())
+            .unwrap_or(&String::default())
             .to_owned();
         info!("connecting to MQTT endpoint at {}", mqtt_uri);
         match CreateOptionsBuilder::new()
@@ -231,7 +230,7 @@ impl MqttConnection {
             .max_buffered_messages(50)
             .send_while_disconnected(true)
             .delete_oldest_messages(true)
-            .client_id(&client_id)
+            .client_id(client_id)
             .create_client()
         {
             Err(e) => {
@@ -247,7 +246,6 @@ impl MqttConnection {
                 Ok(MqttConnection {
                     mqtt_client: client,
                     uri: mqtt_uri,
-                    client_id,
                 })
             }
         }
