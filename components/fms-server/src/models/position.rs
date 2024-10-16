@@ -23,7 +23,6 @@ use crate::models;
 //use serde::Serialize;
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct VehiclePositionObject {
     /// vehicle identification number. See ISO 3779 (17 characters)
     #[serde(rename = "vin")]
@@ -56,7 +55,6 @@ pub struct VehiclePositionObject {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct GnssPositionObject {
     /// Latitude (WGS84 based)
     #[serde(rename = "latitude")]
@@ -87,7 +85,6 @@ pub struct GnssPositionObject {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct VehiclePositionResponseObject {
     #[serde(rename = "vehiclePositionResponse")]
     pub vehicle_position_response: VehiclePositionResponseObjectVehiclePositionResponse,
@@ -107,7 +104,6 @@ pub struct VehiclePositionResponseObject {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "conversion", derive(frunk::LabelledGeneric))]
 pub struct VehiclePositionResponseObjectVehiclePositionResponse {
     #[serde(rename = "vehiclePositions")]
     #[serde(skip_serializing_if = "Option::is_none")]
