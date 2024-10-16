@@ -39,6 +39,7 @@ clap = { workspace = true, features = [
     "error-context",
     "suggestions",
 ] }
+duration-str = { workspace = true }
 env_logger = { workspace = true }
 fms-proto = { workspace = true }
 futures = { version = "0.3" }
