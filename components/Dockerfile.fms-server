@@ -34,15 +34,17 @@ ENV CARGO_UNSTABLE_SPARSE_REGISTRY=true
 RUN echo "Building for $TARGETARCH"
 RUN mkdir components
 COPY . components/
-WORKDIR /home/rust/src/components
+WORKDIR /home/rust/src/components/fms-server
 
-RUN cargo build --package fms-server --release --target $BUILDTARGET
-RUN mv target/${BUILDTARGET}/release/fms-server /home/rust
+RUN cargo install cargo-about
+RUN cargo about generate -o /home/rust/licenses.html ../about.hbs
+RUN cargo build --release --target $BUILDTARGET
+RUN mv ../target/${BUILDTARGET}/release/fms-server /home/rust
 
 FROM scratch
 
 COPY --from=builder /home/rust/fms-server /app/fms-server
-COPY LICENSES /app/
+COPY --from=builder /home/rust/licenses.html /app/
 
 EXPOSE 8081
 ENTRYPOINT [ "/app/fms-server" ]

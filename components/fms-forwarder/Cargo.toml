@@ -19,6 +19,7 @@
 
 [package]
 name = "fms-forwarder"
+publish = false
 version.workspace = true
 edition.workspace = true
 license.workspace = true
