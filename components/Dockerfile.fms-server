@@ -30,13 +30,13 @@ ARG TARGETARCH
 # This will speed up fetching the crate.io index in the future, see
 # https://blog.rust-lang.org/2022/06/22/sparse-registry-testing.html
 ENV CARGO_UNSTABLE_SPARSE_REGISTRY=true
+RUN cargo install cargo-about
 
 RUN echo "Building for $TARGETARCH"
 RUN mkdir components
 COPY . components/
 WORKDIR /home/rust/src/components/fms-server
 
-RUN cargo install cargo-about
 RUN cargo about generate -o /home/rust/licenses.html ../about.hbs
 RUN cargo build --release --target $BUILDTARGET
 RUN mv ../target/${BUILDTARGET}/release/fms-server /home/rust
