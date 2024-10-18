@@ -38,15 +38,17 @@ ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
 RUN echo "Building for $TARGETARCH"
 RUN mkdir components
 COPY . components/
-WORKDIR /home/rust/src/components
+WORKDIR /home/rust/src/components/fms-forwarder
 
-RUN cargo build --package fms-forwarder --release --target $BUILDTARGET
-RUN mv target/${BUILDTARGET}/release/fms-forwarder /home/rust
+RUN cargo install cargo-about
+RUN cargo about generate -o /home/rust/licenses.html ../about.hbs
+RUN cargo build --release --target $BUILDTARGET
+RUN mv ../target/${BUILDTARGET}/release/fms-forwarder /home/rust
 
 FROM scratch
 
 COPY --from=builder /home/rust/fms-forwarder /app/fms-forwarder
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY LICENSES /app/
+COPY --from=builder /home/rust/licenses.html /app/
 
 ENTRYPOINT [ "/app/fms-forwarder" ]
