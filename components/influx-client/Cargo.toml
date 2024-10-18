@@ -41,7 +41,7 @@ clap = { workspace = true, features = [
 ] }
 fms-proto = { workspace = true, optional = true }
 protobuf = { workspace = true, optional = true }
-influxrs = { workspace = true }
+influxrs = { workspace = true, features = ["client"] }
 isahc = { version = "1.7", default-features = false, features = [
     "http2",
     "static-ssl",
