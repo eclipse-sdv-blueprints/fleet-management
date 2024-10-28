@@ -23,7 +23,6 @@ use clap::ArgMatches;
 use fms_proto::fms::VehicleStatus;
 use influxrs::Measurement;
 use log::{debug, warn};
-use protobuf::well_known_types::timestamp::Timestamp;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::connection::InfluxConnection;
@@ -253,15 +252,21 @@ impl InfluxWriter {
             debug!("ignoring vehicle status without VIN ...");
             return;
         }
-        let created_timestamp: u128 = match vehicle_status.created.clone().into_option() {
-            Some(ts) => <Timestamp as Into<SystemTime>>::into(ts)
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis(),
-            None => {
-                debug!("ignoring vehicle status without created timestamp");
-                return;
-            }
+        let Some(ts) = vehicle_status
+            .created
+            .clone()
+            .into_option()
+            .and_then(|v| SystemTime::try_from(v).ok())
+        else {
+            debug!("ignoring vehicle status without created timestamp");
+            return;
+        };
+        let Ok(created_timestamp) = ts
+            .duration_since(UNIX_EPOCH)
+            .map_err(|e| debug!("error processing 'created' timestamp: {}", e))
+            .map(|d| d.as_millis())
+        else {
+            return;
         };
         let trigger = match vehicle_status.trigger.clone().into_option() {
             Some(t) => match t.context.as_str() {
@@ -280,7 +285,7 @@ impl InfluxWriter {
             }
         };
 
-        let mut measurements: Vec<Measurement> = Vec::new();
+        let mut measurements = Vec::new();
         if let Some(measurement) = build_header_measurement(
             vehicle_status.vin.as_str(),
             &trigger,
@@ -299,15 +304,11 @@ impl InfluxWriter {
             debug!("writing snapshot measurement to influxdb");
             measurements.push(measurement);
         }
-
         if !measurements.is_empty() {
             if let Err(e) = self
                 .influx_con
                 .client
-                .write(
-                    self.influx_con.bucket.as_str(),
-                    measurements[..].try_into().unwrap(),
-                )
+                .write(self.influx_con.bucket.as_str(), measurements.as_slice())
                 .await
             {
                 warn!("failed to write data to influx: {e}");

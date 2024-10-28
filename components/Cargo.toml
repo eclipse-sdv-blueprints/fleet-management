@@ -50,7 +50,7 @@ prost = { version = "0.12" }
 prost-types = { version = "0.12" }
 # tokio does not enable features by default
 tokio = { version = "1.39" }
-zenoh = { version = "0.11.0", default-features = false }
+zenoh = { version = "1.0.0", default-features = false }
 
 [profile.release]
 lto = true          # Link time optimization (dead code removal etc...)
