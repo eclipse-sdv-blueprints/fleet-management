@@ -1521,9 +1521,9 @@ dependencies = [
 
 [[package]]
 name = "influxrs"
-version = "3.0.0"
+version = "3.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae2b0b3d0ecac700fd3b3833d8faf40e3606e9759fa232758998a098a69670c5"
+checksum = "03afc8a4c6452678daa690a20f48efe1c81e037ba65eca22560078c831b430a8"
 dependencies = [
  "csv",
  "isahc",
