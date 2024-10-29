@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tonic_build::configure()
         .compile_well_known_types(false)
         .build_server(false)
-        .compile(
+        .compile_protos(
             &["proto/kuksa/val/v1/val.proto"],
             &["proto", "proto/kuksa/val/v1"],
         )?;
