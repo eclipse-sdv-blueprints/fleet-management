@@ -18,11 +18,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 services:
-  zenoh:
+  fms-zenoh-router:
     command: -c /zenoh-config.json5
     environment:
       RUST_LOG: zenoh=info
-    image: eclipse/zenoh:0.10.1-rc
+    image: eclipse/zenoh:1.0.0
     container_name: "fms-zenoh-router"
     networks:
       - "fms-backend"
@@ -31,16 +31,18 @@ services:
       - 7447:7447/tcp
     restart: unless-stopped
     volumes:
-      - ./zenoh-config.json5:/zenoh-config.json5
+      - ./zenoh-config-router.json5:/zenoh-config.json5
 
   fms-forwarder:
-    command: "zenoh -m client"
+    command: "zenoh -c /zenoh-config.json5"
     depends_on:
-      zenoh:
+      fms-zenoh-router:
         condition: service_started
+    volumes:
+      - ./zenoh-config-client.json5:/zenoh-config.json5
 
   fms-consumer:
-    command: "zenoh -m client"
+    command: "zenoh -c /zenoh-config.json5"
     image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-consumer:main"
     build:
       context: "./components"
@@ -55,7 +57,7 @@ services:
     depends_on:
       influxdb:
         condition: service_healthy
-      zenoh:
+      fms-zenoh-router:
         condition: service_started
     env_file:
       - "./influxdb/fms-demo.env"
@@ -63,6 +65,7 @@ services:
       INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
       RUST_LOG: "${FMS_CONSUMER_LOG_CONFIG:-info,fms_consumer=debug,influx_client=debug}"
     volumes:
+      - ./zenoh-config-client.json5:/zenoh-config.json5
       - type: "volume"
         source: "influxdb-auth"
         target: "/tmp"
