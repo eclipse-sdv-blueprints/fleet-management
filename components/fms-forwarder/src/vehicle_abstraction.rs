@@ -108,11 +108,11 @@ mod vss;
 ///
 /// The following arguments are being added:
 ///
-/// | long name           | environment variable | default value | description |
-/// |---------------------|----------------------|---------------|-------------|
-/// | *databroker-uri*    | *KUKSA_DATA_BROKER_URI*| `http://127.0.0.1:55555` | The HTTP(S) URI of the kuksa.val Databroker's gRPC endpoint. |
-/// | *default-vin*       | *DEFAULT_VIN*        | `YV2E4C3A5VB180691` | The default VIN to use if the kuksa.val Databroker does not contain the vehicle's VIN. The VIN is used as a tag on measurements written to the InfluxDB server. |
-/// | *timer-interval*    | *TIMER_INTERVAL*     | `5s`          | The time period to wait after polling FMS snapshot data from the kuksa.val Databroker, e.g 5m10s or 1h15m. |
+/// | long name           | environment variable  | default value | description |
+/// |---------------------|-----------------------|---------------|-------------|
+/// | *databroker-uri*    | *KUKSA_DATABROKER_URI*| `http://127.0.0.1:55555` | The HTTP(S) URI of the kuksa.val Databroker's gRPC endpoint. |
+/// | *default-vin*       | *DEFAULT_VIN*         | `YV2E4C3A5VB180691` | The default VIN to use if the kuksa.val Databroker does not contain the vehicle's VIN. The VIN is used as a tag on measurements written to the InfluxDB server. |
+/// | *timer-interval*    | *TIMER_INTERVAL*      | `5s`          | The time period to wait after polling FMS snapshot data from the kuksa.val Databroker, e.g 5m10s or 1h15m. |
 ///
 pub fn add_command_line_args(command_line: Command) -> Command {
     command_line
@@ -124,7 +124,7 @@ pub fn add_command_line_args(command_line: Command) -> Command {
                 .help("The HTTP(S) URI of the kuksa.val Databroker's gRPC endpoint.")
                 .value_name("URI")
                 .required(false)
-                .env("KUKSA_DATA_BROKER_URI")
+                .env("KUKSA_DATABROKER_URI")
                 .default_value("http://127.0.0.1:55555"),
         )
         .arg(
