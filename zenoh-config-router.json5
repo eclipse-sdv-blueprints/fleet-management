@@ -85,7 +85,7 @@
   ////
   //// mode: The bridge's mode (peer or client)
   ////
-  //mode: "client",
+  mode: "router",
 
   ////
   //// Which endpoints to connect to. E.g. tcp/localhost:7447.
@@ -104,7 +104,7 @@
   ////
   listen: {
     endpoints: [
-      //"tcp/127.0.0.1:7447"
+      "tcp/0.0.0.0:7447"
     ]
   },
 }

@@ -49,7 +49,6 @@ log = { workspace = true }
 paho-mqtt = { version = "0.12", default-features = false, features = [
     "vendored-ssl",
 ] }
-zenoh = { workspace = true, features = ["transport_tcp"] }
 protobuf = { workspace = true }
 prost = { version = "0.13" }
 prost-types = { version = "0.13" }
@@ -60,6 +59,7 @@ tonic = { version = "0.12.3", default-features = false, features = [
     "tls",
     "prost",
 ] }
+zenoh = { workspace = true, features = ["transport_tcp"] }
 
 [build-dependencies]
 protoc-bin-vendored = { workspace = true }
