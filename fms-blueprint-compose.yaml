@@ -128,7 +128,7 @@ services:
         target: "/tmp"
         read_only: true
   databroker:
-    image: "ghcr.io/eclipse/kuksa.val/databroker:0.4.1"
+    image: "quay.io/eclipse-kuksa/kuksa-databroker:0.4.6"
     container_name: "databroker"
     cap_drop: *default-drops
     networks:
@@ -138,9 +138,9 @@ services:
     configs:
       - "vss_overlay.json"
     environment:
-      KUKSA_DATA_BROKER_ADDR: "0.0.0.0"
-      KUKSA_DATA_BROKER_PORT: "55556"
-      KUKSA_DATA_BROKER_METADATA_FILE: "/vss_overlay.json"
+      KUKSA_DATABROKER_ADDR: "0.0.0.0"
+      KUKSA_DATABROKER_PORT: "55556"
+      KUKSA_DATABROKER_METADATA_FILE: "/vss_overlay.json"
       RUST_LOG: "info"
     # for the time being, we do not use TLS secured connections to Databroker
     command: "--insecure"
@@ -163,7 +163,7 @@ services:
     env_file: "${FMS_FORWARDER_PROPERTIES_FILE:-./influxdb/fms-demo.env}"
     environment:
       INFLUXDB_TOKEN_FILE: "/etc/forwarder/fms-demo.token"
-      KUKSA_DATA_BROKER_URI: "http://databroker:55556"
+      KUKSA_DATABROKER_URI: "http://databroker:55556"
       RUST_LOG: "${FMS_FORWARDER_LOG_CONFIG:-info,fms_forwarder=info,influx_client=info}"
       TRUST_STORE_PATH: "${FMS_FORWARDER_TRUST_STORE_PATH:-/etc/ssl/certs/ca-certificates.crt}"
     volumes:
@@ -172,7 +172,7 @@ services:
         target: "/etc/forwarder"
         read_only: true
   csv-provider:
-    image: "ghcr.io/eclipse/kuksa.val.feeders/csv-provider:main"
+    image: "quay.io/eclipse-kuksa/csv-provider:0.4.4"
     container_name: "csv-provider"
     cap_drop: *default-drops
     networks:
