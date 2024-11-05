@@ -17,17 +17,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-use clap::Command;
+use clap::Parser;
+use influx_client::connection::InfluxConnectionConfig;
+
+/// Exposes data from an InfluxDB via an rFMS API endpoint.
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct FmsServerArgs {
+    #[command(flatten)]
+    influx_connection: InfluxConnectionConfig,
+}
 
 #[tokio::main]
 async fn main() {
     env_logger::init();
 
-    let mut parser = Command::new("rFMS server")
-        .about("Exposes data from an InfluxDB via an rFMS API endpoint.");
-    parser = fms_server::add_command_line_args(parser);
-    let args = parser.get_matches();
-    let router = fms_server::app(args);
+    // let mut parser = Command::new("rFMS server")
+    //     .about("Exposes data from an InfluxDB via an rFMS API endpoint.");
+    // parser = fms_server::add_command_line_args(parser);
+    // let args = parser.get_matches();
+    let args = FmsServerArgs::parse();
+    let router = fms_server::app(&args.influx_connection);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8081").await.unwrap();
     axum::serve::serve(listener, router.into_make_service())
         .await

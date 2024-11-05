@@ -144,6 +144,31 @@ services:
       RUST_LOG: "info"
     # for the time being, we do not use TLS secured connections to Databroker
     command: "--insecure"
+  fms-consumer:
+    image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-consumer:main"
+    build:
+      context: "./components"
+      dockerfile: "Dockerfile.fms-consumer"
+    container_name: "fms-consumer"
+    cap_drop:
+      - CAP_MKNOD
+      - CAP_NET_RAW
+      - CAP_AUDIT_WRITE
+    networks:
+      - "fms-backend"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    env_file:
+      - "./influxdb/fms-demo.env"
+    environment:
+      INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
+      RUST_LOG: "${FMS_CONSUMER_LOG_CONFIG:-info,fms_consumer=debug,influx_client=debug}"
+    volumes:
+      - type: "volume"
+        source: "influxdb-auth"
+        target: "/tmp"
+        read_only: true
   fms-forwarder:
     image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-forwarder:main"
     build: &fms-forwarder-build
@@ -159,7 +184,6 @@ services:
         condition: service_healthy
       databroker:
         condition: service_started
-    command: "influx"
     env_file: "${FMS_FORWARDER_PROPERTIES_FILE:-./influxdb/fms-demo.env}"
     environment:
       INFLUXDB_TOKEN_FILE: "/etc/forwarder/fms-demo.token"
