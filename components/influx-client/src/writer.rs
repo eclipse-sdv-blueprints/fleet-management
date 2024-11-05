@@ -19,14 +19,13 @@
 
 //! Provides means to write a Vehicle's current status properties
 //! to an InfluxDB as Influx *measurements*.
-use clap::ArgMatches;
 use fms_proto::fms::VehicleStatus;
 use influxrs::Measurement;
 use log::{debug, warn};
 use protobuf::well_known_types::timestamp::Timestamp;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::connection::InfluxConnection;
+use crate::connection::{InfluxConnection, InfluxConnectionConfig};
 
 fn build_header_measurement(
     vin: &str,
@@ -194,7 +193,7 @@ impl InfluxWriter {
     ///
     /// Determines the parameters necessary for creating the writer from values specified on
     /// the command line or via environment variables as defined by [`super::add_command_line_args`].
-    pub fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(args: &InfluxConnectionConfig) -> Result<Self, Box<dyn std::error::Error>> {
         InfluxConnection::new(args).map(|con| InfluxWriter { influx_con: con })
     }
 

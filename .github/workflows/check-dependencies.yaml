@@ -40,7 +40,8 @@ jobs:
           | grep -v '^[[:space:]]*$' \
           | grep -v fms- \
           | grep -v influx-client \
-          | grep -v zenoh \
+          | grep -v up-cloudevents \
+          | grep -v up-transport-hono \
           | sed -E 's|([^ ]+) v([^ ]+).*|crate/cratesio/-/\1/\2|' \
           > DEPS.txt
     - name: Set up JDK

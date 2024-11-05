@@ -1,0 +1,21 @@
+[package]
+name = "up-transport-hono-mqtt"
+publish = false
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+edition.workspace = true
+documentation.workspace = true
+
+[dependencies]
+async-trait = { workspace = true }
+clap = { workspace = true, features = ["std", "derive", "env"] }
+log = { workspace = true }
+paho-mqtt = { version = "0.12", default-features = false, features = [
+    "vendored-ssl",
+] }
+protobuf = { workspace = true }
+up-cloudevents = { workspace = true }
+up-rust = { workspace = true }
+url_encor = { version = "1.0.2" }

@@ -249,6 +249,7 @@ group.id=fms-demo-consumer
 enable.partition.eof=false
 session.timeout.ms=6000
 enable.auto.commit=true
+allow.auto.create.topics=true
 security.protocol=SASL_SSL
 sasl.mechanism=SCRAM-SHA-512
 sasl.username=${HONO_KAFKA_USER}
@@ -288,6 +289,6 @@ create_docker_compose_env \
   "${CONFIG_DIR_BASE}/hono.env" \
   "${CONFIG_DIR_FMS_CONSUMER}" \
   "kafka.properties" \
-  "hono.telemetry.${HONO_TENANT_ID}" \
+  "${HONO_TENANT_ID}" \
   "${CONFIG_DIR_FMS_FORWARDER}" \
   "${MQTT_PROPS_FILE}"
