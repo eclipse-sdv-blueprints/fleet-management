@@ -30,30 +30,14 @@ jobs:
   deps:
     name: "Check 3rd party Rust dependencies' licenses"
     runs-on: ubuntu-latest
+    env:
+      DASH_SUMMARY: "DEPENDENCIES.txt"
     steps:
     - uses: actions/checkout@v4
-    - name: Determine list of 3rd party Rust dependencies
-      working-directory: ${{github.workspace}}
-      run: |
-        cargo tree --manifest-path components/Cargo.toml -e no-build,no-dev --prefix none --no-dedupe --locked \
-          | sort -u \
-          | grep -v '^[[:space:]]*$' \
-          | grep -v fms- \
-          | grep -v influx-client \
-          | grep -v zenoh \
-          | sed -E 's|([^ ]+) v([^ ]+).*|crate/cratesio/-/\1/\2|' \
-          > DEPS.txt
-    - name: Set up JDK
-      uses: actions/setup-java@v4
-      with:
-        distribution: "temurin"
-        java-version: "17"
-    - name: "Run latest Eclipse Dash jar file"
+    - name: "Check 3rd party license compatibility"
       id: "run-checks"
-      working-directory: ${{github.workspace}}
       run: |
-        wget --quiet -O dash.jar "https://repo.eclipse.org/service/local/artifact/maven/redirect?r=dash-licenses&g=org.eclipse.dash&a=org.eclipse.dash.licenses&v=LATEST"
-        if java -Dorg.eclipse.dash.timeout=60 -jar dash.jar -batch 90 -summary DEPENDENCIES.txt DEPS.txt
+        if .github/scripts/check-3rd-party-licenses.sh
         then
           echo "checks-failed=0" >> $GITHUB_OUTPUT
           echo "License information of 3rd party dependencies has been vetted successfully." >> $GITHUB_STEP_SUMMARY
@@ -67,7 +51,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: 3rd-party-dependencies
-        path: DEPENDENCIES.txt
+        path: ${{ env.DASH_SUMMARY }}
     - name: "Determine exit code"
       env:
         EXIT_CODE: ${{ steps.run-checks.outputs.checks-failed }}

@@ -1,8 +1,3 @@
-# SPDX-FileCopyrightText: 2023 Contributors to the Eclipse Foundation
-#
-# See the NOTICE file(s) distributed with this work for additional
-# information regarding copyright ownership.
-# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,30 +13,22 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [package]
-name = "influx-client"
+name = "up-transport-hono-mqtt"
 publish = false
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
 version.workspace = true
 edition.workspace = true
-license.workspace = true
-repository.workspace = true
 documentation.workspace = true
-readme.workspace = true
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+async-trait = { workspace = true }
 clap = { workspace = true, features = ["std", "derive", "env"] }
-fms-proto = { workspace = true, optional = true }
-protobuf = { workspace = true, optional = true }
-influxrs = { workspace = true, features = ["client"] }
-isahc = { version = "1.7", default-features = false, features = [
-    "http2",
-    "static-ssl",
-    "static-curl",
-    "text-decoding",
-] }
 log = { workspace = true }
-
-[features]
-default = ["writer"]
-writer = ["dep:fms-proto", "dep:protobuf"]
+paho-mqtt = { version = "0.13.0", default-features = false, features = [
+    "vendored-ssl",
+] }
+protobuf = { workspace = true }
+up-rust = { workspace = true, features = ["cloudevents"] }
+url_encor = { version = "1.0.2" }

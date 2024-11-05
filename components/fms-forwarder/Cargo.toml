@@ -34,6 +34,7 @@ async-trait = { workspace = true }
 chrono = { workspace = true, features = ["std"] }
 clap = { workspace = true, features = [
     "std",
+    "derive",
     "env",
     "color",
     "help",
@@ -41,14 +42,14 @@ clap = { workspace = true, features = [
     "error-context",
     "suggestions",
 ] }
-duration-str = { workspace = true, features = ["time"] }
+duration-str = { version = "0.12.0", default-features = false, features = [
+    "time",
+] }
 env_logger = { workspace = true }
 fms-proto = { workspace = true }
+fms-util = { workspace = true }
 influx-client = { workspace = true, features = ["writer"] }
 log = { workspace = true }
-paho-mqtt = { version = "0.12", default-features = false, features = [
-    "vendored-ssl",
-] }
 protobuf = { workspace = true }
 prost = { version = "0.13" }
 prost-types = { version = "0.13" }
@@ -59,7 +60,9 @@ tonic = { version = "0.12.3", default-features = false, features = [
     "tls",
     "prost",
 ] }
-zenoh = { workspace = true, features = ["transport_tcp"] }
+up-rust = { workspace = true, features = ["communication"] }
+up-transport-hono-mqtt = { workspace = true }
+up-transport-zenoh = { workspace = true }
 
 [build-dependencies]
 protoc-bin-vendored = { workspace = true }

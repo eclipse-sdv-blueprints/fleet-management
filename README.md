@@ -29,24 +29,28 @@ for truck fleet management where trucks run an SDV software stack so that logist
 manage apps, data and services for a diverse set of vehicles.
 
 The use case illustrates how the standard VSS model can be customized and used to report data from a vehicle
-to a back end. The following diagram provides an overview of the current architecture:
+to a back end. It also shows how [Eclipse uProtocol&trade;](https://eclipse-uprotocol.github.io) can be used
+to connect in-vehicle components to an off-vehicle service in the back end. The following diagram provides
+an overview of the current architecture:
 
-<img src="img/architecture.drawio.svg">
+<img src="img/architecture-uprotocol.drawio.svg">
 
 The overall idea is to enable back end applications to consume data coming from a vehicle using the rFMS API.
 
 Data originates from the vehicle's sensors which are represented by a CSV file that is being played back by the
-kuksa.val CSV feeder. The CSV feeder publishes the data to the kuksa.val Databroker. From there, the FMS Forwarder
-consumes the data and writes it to an InfluxDB in the back end. The measurements in the InfluxDB can then be
-visualized in a web browser by means of a Grafana dashboard. Alternatively, the measurements can be retrieved by
-a Fleet Management application via the FMS Server's (HTTP based) rFMS API.
+[Eclipse Kuksa&trade; CSV Provider](https://github.com/eclipse-kuksa/kuksa-csv-provider). The *CSV Provider* publishes
+the data to the [Kuksa Databroker](https://github.com/eclipse-kuksa/kuksa-databroker).
+The *FMS Forwarder* reads the signal values from the Databroker and sends them to the *FMS Consumer* in the back end
+using uProtocol _Notifications_. The FMS Consumer then writes the measurements to an *InfluxDB* from where it
+can be visualized in a web browser by means of a *Grafana* dashboard. Alternatively, the measurements can be
+retrieved by a Fleet Management application via the *FMS Server's* (HTTP based) rFMS API.
 
 # Quick Start
 
 The easiest way to set up and start the services is by means of using the Docker Compose file in the top level folder:
 
 ```sh
-docker compose -f ./fms-blueprint-compose.yaml up --detach
+docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.yaml up --detach
 ```
 
 This will pull or build (if necessary) the container images and create and start all components.
@@ -61,16 +65,20 @@ The rFMS API can be used to retrieve the data, e.g.
 curl -v -s http://127.0.0.1:8081/rfms/vehicleposition?latestOnly=true | jq
 ```
 
-# Using Eclipse Hono to send Vehicle Data to Back End
+# Eclipse Zenoh&trade; Transport
 
-By default, the Docker Compose file starts the FMS Forwarder configured to write vehicle data directly to the
-Influx DB running in the back end.
+By default, the Docker Compose files start the _FMS Forwarder_ and _FMS Consumer_ using a [Zenoh](https://zenoh.io) based uProtocol transport.
 
-However, in a real world scenario, this tight coupling between the vehicle and the Influx DB is not desirable.
-As an alternative, the blueprint supports configuring the FMS Forwarder to send vehicle data to the MQTT adapter
-of an Eclipse Hono instance as shown in the diagram below.
+<img src="img/architecture-zenoh.drawio.svg">
+
+# Eclipse Hono&trade; based Transport
+
+The blueprint can also be configured to use a Hono based uProtocol transport that employs Hono's MQTT adapter
+and Apache Kafka&trade; based messaging infrastructure for sending vehicle data to the Consumer.
 
 <img src="img/architecture-hono.drawio.svg">
+
+In order to run the blueprint with the Hono transport, perform the following steps:
 
 1. Register the vehicle as a device in Hono using the [create-config-hono.sh shell script](./create-config-hono.sh):
 
@@ -95,26 +103,6 @@ of an Eclipse Hono instance as shown in the diagram below.
 
    The path set via the `--env-file` option needs to be adapted to the output folder specified in the previous step.
 
-   The second compose file specified on the command line will also start the [FMS Consumer](./components/fms-consumer)
-   back end component which receives vehicle data via Hono's north bound Kafka based Telemetry API and writes it to the
-   Influx DB.
-   
-# Using Eclipse Zenoh to geographically distribute the vehicle data
-
-The blueprint supports configuring the FMS Forwarder to send vehicle data to the Eclipse Zenoh router of an [Eclipse Zenoh](https://zenoh.io/) instance as shown in the diagram below.
-Zenoh router provides a plugin mechanism to other protocols to enable the Vehicle to anything communication.
-
-<img src="img/architecture-zenoh.drawio.svg">
-
-Start up the vehicle and back end services using Docker Compose:
-
-```sh
-docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.yaml up --detach
-```
-
-Once all services have been started, the current vehicle status can be viewed on a [Grafana dashboard](http://127.0.0.1:3000),
-using *admin*/*admin* as username and password for logging in.
-
 # Manual configuration
 
 All information required for setting up the networks, volumes, configs and containers is contained in the
@@ -125,5 +113,6 @@ Additional information can be found in the components' corresponding subfolders.
 
 # Contributing
 
-We are looking forward to your ideas and PRs. Each PRs triggers a GitHub action which checks the formating, performs linting and runs the test. You can performe similar check in your development environment. For more details check the respective [action](.github/workflows/lint_source_code.yaml) where the checks are listed in the bottom of the file.
-
+We are looking forward to your ideas and PRs. Each PRs triggers a GitHub action which checks the formating, performs
+linting and runs the test. You can performe similar check in your development environment. For more details check the
+respective [action](.github/workflows/lint_source_code.yaml) where the checks are listed in the bottom of the file.

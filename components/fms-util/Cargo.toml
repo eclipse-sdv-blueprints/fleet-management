@@ -1,8 +1,3 @@
-# SPDX-FileCopyrightText: 2023 Contributors to the Eclipse Foundation
-#
-# See the NOTICE file(s) distributed with this work for additional
-# information regarding copyright ownership.
-# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -17,9 +12,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-.DS_Store
-*.drawio.bkp
-**/target
+[package]
+name = "fms-util"
+publish = false
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+edition.workspace = true
+documentation.workspace = true
 
-config/hono/
-*.env
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
+log = { workspace = true }
+zenoh = { workspace = true, features = ["transport_tcp"] }
