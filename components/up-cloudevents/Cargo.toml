@@ -1,0 +1,17 @@
+[package]
+name = "up-cloudevents"
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+edition.workspace = true
+documentation.workspace = true
+
+[dependencies]
+bytes = { workspace = true }
+protobuf = { workspace = true }
+up-rust = { workspace = true }
+
+[build-dependencies]
+protobuf-codegen = { workspace = true }
+protoc-bin-vendored = { workspace = true }

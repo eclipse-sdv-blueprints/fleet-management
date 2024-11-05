@@ -17,20 +17,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-use async_trait::async_trait;
-use fms_proto::fms::VehicleStatus;
-use influx_client::writer::InfluxWriter;
-
-/// A facade for publishing Vehicle status information to a back end store.
-#[async_trait]
-pub trait StatusPublisher {
-    /// Publishes status information.
-    async fn publish_vehicle_status(&self, vehicle_status: &VehicleStatus);
-}
-
-#[async_trait]
-impl StatusPublisher for InfluxWriter {
-    async fn publish_vehicle_status(&self, vehicle_status: &VehicleStatus) {
-        self.write_vehicle_status(vehicle_status).await
-    }
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    protobuf_codegen::Codegen::new()
+        .protoc()
+        // use vendored protoc instead of relying on user provided protobuf installation
+        .protoc_path(&protoc_bin_vendored::protoc_bin_path().unwrap())
+        .include("proto")
+        .inputs(["proto/io/cloudevents/v1/cloudevents.proto"])
+        .cargo_out_dir("cloudevents")
+        .run_from_script();
+    Ok(())
 }

@@ -1,0 +1,16 @@
+[package]
+name = "fms-util"
+publish = false
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+edition.workspace = true
+documentation.workspace = true
+
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
+log = { workspace = true }
+up-rust = { workspace = true }
+up-transport-zenoh = { workspace = true }
+zenoh = { workspace = true, features = ["transport_tcp"] }

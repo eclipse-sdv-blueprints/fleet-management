@@ -1,0 +1,30 @@
+[package]
+name = "up-transport-hono-kafka"
+publish = false
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+edition.workspace = true
+documentation.workspace = true
+
+[dependencies]
+async-trait = { workspace = true }
+clap = { workspace = true, features = ["std", "derive", "env"] }
+fms-proto = { workspace = true }
+futures = { version = "0.3" }
+log = { workspace = true }
+protobuf = { workspace = true }
+rdkafka = { version = "0.36", default-features = false, features = [
+    "libz",
+    "tokio",
+    "cmake-build",
+    "ssl-vendored",
+] }
+tokio = { workspace = true }
+up-cloudevents = { workspace = true }
+up-rust = { workspace = true, features = ["util"] }
+
+[build-dependencies]
+# see https://github.com/fede1024/rust-rdkafka/issues/572#issuecomment-1529316876
+openssl-src = { version = "300", features = ["force-engine"] }

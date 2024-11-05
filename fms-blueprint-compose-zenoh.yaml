@@ -43,30 +43,10 @@ services:
 
   fms-consumer:
     command: "zenoh -c /zenoh-config.json5"
-    image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-consumer:main"
-    build:
-      context: "./components"
-      dockerfile: "Dockerfile.fms-consumer"
-    container_name: "fms-consumer"
-    cap_drop:
-      - CAP_MKNOD
-      - CAP_NET_RAW
-      - CAP_AUDIT_WRITE
-    networks:
-      - "fms-backend"
     depends_on:
       influxdb:
         condition: service_healthy
       fms-zenoh-router:
         condition: service_started
-    env_file:
-      - "./influxdb/fms-demo.env"
-    environment:
-      INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
-      RUST_LOG: "${FMS_CONSUMER_LOG_CONFIG:-info,fms_consumer=debug,influx_client=debug}"
     volumes:
       - ./zenoh-config-client.json5:/zenoh-config.json5
-      - type: "volume"
-        source: "influxdb-auth"
-        target: "/tmp"
-        read_only: true

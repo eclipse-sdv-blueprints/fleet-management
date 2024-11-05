@@ -21,7 +21,7 @@ use axum::http::StatusCode;
 use axum::{routing::get, Json, Router};
 
 use axum::extract::{Query, State};
-use clap::{ArgMatches, Command};
+use influx_client::connection::InfluxConnectionConfig;
 use log::{error, info};
 
 use serde_json::json;
@@ -45,8 +45,8 @@ use models::status::{
 };
 use query_parser::parse_query_parameters;
 
-pub fn app(args: ArgMatches) -> Router {
-    let influx_reader = InfluxReader::new(&args).map_or_else(
+pub fn app(influx_connection_params: &InfluxConnectionConfig) -> Router {
+    let influx_reader = InfluxReader::new(influx_connection_params).map_or_else(
         |e| {
             error!("failed to create InfluxDB client: {e}");
             process::exit(1);
@@ -60,10 +60,6 @@ pub fn app(args: ArgMatches) -> Router {
         .route("/rfms/vehicles", get(get_vehicles))
         .route("/rfms/vehiclestatuses", get(get_vehiclesstatuses))
         .with_state(influx_reader)
-}
-
-pub fn add_command_line_args(command_line: Command) -> Command {
-    influx_client::connection::add_command_line_args(command_line)
 }
 
 async fn root() -> &'static str {

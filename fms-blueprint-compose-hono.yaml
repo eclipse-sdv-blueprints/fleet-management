@@ -20,32 +20,11 @@
 services:
   fms-consumer:
     command: "hono"
-    image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-consumer:main"
-    build:
-      context: "./components"
-      dockerfile: "Dockerfile.fms-consumer"
-    container_name: "fms-consumer"
-    cap_drop:
-      - CAP_MKNOD
-      - CAP_NET_RAW
-      - CAP_AUDIT_WRITE
-    networks:
-      - "fms-backend"
-    depends_on:
-      influxdb:
-        condition: service_healthy
-    env_file:
-      - "./influxdb/fms-demo.env"
     environment:
-      INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
+      HONO_TENANT_ID: "${FMS_CONSUMER_HONO_TENANT_ID}"
       KAFKA_PROPERTIES_FILE: "/app/config/${FMS_CONSUMER_KAFKA_PROPERTIES_FILE:-kafka.properties}"
-      KAFKA_TOPIC_NAME: "${FMS_CONSUMER_KAFKA_TOPIC_NAME}"
-      RUST_LOG: "${FMS_CONSUMER_LOG_CONFIG:-info,fms_consumer=debug,influx_client=debug}"
+      RUST_LOG: "${FMS_CONSUMER_LOG_CONFIG:-info,fms_consumer=debug,influx_client=debug,up_transport_hono_kafka=info}"
     volumes:
-      - type: "volume"
-        source: "influxdb-auth"
-        target: "/tmp"
-        read_only: true
       - type: "bind"
         source: "${FMS_CONSUMER_CONFIG_FOLDER}"
         target: "/app/config"
@@ -53,6 +32,9 @@ services:
     command: "hono"
     env_file:
       - "${FMS_FORWARDER_MQTT_ENV_FILE}"
+    environment:
+      RUST_LOG: "${FMS_FORWARDER_LOG_CONFIG:-info,fms_forwarder=info,up_transport_hono_mqtt=info}"
+
     volumes:
       - type: "bind"
         source: "${FMS_FORWARDER_CONFIG_FOLDER}"

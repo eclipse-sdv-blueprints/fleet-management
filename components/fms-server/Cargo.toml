@@ -35,6 +35,7 @@ axum = "0.7"
 chrono = { workspace = true, features = ["clock", "serde"] }
 clap = { workspace = true, features = [
     "std",
+    "derive",
     "env",
     "color",
     "help",
