@@ -20,7 +20,7 @@
 //! An abstraction of a vehicle's (current) status based on
 //! [Eclipse kuksa.val Databroker](https://github.com/eclipse/kuksa.val).
 //!
-use clap::{Arg, ArgMatches, Command};
+use clap::Args;
 use log::{debug, error, info, warn};
 use protobuf::MessageField;
 use tokio::sync::mpsc::Sender;
@@ -80,10 +80,6 @@ const TRIGGER_VSS_PATHS: &[&str] = &[
     vss::FMS_VEHICLE_TACHOGRAPH_DRIVER2_WORKINGSTATE,
 ];
 
-const PARAM_DATABROKER_URI: &str = "databroker-uri";
-const PARAM_DEFAULT_VIN: &str = "default-vin";
-const PARAM_TIMER_INTERVAL: &str = "timer-interval";
-
 const TELL_TALE_NAME_ECT: &str = "ENGINE_COOLANT_TEMPERATURE";
 const TELL_TALE_NAME_ENGINE_OIL: &str = "ENGINE_OIL";
 const TELL_TALE_NAME_ENGINE_MIL_INDICATOR: &str = "ENGINE_MIL_INDICATOR";
@@ -100,54 +96,27 @@ const TRIGGER_ENGINE_OFF: &str = "ENGINE_OFF";
 const TRIGGER_TELL_TALE: &str = "TELL_TALE";
 const TRIGGER_TIMER: &str = "TIMER";
 
+const PARAM_DATABROKER_URI: &str = "databroker-uri";
+const PARAM_DEFAULT_VIN: &str = "default-vin";
+const PARAM_TIMER_INTERVAL: &str = "timer-interval";
+
 mod kuksa;
 mod vss;
 
-/// Adds arguments to an existing command line which can be
-/// used to configure the component's behavior.
-///
-/// The following arguments are being added:
-///
-/// | long name           | environment variable  | default value | description |
-/// |---------------------|-----------------------|---------------|-------------|
-/// | *databroker-uri*    | *KUKSA_DATABROKER_URI*| `http://127.0.0.1:55555` | The HTTP(S) URI of the kuksa.val Databroker's gRPC endpoint. |
-/// | *default-vin*       | *DEFAULT_VIN*         | `YV2E4C3A5VB180691` | The default VIN to use if the kuksa.val Databroker does not contain the vehicle's VIN. The VIN is used as a tag on measurements written to the InfluxDB server. |
-/// | *timer-interval*    | *TIMER_INTERVAL*      | `5s`          | The time period to wait after polling FMS snapshot data from the kuksa.val Databroker, e.g 5m10s or 1h15m. |
-///
-pub fn add_command_line_args(command_line: Command) -> Command {
-    command_line
-        .arg(
-            Arg::new(PARAM_DATABROKER_URI)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long(PARAM_DATABROKER_URI)
-                .alias("uri")
-                .help("The HTTP(S) URI of the kuksa.val Databroker's gRPC endpoint.")
-                .value_name("URI")
-                .required(false)
-                .env("KUKSA_DATABROKER_URI")
-                .default_value("http://127.0.0.1:55555"),
-        )
-        .arg(
-            Arg::new(PARAM_DEFAULT_VIN)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long(PARAM_DEFAULT_VIN)
-                .help("The default VIN to use if the kuksa.val Databroker does not contain the vehicle's VIN. The VIN is used as a tag on measurements written to the InfluxDB server.")
-                .value_name("IDENTIFIER")
-                .required(false)
-                .env("DEFAULT_VIN")
-                .default_value("YV2E4C3A5VB180691"),
-        )
-        .arg(
-            Arg::new(PARAM_TIMER_INTERVAL)
-                .value_parser(|s: &str| duration_str::parse(s))
-                .long(PARAM_TIMER_INTERVAL)
-                .alias("timer")
-                .help("The time period to wait after polling FMS snapshot data from the kuksa.val Databroker, e.g 5m10s or 1h15m.")
-                .value_name("DURATION_SPEC")
-                .required(false)
-                .env("TIMER_INTERVAL")
-                .default_value("5s"),
-        )
+#[derive(Args)]
+pub struct KuksaDatabrokerClientConfig {
+    /// The HTTP(S) URI of the Eclipse Kuksa Databroker's gRPC endpoint.
+    #[arg(long = PARAM_DATABROKER_URI, value_name = "URI", env = "KUKSA_DATABROKER_URI", default_value = "http://127.0.0.1:55555", value_parser = clap::builder::NonEmptyStringValueParser::new() )]
+    databroker_uri: String,
+
+    /// The default VIN to use if the kuksa.val Databroker does not contain the vehicle's VIN.
+    /// The VIN is used as a tag on measurements written to the InfluxDB server.
+    #[arg(long = PARAM_DEFAULT_VIN, value_name = "IDENTIFIER", env = "DEFAULT_VIN", default_value = "YV2E4C3A5VB180691", value_parser = clap::builder::NonEmptyStringValueParser::new() )]
+    default_vin: String,
+
+    /// The time period to wait after polling FMS snapshot data from the kuksa.val Databroker, e.g 5m10s or 1h15m.
+    #[arg(long = PARAM_TIMER_INTERVAL, value_name = "DURATION_SPEC", env = "TIMER_INTERVAL", default_value = "5s", value_parser = |s: &str| duration_str::parse(s) )]
+    timer_interval: Duration,
 }
 
 /// Indicates a problem while invoking a Databroker operation.
@@ -331,22 +300,12 @@ struct KuksaValDatabroker {
 }
 
 impl KuksaValDatabroker {
-    async fn new(args: &ArgMatches) -> Result<Self, DatabrokerError> {
-        let databroker_uri = args
-            .get_one::<String>(PARAM_DATABROKER_URI)
-            .unwrap()
-            .to_owned();
-
-        let default_vin = args
-            .get_one::<String>(PARAM_DEFAULT_VIN)
-            .unwrap()
-            .to_owned();
-
+    async fn new(config: &KuksaDatabrokerClientConfig) -> Result<Self, DatabrokerError> {
         info!(
-            "creating client for kuksa.val Databroker at {}",
-            databroker_uri
+            "creating client for Eclipse Kuksa Databroker at {}",
+            config.databroker_uri
         );
-        Endpoint::from_shared(databroker_uri.to_owned())
+        Endpoint::from_shared(config.databroker_uri.to_owned())
             .map_err(|e| {
                 error!("invalid Databroker URI: {}", e);
                 DatabrokerError {
@@ -361,7 +320,7 @@ impl KuksaValDatabroker {
                 let client = ValClient::new(channel);
                 KuksaValDatabroker {
                     client: Box::new(client),
-                    default_vin,
+                    default_vin: config.default_vin.to_owned(),
                 }
             })
     }
@@ -476,20 +435,13 @@ impl KuksaValDatabroker {
 
 /// Sets up a connection to the Databroker and registers callbacks for
 /// signals that trigger the reporting of the vehicle's current status.
-///
-/// Expects to find parameters as defined by [`add_command_line_args`] in the passed
-/// in *args*.
-///
 pub async fn init(
-    args: &ArgMatches,
+    config: &KuksaDatabrokerClientConfig,
     status_publisher: Sender<VehicleStatus>,
 ) -> Result<(), DatabrokerError> {
-    let timer_interval = args
-        .get_one::<Duration>(PARAM_TIMER_INTERVAL)
-        .unwrap()
-        .to_owned();
+    let timer_interval = config.timer_interval.to_owned();
 
-    let mut databroker = KuksaValDatabroker::new(args).await?;
+    let mut databroker = KuksaValDatabroker::new(config).await?;
     let (tx, mut rx) = tokio::sync::mpsc::channel::<FmsTrigger>(50);
     let _ = &databroker.register_triggers(tx.clone()).await?;
 

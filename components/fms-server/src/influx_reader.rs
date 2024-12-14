@@ -17,10 +17,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-use chrono::{DateTime, NaiveDateTime, Utc};
-use clap::ArgMatches;
+use chrono::{DateTime, Utc};
 use const_format::formatcp;
-use influx_client::connection::InfluxConnection;
+use influx_client::connection::{InfluxConnection, InfluxConnectionConfig};
 use influxrs::InfluxError;
 use log::error;
 
@@ -73,9 +72,7 @@ fn unpack_value_bool(value: Option<&String>) -> Option<bool> {
 
 fn unpack_time(value: Option<&String>) -> Option<DateTime<Utc>> {
     let timestamp = unpack_value_i64(value)?;
-    NaiveDateTime::from_timestamp_millis(timestamp)?
-        .and_local_timezone(Utc)
-        .latest()
+    DateTime::from_timestamp_millis(timestamp)
 }
 
 fn unpack_driver_working_state(value: Option<&String>) -> Option<DriverWorkingStateProperty> {
@@ -99,7 +96,7 @@ pub struct InfluxReader {
 }
 
 impl InfluxReader {
-    pub fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(args: &InfluxConnectionConfig) -> Result<Self, Box<dyn std::error::Error>> {
         InfluxConnection::new(args).map(|con| InfluxReader { influx_con: con })
     }
 
