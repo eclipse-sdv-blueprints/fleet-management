@@ -33,6 +33,7 @@ readme.workspace = true
 async-trait = { workspace = true }
 clap = { workspace = true, features = [
     "std",
+    "derive",
     "env",
     "color",
     "help",
@@ -40,22 +41,12 @@ clap = { workspace = true, features = [
     "error-context",
     "suggestions",
 ] }
-duration-str = { workspace = true }
 env_logger = { workspace = true }
 fms-proto = { workspace = true }
-futures = { version = "0.3" }
+fms-zenoh = { workspace = true }
 influx-client = { workspace = true, features = ["writer"] }
-rdkafka = { version = "0.36", default-features = false, features = [
-    "libz",
-    "tokio",
-    "cmake-build",
-    "ssl-vendored",
-] }
 log = { workspace = true }
-protobuf = { workspace = true }
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
-zenoh = { workspace = true, features = ["transport_tcp"] }
-
-[build-dependencies]
-# see https://github.com/fede1024/rust-rdkafka/issues/572#issuecomment-1529316876
-openssl-src = { version = "300", features = ["force-engine"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+up-rust = { workspace = true }
+up-transport-hono-kafka = { workspace = true }
+up-transport-zenoh = { workspace = true }

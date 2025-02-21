@@ -31,10 +31,11 @@ readme.workspace = true
 
 [dependencies]
 async-trait = "0.1"
-axum = "0.7"
+axum = "0.8.1"
 chrono = { workspace = true, features = ["clock", "serde"] }
 clap = { workspace = true, features = [
     "std",
+    "derive",
     "env",
     "color",
     "help",

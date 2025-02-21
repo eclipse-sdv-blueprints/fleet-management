@@ -3,9 +3,23 @@
   "version": "0.1.0",
   "description": "A close to real-life showcase for truck fleet management where trucks run an SDV software stack so that logistics fleet operators can manage apps, data and services for a diverse set of vehicles.",
   "participatingProjects": [
-    { "id": "automotive.kuksa" },
-    { "id": "automotive.leda" },
-    { "id": "iot.hono" },
-    { "id": "iot.paho" }
+    {
+      "id": "automotive.kuksa"
+    },
+    {
+      "id": "automotive.leda"
+    },
+    {
+      "id": "automotive.uprotocol"
+    },
+    {
+      "id": "iot.hono"
+    },
+    {
+      "id": "iot.paho"
+    },
+    {
+      "id": "iot.zenoh"
+    }
   ]
 }

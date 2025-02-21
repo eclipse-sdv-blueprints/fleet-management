@@ -17,7 +17,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-use clap::{Arg, ArgGroup, ArgMatches, Command};
+use std::path::PathBuf;
+
+use clap::Args;
 use influxrs::InfluxClient;
 use log::{error, info};
 
@@ -27,85 +29,72 @@ const PARAM_INFLUXDB_URI: &str = "influxdb-uri";
 const PARAM_INFLUXDB_TOKEN: &str = "influxdb-token";
 const PARAM_INFLUXDB_TOKEN_FILE: &str = "influxdb-token-file";
 
-/// Adds command line arguments to an existing command line which can be
-/// used to configure the connection to an InfluxDB server.
-///
-/// The following arguments are being added:
-///
-/// | long name           | environment variable    | default value |
-/// |---------------------|-------------------------|---------------|
-/// | influxdb-bucket     | INFLUXDB_BUCKET         | `demo`        |
-/// | influxdb-org        | INFLUXDB_ORG            | `sdv`         |
-/// | influxdb-uri        | INFLUXDB_URI            | -             |
-/// | influxdb-token      | INFLUXDB_TOKEN          | -             |
-/// | influxdb-token-file | INFLUXDB_TOKEN_FILE     | -             |
-///
-pub fn add_command_line_args(command_line: Command) -> Command {
-    command_line
-        .arg(
-            Arg::new(PARAM_INFLUXDB_URI)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long(PARAM_INFLUXDB_URI)
-                .alias("ia")
-                .help("The HTTP(S) URI of the InfluxDB server to write data to.")
-                .value_name("URI")
-                .required(true)
-                .env("INFLUXDB_URI"),
-        )
-        .group(ArgGroup::new("influxdb-auth-token").required(true))
-        .arg(
-            Arg::new(PARAM_INFLUXDB_TOKEN)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long(PARAM_INFLUXDB_TOKEN)
-                .alias("token")
-                .help("The API token to use for authenticating to the InfluxDB server.")
-                .group("influxdb-auth-token")
-                .value_name("TOKEN")
-                .env("INFLUXDB_TOKEN"),
-        )
-        .arg(
-            Arg::new(PARAM_INFLUXDB_TOKEN_FILE)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long(PARAM_INFLUXDB_TOKEN_FILE)
-                .alias("token-file")
-                .help("The path to a file that contains the API token to use for authenticating to the InfluxDB server.")
-                .group("influxdb-auth-token")
-                .value_name("FILE")
-                .conflicts_with("influxdb-token")
-                .env("INFLUXDB_TOKEN_FILE"),
-        )
-        .arg(
-            Arg::new(PARAM_INFLUXDB_ORG)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long(PARAM_INFLUXDB_ORG)
-                .alias("org")
-                .help("The name of the organization to connect to on the InfluxDB server.")
-                .value_name("NAME")
-                .required(false)
-                .default_value("sdv")
-                .env("INFLUXDB_ORG"),
-        )
-        .arg(
-            Arg::new(PARAM_INFLUXDB_BUCKET)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .long(PARAM_INFLUXDB_BUCKET)
-                .alias("bucket")
-                .help("The name of the bucket to write data to on the InfluxDB server.")
-                .value_name("NAME")
-                .required(false)
-                .default_value("demo")
-                .env("INFLUXDB_BUCKET"),
-        )
+#[derive(Args, Debug)]
+#[group(required = true, multiple = false)]
+struct Token {
+    /// The API token to use for authenticating to the InfluxDB server.
+    #[arg(long = PARAM_INFLUXDB_TOKEN, value_name = "NAME", env = "INFLUXDB_TOKEN", value_parser = clap::builder::NonEmptyStringValueParser::new() )]
+    token: Option<String>,
+
+    /// The path to a file that contains the API token to use for authenticating to the InfluxDB server.
+    #[arg(long = PARAM_INFLUXDB_TOKEN_FILE, value_name = "FILE", env = "INFLUXDB_TOKEN_FILE", value_parser = clap::builder::PathBufValueParser::new() )]
+    token_file: Option<PathBuf>,
 }
 
-fn read_token_from_file(filename: &str) -> std::io::Result<String> {
-    info!("reading token from file {filename}");
-    std::fs::read_to_string(filename)
-        .map(|s| s.trim().to_string())
-        .map_err(|e| {
-            error!("failed to read token from file [{filename}]: {e}");
-            e
-        })
+#[derive(Args, Debug)]
+pub struct InfluxConnectionConfig {
+    /// The HTTP(S) URI of the InfluxDB server.
+    #[arg(
+        long = PARAM_INFLUXDB_URI,
+        value_name = "URI",
+        required = true,
+        env = "INFLUXDB_URI",
+        value_parser = clap::builder::NonEmptyStringValueParser::new()
+    )]
+    uri: String,
+
+    /// The name of the organization to connect to on the InfluxDB server.
+    #[arg(
+        long = PARAM_INFLUXDB_ORG,
+        value_name = "URI",
+        required = false,
+        env = "INFLUXDB_ORG",
+        default_value = "sdv",
+        value_parser = clap::builder::NonEmptyStringValueParser::new()
+    )]
+    org: String,
+
+    /// The name of the bucket to write data to on the InfluxDB server.
+    #[arg(
+        long = PARAM_INFLUXDB_BUCKET,
+        value_name = "URI",
+        required = false,
+        env = "INFLUXDB_BUCKET",
+        default_value = "demo",
+        value_parser = clap::builder::NonEmptyStringValueParser::new()
+    )]
+    bucket: String,
+
+    #[command(flatten)]
+    token: Token,
+}
+
+impl InfluxConnectionConfig {
+    fn token(&self) -> Result<String, Box<dyn std::error::Error>> {
+        if let Some(token) = self.token.token.as_ref() {
+            Ok(token.to_owned())
+        } else if let Some(path) = self.token.token_file.as_ref() {
+            info!("reading token from file {:?}", path);
+            Ok(std::fs::read_to_string(path)
+                .map(|s| s.trim().to_string())
+                .map_err(|e| {
+                    error!("failed to read token from file: {e}");
+                    Box::new(e)
+                })?)
+        } else {
+            Err(Box::from("test"))
+        }
+    }
 }
 
 /// A connection to an InfluxDB server.
@@ -123,59 +112,49 @@ impl InfluxConnection {
     /// # Examples
     ///
     /// ```
-    /// use clap::Command;
-    /// use influx_client::connection::InfluxConnection;
+    /// use clap::{Args, Command, FromArgMatches};
+    /// use influx_client::connection::{InfluxConnection, InfluxConnectionConfig};
     ///
-    /// let command = influx_client::connection::add_command_line_args(Command::new("influx_client"));
+    /// let command = Command::new("influx_client");
+    /// let command = InfluxConnectionConfig::augment_args(command);
     /// let matches = command.get_matches_from(vec![
     ///     "influx_client",
     ///     "--influxdb-uri", "http://my-influx.io",
     ///     "--influxdb-token", "some-token",
     ///     "--influxdb-bucket", "the-bucket",
     /// ]);
-    /// let connection = InfluxConnection::new(&matches)?;
+    /// let connection_params = InfluxConnectionConfig::from_arg_matches(&matches)?;
+    /// let connection = InfluxConnection::new(&connection_params)?;
     /// assert_eq!(connection.bucket, "the-bucket".to_string());
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
-    pub fn new(args: &ArgMatches) -> Result<Self, Box<dyn std::error::Error>> {
-        let influx_uri = args
-            .get_one::<String>(PARAM_INFLUXDB_URI)
-            .unwrap()
-            .to_owned();
-        let influx_token = match args.get_one::<String>(PARAM_INFLUXDB_TOKEN) {
-            Some(token) => token.to_string(),
-            None => {
-                let file_name = args.get_one::<String>(PARAM_INFLUXDB_TOKEN_FILE).unwrap();
-                match read_token_from_file(file_name) {
-                    Ok(token) => token,
-                    Err(e) => return Err(Box::new(e)),
-                }
-            }
-        };
-        let influx_org = args
-            .get_one::<String>(PARAM_INFLUXDB_ORG)
-            .unwrap()
-            .to_owned();
-        let influx_bucket = args
-            .get_one::<String>(PARAM_INFLUXDB_BUCKET)
-            .unwrap()
-            .to_owned();
-        let client = InfluxClient::builder(influx_uri, influx_token, influx_org)
-            .build()
-            .unwrap();
+    pub fn new(
+        connection_params: &InfluxConnectionConfig,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let client = InfluxClient::builder(
+            connection_params.uri.to_owned(),
+            connection_params.token()?,
+            connection_params.org.to_owned(),
+        )
+        .build()?;
         Ok(InfluxConnection {
             client,
-            bucket: influx_bucket,
+            bucket: connection_params.bucket.to_owned(),
         })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use clap::{Args, Command, FromArgMatches};
+
+    use super::*;
+    use crate::connection::InfluxConnectionConfig;
 
     #[test]
     fn test_command_line_uses_defaults() {
-        let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
+        let command = Command::new("influx_client");
+        let command = InfluxConnectionConfig::augment_args(command);
         let matches = command.get_matches_from(vec![
             "influx_client",
             "--influxdb-uri",
@@ -183,43 +162,29 @@ mod tests {
             "--influxdb-token",
             "the-token",
         ]);
-        assert_eq!(
-            matches
-                .get_one::<String>(super::PARAM_INFLUXDB_URI)
-                .unwrap(),
-            "http://influx.io"
-        );
-        assert_eq!(
-            matches
-                .get_one::<String>(super::PARAM_INFLUXDB_TOKEN)
-                .unwrap(),
-            "the-token"
-        );
-        assert_eq!(
-            matches
-                .get_one::<String>(super::PARAM_INFLUXDB_ORG)
-                .unwrap(),
-            "sdv"
-        );
-        assert_eq!(
-            matches
-                .get_one::<String>(super::PARAM_INFLUXDB_BUCKET)
-                .unwrap(),
-            "demo"
-        );
+        let connection_params = InfluxConnectionConfig::from_arg_matches(&matches)
+            .expect("failed to create params from command line");
+        assert_eq!(connection_params.uri, *"http://influx.io");
+        assert_eq!(connection_params.token.token, Some("the-token".to_string()));
+        assert_eq!(connection_params.org, *"sdv");
+        assert_eq!(connection_params.bucket, *"demo");
     }
 
     #[test]
     fn test_command_line_requires_uri() {
-        let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
+        let command = Command::new("influx_client");
+        let command = InfluxConnectionConfig::augment_args(command);
         let matches =
             command.try_get_matches_from(vec!["influx_client", "--influxdb-token", "the-token"]);
-        assert!(matches.is_err_and(|e| e.kind() == clap::error::ErrorKind::MissingRequiredArgument));
+        assert!(
+            matches.is_err_and(|e| { e.kind() == clap::error::ErrorKind::MissingRequiredArgument })
+        );
     }
 
     #[test]
     fn test_command_line_requires_token_or_token_file() {
-        let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
+        let command = Command::new("influx_client");
+        let command = InfluxConnectionConfig::augment_args(command);
         let no_token_matches = command.try_get_matches_from(vec![
             "influx_client",
             "--influxdb-uri",
@@ -228,7 +193,8 @@ mod tests {
         assert!(no_token_matches
             .is_err_and(|e| e.kind() == clap::error::ErrorKind::MissingRequiredArgument));
 
-        let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
+        let command = Command::new("influx_client");
+        let command = InfluxConnectionConfig::augment_args(command);
         let with_token_matches = command.get_matches_from(vec![
             "influx_client",
             "--influxdb-uri",
@@ -236,14 +202,13 @@ mod tests {
             "--influxdb-token",
             "the-token",
         ]);
-        assert_eq!(
-            with_token_matches
-                .get_one::<String>(super::PARAM_INFLUXDB_TOKEN)
-                .unwrap(),
-            "the-token"
-        );
 
-        let command = crate::connection::add_command_line_args(clap::Command::new("influx_client"));
+        let connection_params = InfluxConnectionConfig::from_arg_matches(&with_token_matches)
+            .expect("failed to create params from command line");
+        assert_eq!(connection_params.token.token, Some("the-token".to_string()));
+
+        let command = Command::new("influx_client");
+        let command = InfluxConnectionConfig::augment_args(command);
         let with_token_file_matches = command.get_matches_from(vec![
             "influx_client",
             "--influxdb-uri",
@@ -251,11 +216,12 @@ mod tests {
             "--influxdb-token-file",
             "/path/to/token-file",
         ]);
+        let connection_params = InfluxConnectionConfig::from_arg_matches(&with_token_file_matches)
+            .expect("failed to create params from command line");
+        println!("params: {:?}", connection_params);
         assert_eq!(
-            with_token_file_matches
-                .get_one::<String>(super::PARAM_INFLUXDB_TOKEN_FILE)
-                .unwrap(),
-            "/path/to/token-file"
+            connection_params.token.token_file,
+            Some(PathBuf::from("/path/to/token-file"))
         );
     }
 }

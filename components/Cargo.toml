@@ -18,7 +18,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [workspace]
-members = ["fms-consumer", "fms-forwarder", "fms-server", "influx-client"]
+members = [
+    "fms-consumer",
+    "fms-forwarder",
+    "fms-server",
+    "fms-zenoh",
+    "influx-client",
+    "up-transport-hono-kafka",
+    "up-transport-hono-mqtt",
+]
 resolver = "2"
 
 [workspace.package]
@@ -30,27 +38,28 @@ edition = "2021"
 documentation = "https://eclipse-sdv-blueprints.github.io/blueprints-website/"
 
 [workspace.dependencies]
-async-trait = { version = "0.1" }
-chrono = { version = "0.4", default-features = false }
-clap = { version = "4.4", default-features = false }
-duration-str = { version = "0.7", default-features = false }
-env_logger = { version = "0.11", default-features = false, features = [
+async-trait = { version = "0.1.86" }
+bytes = { version = "1.7.0" }
+chrono = { version = "0.4.39", default-features = false }
+clap = { version = "4.5.29", default-features = false }
+env_logger = { version = "0.11.6", default-features = false, features = [
     "humantime",
 ] }
 fms-proto = { path = "fms-proto" }
+fms-zenoh = { path = "fms-zenoh" }
 influx-client = { path = "influx-client", default-features = false }
 influxrs = { version = "3.0.1", default-features = false }
-log = { version = "0.4" }
+log = { version = "0.4.25" }
 protobuf = { version = "3.5.1" }
 protobuf-codegen = { version = "3.5.1" }
 protoc-bin-vendored = { version = "3.0" }
-# prost has no features
-prost = { version = "0.12" }
-# prost-types has no features
-prost-types = { version = "0.12" }
 # tokio does not enable features by default
-tokio = { version = "1.39" }
-zenoh = { version = "1.0.0", default-features = false }
+tokio = { version = "1.43" }
+up-rust = { version = "0.4.0", default-features = false }
+up-transport-hono-kafka = { path = "up-transport-hono-kafka" }
+up-transport-hono-mqtt = { path = "up-transport-hono-mqtt" }
+up-transport-zenoh = { version = "0.5.0" }
+zenoh = { version = "1.2.1", default-features = false }
 
 [profile.release]
 lto = true          # Link time optimization (dead code removal etc...)
