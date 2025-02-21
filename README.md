@@ -29,9 +29,9 @@ for truck fleet management where trucks run an SDV software stack so that logist
 manage apps, data and services for a diverse set of vehicles.
 
 The use case illustrates how the standard VSS model can be customized and used to report data from a vehicle
-to a back end. It also shows how [Eclipse uProtocol&trade;](https://eclipse-uprotocol.github.io) can be used
-to connect in-vehicle components to an off-vehicle service in the back end. The following diagram provides
-an overview of the current architecture:
+to a back end. It also shows how [Eclipse uProtocol&trade;](https://eclipse-uprotocol.github.io) can be used to connect in-vehicle components to an off-vehicle service in the back end. uProtocol provides a generic API for using the well known pub/sub and RPC message exchange patterns over arbitrary transport protocols like MQTT, Eclipse Zenoh etc.
+
+The following component diagram provides a high level overview of the building blocks and how they are related to each other.
 
 <img src="img/architecture-uprotocol.drawio.svg">
 
@@ -40,10 +40,11 @@ The overall idea is to enable back end applications to consume data coming from 
 Data originates from the vehicle's sensors which are represented by a CSV file that is being played back by the
 [Eclipse Kuksa&trade; CSV Provider](https://github.com/eclipse-kuksa/kuksa-csv-provider). The *CSV Provider* publishes
 the data to the [Kuksa Databroker](https://github.com/eclipse-kuksa/kuksa-databroker).
-The *FMS Forwarder* reads the signal values from the Databroker and sends them to the *FMS Consumer* in the back end
-using uProtocol _Notifications_. The FMS Consumer then writes the measurements to an *InfluxDB* from where it
+The *FMS Forwarder* reads the signal values from the Databroker and sends them to the *FMS Consumer* in the back end. The FMS Consumer then writes the measurements to an *InfluxDB* from where it
 can be visualized in a web browser by means of a *Grafana* dashboard. Alternatively, the measurements can be
 retrieved by a Fleet Management application via the *FMS Server's* (HTTP based) rFMS API.
+
+Both the FMS Forwarder and Consumer are implemened as uProtocol entities (_uEntity_). This allows the FMS Forwarder to send its data to the Consumer by means of a uProtocol _Notification_. The concrete transport protocol being used to transmit the message on the wire is a matter of configuration and has no impact on the implementation of the business logic itself.
 
 # Quick Start
 
@@ -53,7 +54,7 @@ The easiest way to set up and start the services is by means of using the Docker
 docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.yaml up --detach
 ```
 
-This will pull or build (if necessary) the container images and create and start all components.
+This will pull (or build if necessary) the container images and create and start all components.
 
 Once all services have been started, the current vehicle status can be viewed on a [Grafana dashboard](http://127.0.0.1:3000),
 using *admin*/*admin* as username and password for logging in.
@@ -67,7 +68,7 @@ curl -v -s http://127.0.0.1:8081/rfms/vehicleposition?latestOnly=true | jq
 
 # Eclipse Zenoh&trade; Transport
 
-By default, the Docker Compose files start the _FMS Forwarder_ and _FMS Consumer_ using a [Zenoh](https://zenoh.io) based uProtocol transport.
+The command line from the quick start section will start up containers for the _FMS Forwarder_ and _FMS Consumer_ that are configured to use a [Zenoh](https://zenoh.io) based uProtocol transport as shown in the deployment diagram below:
 
 <img src="img/architecture-zenoh.drawio.svg">
 
@@ -75,8 +76,6 @@ By default, the Docker Compose files start the _FMS Forwarder_ and _FMS Consumer
 
 The blueprint can also be configured to use a Hono based uProtocol transport that employs Hono's MQTT adapter
 and Apache Kafka&trade; based messaging infrastructure for sending vehicle data to the Consumer.
-
-<img src="img/architecture-hono.drawio.svg">
 
 In order to run the blueprint with the Hono transport, perform the following steps:
 
@@ -88,7 +87,7 @@ In order to run the blueprint with the Hono transport, perform the following ste
 
    Make sure to replace `MY_TENANT_ID`, `MY_DEVICE_ID` and `MY_PWD` with your own values.
 
-   The script registers the tenant and device in Hono's Sandbox installation at `hono.eclipseprojects.io` unless the
+   The script registers the tenant and device in [Hono's Sandbox installation](https://eclipse.dev/hono/sandbox/) at `hono.eclipseprojects.io` unless the
    `--host` and/or `--kafka-brokers` command line arguments are used. Use the `--help` switch to print usage information.
 
    The script also creates configuration files in the `OUT_DIR/config/hono` folder. The OUT_DIR can be specified using
@@ -102,6 +101,10 @@ In order to run the blueprint with the Hono transport, perform the following ste
    ```
 
    The path set via the `--env-file` option needs to be adapted to the output folder specified in the previous step.
+
+This will result in a deployment as shown below:
+
+<img src="img/architecture-hono.drawio.svg">
 
 # Manual configuration
 

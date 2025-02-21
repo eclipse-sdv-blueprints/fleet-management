@@ -43,7 +43,7 @@ clap = { workspace = true, features = [
 ] }
 env_logger = { workspace = true }
 fms-proto = { workspace = true }
-fms-util = { workspace = true }
+fms-zenoh = { workspace = true }
 influx-client = { workspace = true, features = ["writer"] }
 log = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

@@ -47,7 +47,7 @@ duration-str = { version = "0.12.0", default-features = false, features = [
 ] }
 env_logger = { workspace = true }
 fms-proto = { workspace = true }
-fms-util = { workspace = true }
+fms-zenoh = { workspace = true }
 influx-client = { workspace = true, features = ["writer"] }
 log = { workspace = true }
 protobuf = { workspace = true }

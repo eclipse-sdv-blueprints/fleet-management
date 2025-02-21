@@ -22,7 +22,7 @@ members = [
     "fms-consumer",
     "fms-forwarder",
     "fms-server",
-    "fms-util",
+    "fms-zenoh",
     "influx-client",
     "up-transport-hono-kafka",
     "up-transport-hono-mqtt",
@@ -46,7 +46,7 @@ env_logger = { version = "0.11.6", default-features = false, features = [
     "humantime",
 ] }
 fms-proto = { path = "fms-proto" }
-fms-util = { path = "fms-util" }
+fms-zenoh = { path = "fms-zenoh" }
 influx-client = { path = "influx-client", default-features = false }
 influxrs = { version = "3.0.1", default-features = false }
 log = { version = "0.4.25" }

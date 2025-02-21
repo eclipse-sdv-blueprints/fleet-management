@@ -21,7 +21,7 @@ use std::{str::FromStr, sync::Arc};
 
 use clap::{Parser, Subcommand};
 use fms_proto::fms::VehicleStatus;
-use fms_util::ZenohTransportConfig;
+use fms_zenoh::ZenohTransportConfig;
 use log::{info, warn};
 use tokio::sync::mpsc;
 use up_rust::{

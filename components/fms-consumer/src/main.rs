@@ -23,7 +23,7 @@ use std::thread;
 
 use clap::{Parser, Subcommand};
 use fms_proto::fms::VehicleStatus;
-use fms_util::ZenohTransportConfig;
+use fms_zenoh::ZenohTransportConfig;
 use influx_client::connection::InfluxConnectionConfig;
 use influx_client::writer::InfluxWriter;
 use log::info;
