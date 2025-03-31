@@ -97,7 +97,6 @@ const TRIGGER_TELL_TALE: &str = "TELL_TALE";
 const TRIGGER_TIMER: &str = "TIMER";
 
 const PARAM_DATABROKER_URI: &str = "databroker-uri";
-const PARAM_DEFAULT_VIN: &str = "default-vin";
 const PARAM_TIMER_INTERVAL: &str = "timer-interval";
 
 mod kuksa;
@@ -108,11 +107,6 @@ pub struct KuksaDatabrokerClientConfig {
     /// The HTTP(S) URI of the Eclipse Kuksa Databroker's gRPC endpoint.
     #[arg(long = PARAM_DATABROKER_URI, value_name = "URI", env = "KUKSA_DATABROKER_URI", default_value = "http://127.0.0.1:55555", value_parser = clap::builder::NonEmptyStringValueParser::new() )]
     databroker_uri: String,
-
-    /// The default VIN to use if the kuksa.val Databroker does not contain the vehicle's VIN.
-    /// The VIN is used as a tag on measurements written to the InfluxDB server.
-    #[arg(long = PARAM_DEFAULT_VIN, value_name = "IDENTIFIER", env = "DEFAULT_VIN", default_value = "YV2E4C3A5VB180691", value_parser = clap::builder::NonEmptyStringValueParser::new() )]
-    default_vin: String,
 
     /// The time period to wait after polling FMS snapshot data from the kuksa.val Databroker, e.g 5m10s or 1h15m.
     #[arg(long = PARAM_TIMER_INTERVAL, value_name = "DURATION_SPEC", env = "TIMER_INTERVAL", default_value = "5s", value_parser = |s: &str| duration_str::parse(s) )]
@@ -296,7 +290,6 @@ impl TryFrom<DataEntry> for FmsTrigger {
 
 struct KuksaValDatabroker {
     client: Box<ValClient<Channel>>,
-    default_vin: String,
 }
 
 impl KuksaValDatabroker {
@@ -320,7 +313,6 @@ impl KuksaValDatabroker {
                 let client = ValClient::new(channel);
                 KuksaValDatabroker {
                     client: Box::new(client),
-                    default_vin: config.default_vin.to_owned(),
                 }
             })
     }
@@ -376,7 +368,7 @@ impl KuksaValDatabroker {
                         }
                     });
                 }
-                Ok(kuksa::new_vehicle_status(vss_data, &self.default_vin))
+                kuksa::new_vehicle_status(vss_data)
             }
         }
     }
