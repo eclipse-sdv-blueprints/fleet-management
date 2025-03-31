@@ -28,6 +28,8 @@ use self::datapoint::Value;
 use crate::vehicle_abstraction::vss;
 use fms_proto::fms::VehicleStatus;
 
+use super::DatabrokerError;
+
 #[derive(Debug)]
 pub struct UnsupportedValueTypeError {}
 
@@ -215,15 +217,19 @@ impl TryFrom<Value> for Option<bool> {
     }
 }
 
-pub fn new_vehicle_status(data: HashMap<String, Value>, default_vin: &String) -> VehicleStatus {
+pub fn new_vehicle_status(data: HashMap<String, Value>) -> Result<VehicleStatus, DatabrokerError> {
+    let Some(vin) = data
+        .get(vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_VIN)
+        .map(|v| String::try_from(v.to_owned()).unwrap())
+    else {
+        return Err(DatabrokerError {
+            description: "Databroker does not contain VIN (yet)".to_string(),
+        });
+    };
+
     let mut vehicle_status = VehicleStatus::new();
     vehicle_status.created = MessageField::some(Timestamp::now());
-
-    vehicle_status.vin = data
-        .get(vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_VIN)
-        .map_or(default_vin.to_owned(), |value| {
-            value.clone().try_into().unwrap()
-        });
+    vehicle_status.vin = vin;
 
     if let Some(value) = data.get(vss::VSS_VEHICLE_CHASSIS_PARKINGBRAKE_ISENGAGED) {
         vehicle_status
@@ -400,5 +406,5 @@ pub fn new_vehicle_status(data: HashMap<String, Value>, default_vin: &String) ->
     if let Some(value) = data.get(vss::FMS_VEHICLE_TRAVELED_DISTANCE_HIGH_RES) {
         vehicle_status.hr_total_vehicle_distance = value.clone().try_into().unwrap();
     }
-    vehicle_status
+    Ok(vehicle_status)
 }
