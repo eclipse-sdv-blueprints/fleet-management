@@ -33,7 +33,7 @@ services:
     volumes:
       - ./config/zenoh/config-router.json5:/zenoh-config.json5
 
-  fms-forwarder:
+  fms-consumer:
     command: "zenoh -c /zenoh-config.json5"
     depends_on:
       fms-zenoh-router:
@@ -41,11 +41,9 @@ services:
     volumes:
       - ./config/zenoh/config-client.json5:/zenoh-config.json5
 
-  fms-consumer:
+  fms-forwarder:
     command: "zenoh -c /zenoh-config.json5"
     depends_on:
-      influxdb:
-        condition: service_healthy
       fms-zenoh-router:
         condition: service_started
     volumes:

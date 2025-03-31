@@ -28,13 +28,13 @@ services:
       - type: "bind"
         source: "${FMS_CONSUMER_CONFIG_FOLDER}"
         target: "/app/config"
+
   fms-forwarder:
     command: "hono"
     env_file:
       - "${FMS_FORWARDER_MQTT_ENV_FILE}"
     environment:
       RUST_LOG: "${FMS_FORWARDER_LOG_CONFIG:-info,fms_forwarder=info,up_transport_hono_mqtt=info}"
-
     volumes:
       - type: "bind"
         source: "${FMS_FORWARDER_CONFIG_FOLDER}"

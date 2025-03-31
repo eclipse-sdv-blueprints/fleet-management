@@ -65,7 +65,7 @@ services:
     networks:
       - "fms-backend"
     ports:
-      - "0.0.0.0:8086:8086"
+      - "127.0.0.1:8086:8086"
     configs:
       - source: "influxdb_init.sh"
         target: "/docker-entrypoint-initdb.d/influxdb_init.sh"
@@ -82,6 +82,7 @@ services:
       - type: "volume"
         source: "grafana-datasources"
         target: "/tmp/influxdb-datasources"
+
   grafana:
     image: "docker.io/grafana/grafana:9.5.14"
     container_name: "grafana"
@@ -104,6 +105,7 @@ services:
         source: "grafana-datasources"
         target: "/etc/grafana/provisioning/datasources"
         read_only: true
+
   fms-server:
     image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-server:main"
     build:
@@ -127,6 +129,30 @@ services:
         source: "influxdb-auth"
         target: "/tmp"
         read_only: true
+
+  fms-consumer:
+    image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-consumer:main"
+    build:
+      context: "./components"
+      dockerfile: "Dockerfile.fms-consumer"
+    container_name: "fms-consumer"
+    cap_drop: *default-drops
+    networks:
+      - "fms-backend"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    env_file:
+      - "./influxdb/fms-demo.env"
+    environment:
+      INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
+      RUST_LOG: "${FMS_CONSUMER_LOG_CONFIG:-info,fms_consumer=debug,influx_client=debug}"
+    volumes:
+      - type: "volume"
+        source: "influxdb-auth"
+        target: "/tmp"
+        read_only: true
+
   databroker:
     image: "quay.io/eclipse-kuksa/kuksa-databroker:0.4.6"
     container_name: "databroker"
@@ -144,57 +170,7 @@ services:
       RUST_LOG: "info"
     # for the time being, we do not use TLS secured connections to Databroker
     command: "--insecure"
-  fms-consumer:
-    image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-consumer:main"
-    build:
-      context: "./components"
-      dockerfile: "Dockerfile.fms-consumer"
-    container_name: "fms-consumer"
-    cap_drop:
-      - CAP_MKNOD
-      - CAP_NET_RAW
-      - CAP_AUDIT_WRITE
-    networks:
-      - "fms-backend"
-    depends_on:
-      influxdb:
-        condition: service_healthy
-    env_file:
-      - "./influxdb/fms-demo.env"
-    environment:
-      INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
-      RUST_LOG: "${FMS_CONSUMER_LOG_CONFIG:-info,fms_consumer=debug,influx_client=debug}"
-    volumes:
-      - type: "volume"
-        source: "influxdb-auth"
-        target: "/tmp"
-        read_only: true
-  fms-forwarder:
-    image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-forwarder:main"
-    build: &fms-forwarder-build
-      context: "./components"
-      dockerfile: "Dockerfile.fms-forwarder"
-    container_name: "fms-forwarder"
-    cap_drop: *default-drops
-    networks:
-      - "fms-backend"
-      - "fms-vehicle"
-    depends_on:
-      influxdb:
-        condition: service_healthy
-      databroker:
-        condition: service_started
-    env_file: "${FMS_FORWARDER_PROPERTIES_FILE:-./influxdb/fms-demo.env}"
-    environment:
-      INFLUXDB_TOKEN_FILE: "/etc/forwarder/fms-demo.token"
-      KUKSA_DATABROKER_URI: "http://databroker:55556"
-      RUST_LOG: "${FMS_FORWARDER_LOG_CONFIG:-info,fms_forwarder=info,influx_client=info}"
-      TRUST_STORE_PATH: "${FMS_FORWARDER_TRUST_STORE_PATH:-/etc/ssl/certs/ca-certificates.crt}"
-    volumes:
-      - type: "volume"
-        source: "influxdb-auth"
-        target: "/etc/forwarder"
-        read_only: true
+
   csv-provider:
     image: "quay.io/eclipse-kuksa/csv-provider:0.4.4"
     container_name: "csv-provider"
@@ -211,3 +187,23 @@ services:
       PROVIDER_LOG_LEVEL: "INFO"
       KUKSA_DATA_BROKER_ADDR: "databroker"
       KUKSA_DATA_BROKER_PORT: "55556"
+
+  fms-forwarder:
+    image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-forwarder:main"
+    build:
+      context: "./components"
+      dockerfile: "Dockerfile.fms-forwarder"
+    container_name: "fms-forwarder"
+    cap_drop: *default-drops
+    networks:
+      - "fms-backend"
+      - "fms-vehicle"
+    depends_on:
+      # allow the CSV provider to publish the VIN to the Databroker
+      csv-provider:
+        condition: service_started
+    environment:
+      KUKSA_DATABROKER_URI: "http://databroker:55556"
+      RUST_LOG: "${FMS_FORWARDER_LOG_CONFIG:-info,fms_forwarder=info}"
+      TRUST_STORE_PATH: "${FMS_FORWARDER_TRUST_STORE_PATH:-/etc/ssl/certs/ca-certificates.crt}"
+
