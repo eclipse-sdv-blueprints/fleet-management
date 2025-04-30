@@ -17,47 +17,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-use serde::Deserialize;
-use serde::Serialize;
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-#[must_use]
-pub enum VehiclesGetResponse {
-    /// OK
-    OK(VehicleResponseObject),
-    /// The server cannot or will not process the request due to an apparent client error (e.g., malformed request syntax, invalid request message framing, or deceptive request routing)  Possible reason: Mandatory field missing, e.g. Authentication Header empty or missing  The comments for the 4xx codes are from the Wikipedia article [List of HTTP status codes](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#4xx_Client_errors), which is released under the [Creative Commons Attribution-Share-Alike License 3.0](https://creativecommons.org/licenses/by-sa/3.0/). View authors on this [page](https://en.wikipedia.org/w/index.php?title=List_of_HTTP_status_codes&action=history).
-    TheServerCannotOrWillNotProcessTheRequestDueToAnApparentClientError(ErrorObject),
-    /// Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The response must include a WWW-Authenticate header field containing a challenge applicable to the requested resource. See Basic access authentication and Digest access authentication.  Possible reasons: Wrong credentials, Login credentials expired and/or Access token not valid or expired  The comments for the 4xx codes are from the Wikipedia article [List of HTTP status codes](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#4xx_Client_errors), which is released under the [Creative Commons Attribution-Share-Alike License 3.0](https://creativecommons.org/licenses/by-sa/3.0/). View authors on this [page](https://en.wikipedia.org/w/index.php?title=List_of_HTTP_status_codes&action=history).
-    SimilarTo(ErrorObject),
-    /// The request was a valid request, but the server is refusing to respond to it. Unlike a 401 Unauthorized response, authenticating will make no difference. On servers where authentication is required, this commonly means that the provided credentials were successfully authenticated but that the credentials still do not grant the client permission to access the resource (e.g. a recognized user attempting to access restricted content)  Possible reason: Insufficient rights for the service, no rights on any service of this vehicle and/or Response is too large  The comments for the 4xx codes are from the Wikipedia article [List of HTTP status codes](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#4xx_Client_errors), which is released under the [Creative Commons Attribution-Share-Alike License 3.0](https://creativecommons.org/licenses/by-sa/3.0/). View authors on this [page](https://en.wikipedia.org/w/index.php?title=List_of_HTTP_status_codes&action=history).
-    TheRequestWasAValidRequest(ErrorObject),
-    /// The requested resource could not be found but may be available again in the future. Subsequent requests by the client are permissible  Possible reason: vehicle unknown and/or rFMS-Version not supported  The comments for the 4xx codes are from the Wikipedia article [List of HTTP status codes](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#4xx_Client_errors), which is released under the [Creative Commons Attribution-Share-Alike License 3.0](https://creativecommons.org/licenses/by-sa/3.0/). View authors on this [page](https://en.wikipedia.org/w/index.php?title=List_of_HTTP_status_codes&action=history).
-    TheRequestedResourceCouldNotBeFoundButMayBeAvailableAgainInTheFuture(ErrorObject),
-    /// Possible reason: unsupported Accept parameter sent
-    PossibleReason(ErrorObject),
-    /// The user has sent too many requests in a given amount of time. Intended for use with rate limiting schemes Possible reason Request sent too often and/or Max concurrent calls
-    TheUserHasSentTooManyRequestsInAGivenAmountOfTime(ErrorObject),
-}
-
-/// Optional responses for error codes, detailing the error if needed
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct ErrorObject {
-    /// An identifier for this error
-    #[serde(rename = "error")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
-
-    /// A description of the error
-    #[serde(rename = "error_description")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error_description: Option<String>,
-
-    /// A URI providing more information
-    #[serde(rename = "error_uri")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error_uri: Option<String>,
-}
-
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct VehicleResponseObject {
     #[serde(rename = "vehicleResponse")]

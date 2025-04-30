@@ -33,5 +33,5 @@ readme.workspace = true
 protobuf = { workspace = true }
 
 [build-dependencies]
-protobuf-codegen = { workspace = true }
-protoc-bin-vendored = { workspace = true }
+protobuf-codegen = { version = "3.7.2" }
+protoc-bin-vendored = { version = "3.2" }
