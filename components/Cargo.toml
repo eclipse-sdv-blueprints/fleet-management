@@ -38,23 +38,21 @@ edition = "2021"
 documentation = "https://eclipse-sdv-blueprints.github.io/blueprints-website/"
 
 [workspace.dependencies]
-async-trait = { version = "0.1.86" }
-bytes = { version = "1.7.0" }
-chrono = { version = "0.4.39", default-features = false }
-clap = { version = "4.5.29", default-features = false }
-env_logger = { version = "0.11.6", default-features = false, features = [
+async-trait = { version = "0.1.89" }
+bytes = { version = "1.11.0" }
+chrono = { version = "0.4.42", default-features = false }
+clap = { version = "4.5.53", default-features = false }
+env_logger = { version = "0.11.8", default-features = false, features = [
     "humantime",
 ] }
 fms-proto = { path = "fms-proto" }
 fms-zenoh = { path = "fms-zenoh" }
 influx-client = { path = "influx-client", default-features = false }
 influxrs = { version = "3.0.1", default-features = false }
-log = { version = "0.4.25" }
-protobuf = { version = "3.5.1" }
-protobuf-codegen = { version = "3.5.1" }
-protoc-bin-vendored = { version = "3.0" }
+log = { version = "0.4.28" }
+protobuf = { version = "3.7.2" }
 # tokio does not enable features by default
-tokio = { version = "1.43" }
+tokio = { version = "1.48" }
 up-rust = { version = "0.4.0", default-features = false }
 up-transport-hono-kafka = { path = "up-transport-hono-kafka" }
 up-transport-hono-mqtt = { path = "up-transport-hono-mqtt" }

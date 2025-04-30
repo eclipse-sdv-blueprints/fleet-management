@@ -20,22 +20,18 @@
 //! An abstraction of a vehicle's (current) status based on
 //! [Eclipse kuksa.val Databroker](https://github.com/eclipse/kuksa.val).
 //!
+use std::{collections::HashMap, error::Error, fmt::Display, time::Duration};
+
 use clap::Args;
+use http::Uri;
+use kuksa_rust_sdk::kuksa::{common::ClientTraitV2, val::v2::KuksaClientV2};
+use kuksa_rust_sdk::v2_proto::value::TypedValue;
+use kuksa_rust_sdk::v2_proto::IncompatibleValueTypeError;
 use log::{debug, error, info, warn};
 use protobuf::MessageField;
 use tokio::sync::mpsc::Sender;
 
-use std::{collections::HashMap, error::Error, fmt::Display, time::Duration};
-
-use tonic::{
-    transport::{Channel, Endpoint},
-    Request,
-};
-
 use fms_proto::fms::{TellTaleInfo, Trigger, VehicleStatus};
-use kuksa::{datapoint::Value, val_client::ValClient, EntryRequest, Field, GetRequest, View};
-
-use self::kuksa::{DataEntry, SubscribeEntry, SubscribeRequest, UnsupportedValueTypeError};
 
 const SNAPSHOT_VSS_PATHS: &[&str] = &[
     vss::VSS_VEHICLE_CHASSIS_PARKINGBRAKE_ISENGAGED,
@@ -180,72 +176,57 @@ impl FmsTrigger {
     }
 
     fn new_tell_tale_trigger(
-        data_entry: DataEntry,
+        value: &TypedValue,
         name: &str,
-    ) -> Result<FmsTrigger, UnsupportedValueTypeError> {
-        if let Some(value) = data_entry.clone().value.and_then(|v| v.value) {
-            match String::try_from(value) {
-                Ok(status) => {
-                    let mut tell_tale_info = TellTaleInfo::new();
-                    tell_tale_info.tell_tale = name.to_string();
-                    tell_tale_info.status = status;
-                    Ok(FmsTrigger::TellTale(tell_tale_info))
-                }
-                Err(e) => Err(e),
-            }
-        } else {
-            Err(UnsupportedValueTypeError {})
-        }
+    ) -> Result<FmsTrigger, IncompatibleValueTypeError> {
+        String::try_from(value).map(|status| {
+            let mut tell_tale_info = TellTaleInfo::new();
+            tell_tale_info.tell_tale = name.to_string();
+            tell_tale_info.status = status;
+            FmsTrigger::TellTale(tell_tale_info)
+        })
     }
 
     fn new_boolean_trigger<P: FnOnce(bool) -> FmsTrigger>(
-        data_entry: DataEntry,
+        value: &TypedValue,
         trigger_producer: P,
-    ) -> Result<FmsTrigger, UnsupportedValueTypeError> {
-        if let Some(data_point) = data_entry.clone().value {
-            bool::try_from(data_point.value.unwrap()).map(trigger_producer)
-        } else {
-            Err(UnsupportedValueTypeError {})
-        }
+    ) -> Result<FmsTrigger, IncompatibleValueTypeError> {
+        bool::try_from(value).map(trigger_producer)
     }
 
     fn new_string_value_trigger<P: FnOnce(String) -> FmsTrigger>(
-        data_entry: DataEntry,
+        value: &TypedValue,
         trigger_producer: P,
-    ) -> Result<FmsTrigger, UnsupportedValueTypeError> {
-        if let Some(data_point) = data_entry.clone().value {
-            String::try_from(data_point.value.unwrap()).map(trigger_producer)
-        } else {
-            Err(UnsupportedValueTypeError {})
-        }
+    ) -> Result<FmsTrigger, IncompatibleValueTypeError> {
+        String::try_from(value).map(trigger_producer)
     }
 }
 
-impl TryFrom<DataEntry> for FmsTrigger {
-    type Error = UnsupportedValueTypeError;
+impl TryFrom<(String, &TypedValue)> for FmsTrigger {
+    type Error = IncompatibleValueTypeError;
 
-    fn try_from(data_entry: DataEntry) -> Result<Self, Self::Error> {
-        match data_entry.path.as_str() {
+    fn try_from(value: (String, &TypedValue)) -> Result<Self, Self::Error> {
+        match value.0.as_str() {
             vss::FMS_VEHICLE_CABIN_TELLTALE_ECT_STATUS => {
-                FmsTrigger::new_tell_tale_trigger(data_entry, TELL_TALE_NAME_ECT)
+                FmsTrigger::new_tell_tale_trigger(value.1, TELL_TALE_NAME_ECT)
             }
             vss::FMS_VEHICLE_CABIN_TELLTALE_ENGINEOIL_STATUS => {
-                FmsTrigger::new_tell_tale_trigger(data_entry, TELL_TALE_NAME_ENGINE_OIL)
+                FmsTrigger::new_tell_tale_trigger(value.1, TELL_TALE_NAME_ENGINE_OIL)
             }
             vss::FMS_VEHICLE_CABIN_TELLTALE_ENGINE_STATUS => {
-                FmsTrigger::new_tell_tale_trigger(data_entry, TELL_TALE_NAME_ENGINE_MIL_INDICATOR)
+                FmsTrigger::new_tell_tale_trigger(value.1, TELL_TALE_NAME_ENGINE_MIL_INDICATOR)
             }
             vss::FMS_VEHICLE_CABIN_TELLTALE_FUELLEVEL_STATUS => {
-                FmsTrigger::new_tell_tale_trigger(data_entry, TELL_TALE_NAME_FUEL_LEVEL)
+                FmsTrigger::new_tell_tale_trigger(value.1, TELL_TALE_NAME_FUEL_LEVEL)
             }
             vss::FMS_VEHICLE_CABIN_TELLTALE_PARKINGBRAKE_STATUS => {
-                FmsTrigger::new_tell_tale_trigger(data_entry, TELL_TALE_NAME_PARKING_BRAKE)
+                FmsTrigger::new_tell_tale_trigger(value.1, TELL_TALE_NAME_PARKING_BRAKE)
             }
             vss::VSS_VEHICLE_CHASSIS_PARKINGBRAKE_ISENGAGED => {
-                FmsTrigger::new_boolean_trigger(data_entry, FmsTrigger::ParkingBreakSwitchChanged)
+                FmsTrigger::new_boolean_trigger(value.1, FmsTrigger::ParkingBreakSwitchChanged)
             }
             vss::VSS_VEHICLE_POWERTRAIN_COMBUSTIONENGINE_ISRUNNING => {
-                FmsTrigger::new_boolean_trigger(data_entry, |is_running| {
+                FmsTrigger::new_boolean_trigger(value.1, |is_running| {
                     if is_running {
                         FmsTrigger::EngineOn
                     } else {
@@ -254,7 +235,7 @@ impl TryFrom<DataEntry> for FmsTrigger {
                 })
             }
             vss::FMS_VEHICLE_TACHOGRAPH_DRIVER1_ISCARDPRESENT => {
-                FmsTrigger::new_boolean_trigger(data_entry, |card_is_present| {
+                FmsTrigger::new_boolean_trigger(value.1, |card_is_present| {
                     if card_is_present {
                         FmsTrigger::Driver1Login
                     } else {
@@ -264,12 +245,12 @@ impl TryFrom<DataEntry> for FmsTrigger {
             }
             vss::FMS_VEHICLE_TACHOGRAPH_DRIVER1_WORKINGSTATE => {
                 FmsTrigger::new_string_value_trigger(
-                    data_entry,
+                    value.1,
                     FmsTrigger::Driver1WorkingStateChanged,
                 )
             }
             vss::FMS_VEHICLE_TACHOGRAPH_DRIVER2_ISCARDPRESENT => {
-                FmsTrigger::new_boolean_trigger(data_entry, |card_is_present| {
+                FmsTrigger::new_boolean_trigger(value.1, |card_is_present| {
                     if card_is_present {
                         FmsTrigger::Driver2Login
                     } else {
@@ -279,17 +260,17 @@ impl TryFrom<DataEntry> for FmsTrigger {
             }
             vss::FMS_VEHICLE_TACHOGRAPH_DRIVER2_WORKINGSTATE => {
                 FmsTrigger::new_string_value_trigger(
-                    data_entry,
+                    value.1,
                     FmsTrigger::Driver2WorkingStateChanged,
                 )
             }
-            _ => Err(UnsupportedValueTypeError {}),
+            _ => Err(IncompatibleValueTypeError {}),
         }
     }
 }
 
 struct KuksaValDatabroker {
-    client: Box<ValClient<Channel>>,
+    client: Box<KuksaClientV2>,
 }
 
 impl KuksaValDatabroker {
@@ -298,19 +279,15 @@ impl KuksaValDatabroker {
             "creating client for Eclipse Kuksa Databroker at {}",
             config.databroker_uri
         );
-        Endpoint::from_shared(config.databroker_uri.to_owned())
-            .map_err(|e| {
-                error!("invalid Databroker URI: {}", e);
+        Uri::try_from(config.databroker_uri.clone())
+            .map_err(|err| {
+                error!("invalid Databroker URI: {err}");
                 DatabrokerError {
-                    description: e.to_string(),
+                    description: err.to_string(),
                 }
             })
-            .map(|builder| {
-                let channel = builder
-                    .connect_timeout(Duration::from_secs(5))
-                    .timeout(Duration::from_secs(5))
-                    .connect_lazy();
-                let client = ValClient::new(channel);
+            .map(|uri| {
+                let client = KuksaClientV2::new(uri);
                 KuksaValDatabroker {
                     client: Box::new(client),
                 }
@@ -318,56 +295,46 @@ impl KuksaValDatabroker {
     }
 
     pub async fn get_vehicle_status(&mut self) -> Result<VehicleStatus, DatabrokerError> {
-        let entry_requests: Vec<EntryRequest> = SNAPSHOT_VSS_PATHS
-            .iter()
-            .map(|path| EntryRequest {
-                path: path.to_string(),
-                view: View::CurrentValue as i32,
-                fields: vec![Field::Value as i32],
-            })
-            .collect();
+        let paths = SNAPSHOT_VSS_PATHS.iter().map(|v| v.to_string()).collect();
 
-        let mut vss_data: HashMap<String, Value> = HashMap::new();
-        match self
-            .client
-            .get(Request::new(GetRequest {
-                entries: entry_requests,
-            }))
-            .await
-            .map(|res| res.into_inner())
-        {
-            Err(status) => {
-                warn!("failed to retrieve snapshot data points from Databroker {status}");
+        match self.client.get_values(paths).await {
+            Err(kuksa_rust_sdk::kuksa::common::ClientError::Connection(msg)) => {
+                warn!("failed to retrieve snapshot data points from Databroker: {msg}");
+                Err(DatabrokerError { description: msg })
+            }
+            Err(kuksa_rust_sdk::kuksa::common::ClientError::Status(status)) => {
+                warn!(
+                    "failed to retrieve snapshot data points from Databroker: {}",
+                    status.message()
+                );
                 Err(DatabrokerError {
-                    description: format!("status code {}", status.code()),
+                    description: status.message().to_string(),
+                })
+            }
+            Err(kuksa_rust_sdk::kuksa::common::ClientError::Function(errors)) => {
+                errors.iter().for_each(|error| {
+                    warn!("failed to retrieve snapshot data points from Databroker: {error:?}");
+                });
+                Err(DatabrokerError {
+                    description: "multiple errors while retrieving snapshot data".to_string(),
                 })
             }
             Ok(get_response) => {
-                if let Some(error) = get_response.error {
-                    warn!(
-                        "response from Databroker contains global error [code: {}, message: {}]",
-                        error.code, error.message
-                    );
-                } else {
-                    get_response
-                        .errors
-                        .into_iter()
-                        .for_each(|data_entry_error| {
-                            if let Some(err) = data_entry_error.error {
-                                warn!(
-                                    "response from Databroker contains error [path: {}, error: {:?}]",
-                                    data_entry_error.path, err
-                                );
-                            }
-                        });
-                    get_response.entries.into_iter().for_each(|data_entry| {
-                        let name = data_entry.path.to_owned();
-                        if let Some(value) = data_entry.value.and_then(|dp| dp.value) {
-                            debug!("got value [path: {}]: {:?}", name, value);
-                            vss_data.insert(name, value);
-                        }
-                    });
-                }
+                let mut vss_data = HashMap::new();
+                let mut idx = 0usize;
+                get_response.iter().for_each(|data_entry| {
+                    if let (name, Some(value)) = (
+                        SNAPSHOT_VSS_PATHS[idx],
+                        data_entry
+                            .value
+                            .as_ref()
+                            .and_then(|v| v.typed_value.as_ref()),
+                    ) {
+                        debug!("got value [path: {name}]: {value:?}");
+                        vss_data.insert(name.to_owned(), value.to_owned());
+                    }
+                    idx += 1;
+                });
                 kuksa::new_vehicle_status(vss_data)
             }
         }
@@ -377,37 +344,26 @@ impl KuksaValDatabroker {
         &mut self,
         sender: Sender<FmsTrigger>,
     ) -> Result<(), DatabrokerError> {
-        let subscribe_entries: Vec<SubscribeEntry> = TRIGGER_VSS_PATHS
-            .iter()
-            .map(|path| SubscribeEntry {
-                path: path.to_string(),
-                view: View::CurrentValue as i32,
-                fields: vec![Field::Value as i32],
-            })
-            .collect();
+        let paths = TRIGGER_VSS_PATHS.iter().map(|v| v.to_string()).collect();
 
-        let req = SubscribeRequest {
-            entries: subscribe_entries,
-        };
-
-        match self.client.subscribe(req).await {
-            Ok(response) => {
-                let mut stream = response.into_inner();
+        match self.client.subscribe(paths, None, None).await {
+            Ok(mut response) => {
                 tokio::task::spawn(async move {
-                    while let Ok(message) = stream.message().await {
+                    while let Ok(message) = response.message().await {
                         if let Some(response) = message {
-                            for update in response.updates {
-                                match update.entry {
-                                    Some(data_entry) => {
-                                        if let Ok(trigger) = FmsTrigger::try_from(data_entry) {
-                                            let _ = sender.send(trigger).await;
-                                        }
+                            for (path, datapoint) in response.entries {
+                                if let Some(value) = datapoint
+                                    .value
+                                    .as_ref()
+                                    .and_then(|v| v.typed_value.as_ref())
+                                {
+                                    if let Ok(trigger) = FmsTrigger::try_from((path, value)) {
+                                        let _ = sender.send(trigger).await;
                                     }
-                                    None => {
-                                        debug!(
-                                            "ignoring notification from Databroker containing no data"
-                                        );
-                                    }
+                                } else {
+                                    debug!(
+                                        "ignoring notification from Databroker containing no data"
+                                    );
                                 }
                             }
                         }
@@ -415,10 +371,10 @@ impl KuksaValDatabroker {
                 });
                 Ok(())
             }
-            Err(e) => {
-                warn!("failed to register triggers for signals: {}", e);
+            Err(err) => {
+                warn!("failed to register triggers for signals: {err}");
                 Err(DatabrokerError {
-                    description: e.message().to_string(),
+                    description: err.to_string(),
                 })
             }
         }
@@ -435,7 +391,7 @@ pub async fn init(
 
     let mut databroker = KuksaValDatabroker::new(config).await?;
     let (tx, mut rx) = tokio::sync::mpsc::channel::<FmsTrigger>(50);
-    let _ = &databroker.register_triggers(tx.clone()).await?;
+    databroker.register_triggers(tx.clone()).await?;
 
     tokio::task::spawn(async move {
         let mut current_status = VehicleStatus::new();

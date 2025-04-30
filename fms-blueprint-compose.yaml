@@ -154,7 +154,7 @@ services:
         read_only: true
 
   databroker:
-    image: "quay.io/eclipse-kuksa/kuksa-databroker:0.4.6"
+    image: "quay.io/eclipse-kuksa/kuksa-databroker:0.6.0"
     container_name: "databroker"
     cap_drop: *default-drops
     networks:
@@ -172,7 +172,7 @@ services:
     command: "--insecure"
 
   csv-provider:
-    image: "quay.io/eclipse-kuksa/csv-provider:0.4.4"
+    image: "quay.io/eclipse-kuksa/csv-provider:0.4.5"
     container_name: "csv-provider"
     cap_drop: *default-drops
     networks:
