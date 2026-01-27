@@ -69,4 +69,3 @@ services:
       - type: "volume"
         source: "influxdb-auth"
         target: "/tmp"
-        read_only: true
