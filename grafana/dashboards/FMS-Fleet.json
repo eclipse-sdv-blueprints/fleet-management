@@ -1011,6 +1011,67 @@
         }
       ],
       "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "PDC312342D5DCA611"
+      },
+      "description": "Aggregated stats written by the fleet analysis backend.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      },
+      "id": 20,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PDC312342D5DCA611"
+          },
+          "query": "from(bucket: \"demo\")\n  |> range(start: 0)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"fleet_stats\")\n  |> filter(fn: (r) => r[\"_field\"] == \"vehicleCount\" or r[\"_field\"] == \"headerCount\" or r[\"_field\"] == \"snapshotCount\" or r[\"_field\"] == \"totalCount\")\n  |> last()",
+          "refId": "A"
+        }
+      ],
+      "title": "Fleet Stats",
+      "transformations": [],
+      "type": "stat"
     }
   ],
   "refresh": "5s",
