@@ -28,6 +28,12 @@ pub const FMS_VEHICLE_CABIN_TELLTALE_PARKINGBRAKE_STATUS: &str =
 pub const VSS_VEHICLE_CURRENTOVERALLWEIGHT: &str = "Vehicle.CurrentOverallWeight";
 pub const VSS_VEHICLE_CHASSIS_PARKINGBRAKE_ISENGAGED: &str =
     "Vehicle.Chassis.ParkingBrake.IsEngaged";
+pub const VSS_VEHICLE_BODY_LIGHTS_DIRECTIONINDICATOR_RIGHT_ISSIGNALING: &str =
+    "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling";
+pub const VSS_VEHICLE_BODY_LIGHTS_DIRECTIONINDICATOR_LEFT_ISSIGNALING: &str =
+    "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling";
+pub const VSS_VEHICLE_BODY_LIGHTS_BRAKE_ISACTIVE: &str =
+    "Vehicle.Body.Lights.Brake.IsActive";
 pub const VSS_VEHICLE_CURRENTLOCATION_LATITUDE: &str = "Vehicle.CurrentLocation.Latitude";
 pub const VSS_VEHICLE_CURRENTLOCATION_LONGITUDE: &str = "Vehicle.CurrentLocation.Longitude";
 pub const VSS_VEHICLE_CURRENTLOCATION_ALTITUDE: &str = "Vehicle.CurrentLocation.Altitude";

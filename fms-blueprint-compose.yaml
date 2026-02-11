@@ -88,7 +88,7 @@ services:
     container_name: "grafana"
     cap_drop: *default-drops
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     networks:
       - "fms-backend"
     depends_on:

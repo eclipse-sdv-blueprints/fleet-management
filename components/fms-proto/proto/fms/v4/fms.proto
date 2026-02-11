@@ -171,6 +171,12 @@ message SnapshotData {
   repeated AxleLoad vehicle_axles = 22;
   // List of trailers connected to the truck.
   repeated Trailer trailers = 23;
+  // Indicates if left direction indicator is signaling.
+  optional bool direction_indicator_left = 24;
+  // Indicates if right direction indicator is signaling.
+  optional bool direction_indicator_right = 25;
+  // Indicates if brake-light is active. Allowed values: INACTIVE, ACTIVE, ADAPTIVE.
+  optional string brake_light_status = 26;
 }
 
 message TachoDriverId {

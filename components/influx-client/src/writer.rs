@@ -124,6 +124,15 @@ fn build_snapshot_measurement(
         if let Some(value) = snapshot_data.parking_brake_engaged {
             builder = builder.field(crate::FIELD_PARKING_BREAK_SWITCH, value);
         }
+        if let Some(value) = snapshot_data.direction_indicator_left {
+            builder = builder.field(crate::FIELD_DIRECTION_INDICATOR_LEFT, value);
+        }
+        if let Some(value) = snapshot_data.direction_indicator_right {
+            builder = builder.field(crate::FIELD_DIRECTION_INDICATOR_RIGHT, value);
+        }
+        if let Some(value) = snapshot_data.brake_light_status {
+            builder = builder.field(crate::FIELD_BRAKE_LIGHT_STATUS, value);
+        }
 
         if let Some(current_location) = snapshot_data.gnss_position.into_option() {
             builder = builder

@@ -342,6 +342,15 @@ impl InfluxReader {
                                     parking_brake_switch: unpack_value_bool(
                                         entry.get(influx_client::FIELD_PARKING_BREAK_SWITCH),
                                     ),
+                                    direction_indicator_left: unpack_value_bool(
+                                        entry.get(influx_client::FIELD_DIRECTION_INDICATOR_LEFT),
+                                    ),
+                                    direction_indicator_right: unpack_value_bool(
+                                        entry.get(influx_client::FIELD_DIRECTION_INDICATOR_RIGHT),
+                                    ),
+                                    brake_light_status: entry
+                                        .get(influx_client::FIELD_BRAKE_LIGHT_STATUS)
+                                        .cloned(),
                                     hybrid_battery_pack_remaining_charge: None,
                                     battery_pack_charging_status: None,
                                     battery_pack_charging_connection_status: None,
