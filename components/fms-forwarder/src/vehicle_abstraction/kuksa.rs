@@ -208,7 +208,10 @@ pub fn new_vehicle_status(
             .wheel_based_speed = f64::try_from(value).ok();
     }
 
-    if let Some(value) = data.get(vss::FMS_VEHICLE_TACHOGRAPH_DRIVER1_IDENTIFICATION) {
+    if let Some(value) = data
+        .get(vss::VSS_VEHICLE_DRIVER_IDENTIFIER_SUBJECT)
+        .or_else(|| data.get(vss::FMS_VEHICLE_TACHOGRAPH_DRIVER1_IDENTIFICATION))
+    {
         vehicle_status
             .driver1_id
             .mut_or_insert_default()

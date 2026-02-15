@@ -34,6 +34,7 @@ pub const VSS_VEHICLE_BODY_LIGHTS_DIRECTIONINDICATOR_LEFT_ISSIGNALING: &str =
     "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling";
 pub const VSS_VEHICLE_BODY_LIGHTS_BRAKE_ISACTIVE: &str =
     "Vehicle.Body.Lights.Brake.IsActive";
+pub const VSS_VEHICLE_DRIVER_IDENTIFIER_SUBJECT: &str = "Vehicle.Driver.Identifier.Subject";
 pub const VSS_VEHICLE_CURRENTLOCATION_LATITUDE: &str = "Vehicle.CurrentLocation.Latitude";
 pub const VSS_VEHICLE_CURRENTLOCATION_LONGITUDE: &str = "Vehicle.CurrentLocation.Longitude";
 pub const VSS_VEHICLE_CURRENTLOCATION_ALTITUDE: &str = "Vehicle.CurrentLocation.Altitude";
