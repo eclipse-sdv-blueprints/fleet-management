@@ -105,6 +105,9 @@ services:
         source: "grafana-datasources"
         target: "/etc/grafana/provisioning/datasources"
         read_only: true
+    environment:
+      - GF_SECURITY_ADMIN_USER=sdv
+      - GF_SECURITY_ADMIN_PASSWORD=sdv
 
   fms-server:
     image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-server:main"
