@@ -108,6 +108,7 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=sdv
       - GF_SECURITY_ADMIN_PASSWORD=sdv
+      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=500ms
 
   fms-server:
     image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-server:main"
