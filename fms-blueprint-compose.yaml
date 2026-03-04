@@ -207,6 +207,7 @@ services:
         condition: service_started
     environment:
       KUKSA_DATABROKER_URI: "http://databroker:55556"
+      TIMER_INTERVAL: "${FMS_FORWARDER_TIMER_INTERVAL:-500ms}"
       RUST_LOG: "${FMS_FORWARDER_LOG_CONFIG:-info,fms_forwarder=info}"
       TRUST_STORE_PATH: "${FMS_FORWARDER_TRUST_STORE_PATH:-/etc/ssl/certs/ca-certificates.crt}"
 
