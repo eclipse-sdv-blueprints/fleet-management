@@ -120,7 +120,7 @@ services:
     networks:
       - "fms-backend"
     ports:
-      - "127.0.0.1:8081:8081"
+      - "8081:8081"
     depends_on:
       influxdb:
         condition: service_healthy
@@ -164,7 +164,7 @@ services:
     networks:
       - "fms-vehicle"
     ports:
-      - "127.0.0.1:55555:55556"
+      - "55555:55556"
     configs:
       - "vss_overlay.json"
     environment:
