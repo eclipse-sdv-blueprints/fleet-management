@@ -51,13 +51,15 @@ pub fn new_vehicle_status(
             .parking_brake_engaged = bool::try_from(value).ok();
     }
 
-    if let Some(value) = data.get(vss::VSS_VEHICLE_BODY_LIGHTS_DIRECTIONINDICATOR_RIGHT_ISSIGNALING) {
+    if let Some(value) = data.get(vss::VSS_VEHICLE_BODY_LIGHTS_DIRECTIONINDICATOR_RIGHT_ISSIGNALING)
+    {
         vehicle_status
             .snapshot_data
             .mut_or_insert_default()
             .direction_indicator_right = bool::try_from(value).ok();
     }
-    if let Some(value) = data.get(vss::VSS_VEHICLE_BODY_LIGHTS_DIRECTIONINDICATOR_LEFT_ISSIGNALING) {
+    if let Some(value) = data.get(vss::VSS_VEHICLE_BODY_LIGHTS_DIRECTIONINDICATOR_LEFT_ISSIGNALING)
+    {
         vehicle_status
             .snapshot_data
             .mut_or_insert_default()
