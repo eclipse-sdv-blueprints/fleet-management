@@ -22,7 +22,7 @@ plugins:[ [
         // the base directory to output to.
         outDir: "docs/fleet-management", 
         // the file names to download
-        documents: ["introduction.md"], 
+        documents: ["introduction.md", "fleet-analysis-backend.md"], 
     },
 ], [
     "docusaurus-plugin-remote-content",

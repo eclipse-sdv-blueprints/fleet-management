@@ -51,7 +51,7 @@ services:
 
   fleet-analysis-backend:
     build:
-      context: "../../devices/backend-fleet-analysis-java"
+      context: "./components/backend-fleet-analysis-java"
       dockerfile: "Dockerfile"
     container_name: "fleet-analysis-backend"
     networks:
