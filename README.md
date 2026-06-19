@@ -33,7 +33,7 @@ to a back end. It also shows how [Eclipse uProtocol&trade;](https://eclipse-upro
 
 The following component diagram provides a high level overview of the building blocks and how they are related to each other.
 
-<img src="img/architecture-uprotocol.drawio.svg">
+<img src="docs/img/architecture-uprotocol.drawio.svg">
 
 The overall idea is to enable back end applications to consume data coming from a vehicle using the rFMS API.
 
@@ -72,7 +72,7 @@ curl -v -s http://127.0.0.1:8081/rfms/vehicleposition?latestOnly=true | jq
 
 The command line from the quick start section will start up containers for the _FMS Forwarder_ and _FMS Consumer_ that are configured to use a [Zenoh](https://zenoh.io) based uProtocol transport as shown in the deployment diagram below:
 
-<img src="img/architecture-zenoh.drawio.svg">
+<img src="docs/img/architecture-zenoh.drawio.svg">
 
 # Eclipse Hono&trade; based Transport
 
@@ -106,7 +106,7 @@ In order to run the blueprint with the Hono transport, perform the following ste
 
 This will result in a deployment as shown below:
 
-<img src="img/architecture-hono.drawio.svg">
+<img src="docs/img/architecture-hono.drawio.svg">
 
 # Manual configuration
 
