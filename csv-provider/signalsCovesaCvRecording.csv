@@ -1883,3 +1883,4 @@ current,Vehicle.CurrentLocation.Latitude,43.40362548828125,0
 current,Vehicle.CurrentLocation.Longitude,-80.52514648,0
 current,Vehicle.CurrentLocation.Altitude,372,0
 current,Vehicle.Speed,0.072,0
+current,Vehicle.Speed,0.072,0
