@@ -59,7 +59,7 @@ This will pull (or build if necessary) the container images and create and start
 The stack includes the Jakarta EE fleet analysis backend and exposes it on `http://127.0.0.1:8082/fleet-analysis/api`.
 
 Once all services have been started, the current vehicle status can be viewed on a [Grafana dashboard](http://127.0.0.1:3000),
-using *admin*/*admin* as username and password for logging in.
+using *sdv*/*sdv* as username and password for logging in.
 
 
 The rFMS API can be used to retrieve the data, e.g.
