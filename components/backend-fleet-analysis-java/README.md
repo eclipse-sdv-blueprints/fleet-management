@@ -61,76 +61,13 @@ curl -s http://localhost:8082/fleet-analysis/api/analysis/stats | jq
 
 ## API
 
-### `POST /api/analysis/summary`
+See [openapi.yaml](openapi.yaml) for the complete API specification.
 
-Request body (example):
+The API provides the following endpoints:
 
-```json
-[
-  {
-    "vehicleId": "bike-001",
-    "speedKph": 42.3,
-    "batterySoc": 0.78,
-    "brakeActive": false,
-    "updatedAt": "2024-06-10T10:15:30Z"
-  },
-  {
-    "vehicleId": "bike-002",
-    "speedKph": 12.4,
-    "batterySoc": 0.52,
-    "brakeActive": true,
-    "updatedAt": "2024-06-10T10:15:32Z"
-  }
-]
-```
-
-Response:
-
-```json
-{
-  "vehicleCount": 2,
-  "averageSpeedKph": 27.35,
-  "minBatterySoc": 0.52,
-  "maxBatterySoc": 0.78,
-  "brakingVehicles": 1
-}
-```
-
-### `POST /api/telemetry/ingest`
-
-Writes header and/or snapshot measurements into InfluxDB. Configure the client using:
-
-- `INFLUXDB_URI` (default: `http://influxdb:8086`)
-- `INFLUXDB_ORG` (default: `sdv`)
-- `INFLUXDB_BUCKET` (default: `demo`)
-- `INFLUXDB_TOKEN` or `INFLUXDB_TOKEN_FILE`
-
-Request body (example):
-
-```json
-{
-  "vin": "truck-001",
-  "trigger": "periodic",
-  "createdDateTime": 1737940602000,
-  "header": {
-    "hrTotalVehicleDistance": 12345.6,
-    "grossCombinationVehicleWeight": 18100.2,
-    "totalEngineHours": 82.5,
-    "engineTotalFuelUsed": 221.9,
-    "driver1Id": "driver-01",
-    "driver1IdCardIssuer": "fleet"
-  },
-  "snapshot": {
-    "latitude": 37.7749,
-    "longitude": -122.4194,
-    "speed": 54.2,
-    "positionDateTime": 1737940602,
-    "wheelBasedSpeed": 53.7,
-    "fuelLevel1": 0.42,
-    "parkingBrakeSwitch": false
-  }
-}
-```
+- `POST /api/analysis/summary` - Compute fleet summary statistics
+- `POST /api/telemetry/ingest` - Ingest vehicle telemetry into InfluxDB
+- `GET /api/analysis/stats` - Get latest fleet statistics
 
 ### Fleet stats (InfluxDB)
 
@@ -141,17 +78,3 @@ Default schedule: every 30 seconds (configure with `INFLUXDB_STATS_INTERVAL_SECO
 or Java system property).
 Initial delay before the first stats run defaults to 10 seconds (configure with
 `INFLUXDB_STATS_INITIAL_DELAY_SECONDS`).
-
-**Measurement: `fleet_stats`**
-
-Fields:
-
-- `vehicleCount` (unique `vin` across all time)
-- `headerCount` (total number of header points)
-- `snapshotCount` (total number of snapshot points)
-- `totalCount` (header + snapshot points)
-- `generatedAt` (ms since Unix epoch)
-
-### `GET /api/analysis/stats`
-
-Returns the latest stats snapshot (and triggers a refresh if none exist yet).
