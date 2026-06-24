@@ -28,7 +28,7 @@ services:
       - "fms-backend"
       - "fms-vehicle"
     ports:
-      - 7447:7447/tcp
+      - ${FMS_ZENOH_BIND_HOST:-127.0.0.1}:7447:7447/tcp
     restart: unless-stopped
     volumes:
       - ./config/zenoh/config-router.json5:/zenoh-config.json5

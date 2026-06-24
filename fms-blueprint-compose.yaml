@@ -65,7 +65,7 @@ services:
     networks:
       - "fms-backend"
     ports:
-      - "127.0.0.1:8086:8086"
+      - "${FMS_INFLUXDB_BIND_HOST:-127.0.0.1}:8086:8086"
     configs:
       - source: "influxdb_init.sh"
         target: "/docker-entrypoint-initdb.d/influxdb_init.sh"
@@ -88,7 +88,7 @@ services:
     container_name: "grafana"
     cap_drop: *default-drops
     ports:
-      - "3000:3000"
+      - "${FMS_GRAFANA_BIND_HOST:-127.0.0.1}:3000:3000"
     networks:
       - "fms-backend"
     depends_on:
@@ -120,7 +120,7 @@ services:
     networks:
       - "fms-backend"
     ports:
-      - "8081:8081"
+      - "${FMS_SERVER_BIND_HOST:-127.0.0.1}:8081:8081"
     depends_on:
       influxdb:
         condition: service_healthy
@@ -164,7 +164,7 @@ services:
     networks:
       - "fms-vehicle"
     ports:
-      - "55555:55556"
+      - "${FMS_DATABROKER_BIND_HOST:-127.0.0.1}:55555:55556"
     configs:
       - "vss_overlay.json"
     environment:
@@ -228,7 +228,7 @@ services:
       INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
       INFLUXDB_STATS_INTERVAL_SECONDS: "${INFLUXDB_STATS_INTERVAL_SECONDS:-30}"
     ports:
-      - "127.0.0.1:8082:8080"
+      - "${FMS_FLEET_ANALYSIS_BIND_HOST:-127.0.0.1}:8082:8080"
     volumes:
       - type: "volume"
         source: "influxdb-auth"

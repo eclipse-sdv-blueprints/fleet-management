@@ -16,6 +16,7 @@ paths:
       tags:
         - Analysis
       requestBody:
+        description: JSON payload only. YAML is not accepted by this endpoint.
         required: true
         content:
           application/json:
@@ -24,16 +25,8 @@ paths:
               items:
                 $ref: '#/components/schemas/VehicleSnapshot'
             example:
-              - vehicleId: bike-001
-                speedKph: 42.3
-                batterySoc: 0.78
-                brakeActive: false
-                updatedAt: "2024-06-10T10:15:30Z"
-              - vehicleId: bike-002
-                speedKph: 12.4
-                batterySoc: 0.52
-                brakeActive: true
-                updatedAt: "2024-06-10T10:15:32Z"
+              - {"vehicleId": "bike-001", "speedKph": 42.3, "batterySoc": 0.78, "brakeActive": false, "updatedAt": "2024-06-10T10:15:30Z"}
+              - {"vehicleId": "bike-002", "speedKph": 12.4, "batterySoc": 0.52, "brakeActive": true, "updatedAt": "2024-06-10T10:15:32Z"}
       responses:
         "200":
           description: Fleet summary statistics computed successfully
@@ -55,36 +48,16 @@ paths:
         - Telemetry
       description: >-
         Writes header and/or snapshot measurements into InfluxDB.
-        Configure the InfluxDB client using environment variables:
-        - INFLUXDB_URI (default: http://influxdb:8086)
-        - INFLUXDB_ORG (default: sdv)
-        - INFLUXDB_BUCKET (default: demo)
-        - INFLUXDB_TOKEN or INFLUXDB_TOKEN_FILE
+        This endpoint accepts JSON payloads only.
       requestBody:
+        description: JSON payload only. YAML is not accepted by this endpoint.
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/TelemetryIngest'
             example:
-              vin: truck-001
-              trigger: periodic
-              createdDateTime: 1737940602000
-              header:
-                hrTotalVehicleDistance: 12345.6
-                grossCombinationVehicleWeight: 18100.2
-                totalEngineHours: 82.5
-                engineTotalFuelUsed: 221.9
-                driver1Id: driver-01
-                driver1IdCardIssuer: fleet
-              snapshot:
-                latitude: 37.7749
-                longitude: -122.4194
-                speed: 54.2
-                positionDateTime: 1737940602
-                wheelBasedSpeed: 53.7
-                fuelLevel1: 0.42
-                parkingBrakeSwitch: false
+              {"vin": "truck-001", "trigger": "periodic", "createdDateTime": 1737940602000, "header": {"hrTotalVehicleDistance": 12345.6, "grossCombinationVehicleWeight": 18100.2, "totalEngineHours": 82.5, "engineTotalFuelUsed": 221.9, "driver1Id": "driver-01", "driver1IdCardIssuer": "fleet"}, "snapshot": {"latitude": 37.7749, "longitude": -122.4194, "speed": 54.2, "positionDateTime": 1737940602, "wheelBasedSpeed": 53.7, "fuelLevel1": 0.42, "parkingBrakeSwitch": false}}
       responses:
         "204":
           description: Telemetry ingested successfully
