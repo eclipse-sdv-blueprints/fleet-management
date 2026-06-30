@@ -26,7 +26,7 @@ pub const FMS_VEHICLE_CABIN_TELLTALE_FUELLEVEL_STATUS: &str =
 pub const FMS_VEHICLE_CABIN_TELLTALE_PARKINGBRAKE_STATUS: &str =
     "Vehicle.Cabin.Telltale.ParkingBrake.Status";
 pub const FMS_VEHICLE_CURRENTLOCATION_SPEED: &str = "Vehicle.CurrentLocation.Speed";
-pub const FMS_VEHICLE_CURRENTOVERALLWEIGHT: &str = "Vehicle.CurrentOverallWeight";
+pub const VSS_VEHICLE_CURRENTOVERALLWEIGHT: &str = "Vehicle.CurrentOverallWeight";
 pub const FMS_VEHICLE_POWERTRAIN_CURRENTFUELTYPE: &str = "Vehicle.Powertrain.CurrentFuelType";
 pub const FMS_VEHICLE_POWERTRAIN_FUELSYSTEM_ACCUMULATEDCONSUMPTION: &str =
     "Vehicle.Powertrain.FuelSystem.AccumulatedConsumption";
