@@ -24,8 +24,11 @@
 
 pub const FIELD_ALTITUDE: &str = "altitude";
 pub const FIELD_AMBIENT_AIR_TEMP: &str = "ambientAirTemperature";
+pub const FIELD_BRAKE_LIGHT_STATUS: &str = "brakeLightStatus";
 pub const FIELD_CATALYST_FUEL_LEVEL: &str = "catalystFuelLevel";
 pub const FIELD_CREATED_DATE_TIME: &str = "createdDateTime";
+pub const FIELD_DIRECTION_INDICATOR_LEFT: &str = "directionIndicatorLeft";
+pub const FIELD_DIRECTION_INDICATOR_RIGHT: &str = "directionIndicatorRight";
 pub const FIELD_DRIVER1_ID: &str = "driver1Id";
 pub const FIELD_DRIVER1_CARD_ISSUER: &str = "driver1IdCardIssuer";
 pub const FIELD_DRIVER1_WORKING_STATE: &str = "driver1WorkingState";

@@ -25,34 +25,15 @@ pub const FMS_VEHICLE_CABIN_TELLTALE_FUELLEVEL_STATUS: &str =
     "Vehicle.Cabin.Telltale.FuelLevel.Status";
 pub const FMS_VEHICLE_CABIN_TELLTALE_PARKINGBRAKE_STATUS: &str =
     "Vehicle.Cabin.Telltale.ParkingBrake.Status";
-pub const VSS_VEHICLE_CURRENTOVERALLWEIGHT: &str = "Vehicle.CurrentOverallWeight";
-pub const VSS_VEHICLE_CHASSIS_PARKINGBRAKE_ISENGAGED: &str =
-    "Vehicle.Chassis.ParkingBrake.IsEngaged";
-pub const VSS_VEHICLE_CURRENTLOCATION_LATITUDE: &str = "Vehicle.CurrentLocation.Latitude";
-pub const VSS_VEHICLE_CURRENTLOCATION_LONGITUDE: &str = "Vehicle.CurrentLocation.Longitude";
-pub const VSS_VEHICLE_CURRENTLOCATION_ALTITUDE: &str = "Vehicle.CurrentLocation.Altitude";
-pub const VSS_VEHICLE_CURRENTLOCATION_HEADING: &str = "Vehicle.CurrentLocation.Heading";
 pub const FMS_VEHICLE_CURRENTLOCATION_SPEED: &str = "Vehicle.CurrentLocation.Speed";
-pub const VSS_VEHICLE_CURRENTLOCATION_TIMESTAMP: &str = "Vehicle.CurrentLocation.Timestamp";
-pub const VSS_VEHICLE_EXTERIOR_AIRTEMPERATURE: &str = "Vehicle.Exterior.AirTemperature";
-pub const VSS_VEHICLE_POWERTRAIN_COMBUSTIONENGINE_DIESELEXHAUSTFLUID_LEVEL: &str =
-    "Vehicle.Powertrain.CombustionEngine.DieselExhaustFluid.Level";
-pub const VSS_VEHICLE_POWERTRAIN_COMBUSTIONENGINE_ENGINEHOURS: &str =
-    "Vehicle.Powertrain.CombustionEngine.EngineHours";
-pub const VSS_VEHICLE_POWERTRAIN_COMBUSTIONENGINE_ISRUNNING: &str =
-    "Vehicle.Powertrain.CombustionEngine.IsRunning";
-pub const VSS_VEHICLE_POWERTRAIN_COMBUSTIONENGINE_SPEED: &str =
-    "Vehicle.Powertrain.CombustionEngine.Speed";
+pub const VSS_VEHICLE_CURRENTOVERALLWEIGHT: &str = "Vehicle.CurrentOverallWeight";
 pub const FMS_VEHICLE_POWERTRAIN_CURRENTFUELTYPE: &str = "Vehicle.Powertrain.CurrentFuelType";
 pub const FMS_VEHICLE_POWERTRAIN_FUELSYSTEM_ACCUMULATEDCONSUMPTION: &str =
     "Vehicle.Powertrain.FuelSystem.AccumulatedConsumption";
-pub const VSS_VEHICLE_POWERTRAIN_FUELSYSTEM_RANGE: &str = "Vehicle.Powertrain.FuelSystem.Range";
 pub const FMS_VEHICLE_POWERTRAIN_FUELSYSTEM_TANK_FIRST_LEVEL: &str =
     "Vehicle.Powertrain.FuelSystem.Tank.First.RelativeLevel";
 pub const FMS_VEHICLE_POWERTRAIN_FUELSYSTEM_TANK_SECOND_LEVEL: &str =
     "Vehicle.Powertrain.FuelSystem.Tank.Second.RelativeLevel";
-pub const VSS_VEHICLE_POWERTRAIN_RANGE: &str = "Vehicle.Powertrain.Range";
-pub const VSS_VEHICLE_SPEED: &str = "Vehicle.Speed";
 pub const FMS_VEHICLE_TACHOGRAPH_DRIVER1_CARDISSUINGMEMBERSTATE: &str =
     "Vehicle.Tachograph.Driver.Driver1.CardIssuingMemberState";
 pub const FMS_VEHICLE_TACHOGRAPH_DRIVER1_IDENTIFICATION: &str =
@@ -67,4 +48,29 @@ pub const FMS_VEHICLE_TACHOGRAPH_DRIVER2_WORKINGSTATE: &str =
     "Vehicle.Tachograph.Driver.Driver2.WorkingState";
 pub const FMS_VEHICLE_TACHOGRAPH_VEHICLESPEED: &str = "Vehicle.Tachograph.VehicleSpeed";
 pub const FMS_VEHICLE_TRAVELED_DISTANCE_HIGH_RES: &str = "Vehicle.TraveledDistanceHighRes";
+pub const VSS_VEHICLE_BODY_LIGHTS_BRAKE_ISACTIVE: &str = "Vehicle.Body.Lights.Brake.IsActive";
+pub const VSS_VEHICLE_BODY_LIGHTS_DIRECTIONINDICATOR_LEFT_ISSIGNALING: &str =
+    "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling";
+pub const VSS_VEHICLE_BODY_LIGHTS_DIRECTIONINDICATOR_RIGHT_ISSIGNALING: &str =
+    "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling";
+pub const VSS_VEHICLE_CHASSIS_PARKINGBRAKE_ISENGAGED: &str =
+    "Vehicle.Chassis.ParkingBrake.IsEngaged";
+pub const VSS_VEHICLE_CURRENTLOCATION_ALTITUDE: &str = "Vehicle.CurrentLocation.Altitude";
+pub const VSS_VEHICLE_CURRENTLOCATION_HEADING: &str = "Vehicle.CurrentLocation.Heading";
+pub const VSS_VEHICLE_CURRENTLOCATION_LATITUDE: &str = "Vehicle.CurrentLocation.Latitude";
+pub const VSS_VEHICLE_CURRENTLOCATION_LONGITUDE: &str = "Vehicle.CurrentLocation.Longitude";
+pub const VSS_VEHICLE_CURRENTLOCATION_TIMESTAMP: &str = "Vehicle.CurrentLocation.Timestamp";
+pub const VSS_VEHICLE_DRIVER_IDENTIFIER_SUBJECT: &str = "Vehicle.Driver.Identifier.Subject";
+pub const VSS_VEHICLE_EXTERIOR_AIRTEMPERATURE: &str = "Vehicle.Exterior.AirTemperature";
+pub const VSS_VEHICLE_POWERTRAIN_COMBUSTIONENGINE_DIESELEXHAUSTFLUID_LEVEL: &str =
+    "Vehicle.Powertrain.CombustionEngine.DieselExhaustFluid.Level";
+pub const VSS_VEHICLE_POWERTRAIN_COMBUSTIONENGINE_ENGINEHOURS: &str =
+    "Vehicle.Powertrain.CombustionEngine.EngineHours";
+pub const VSS_VEHICLE_POWERTRAIN_COMBUSTIONENGINE_ISRUNNING: &str =
+    "Vehicle.Powertrain.CombustionEngine.IsRunning";
+pub const VSS_VEHICLE_POWERTRAIN_COMBUSTIONENGINE_SPEED: &str =
+    "Vehicle.Powertrain.CombustionEngine.Speed";
+pub const VSS_VEHICLE_POWERTRAIN_FUELSYSTEM_RANGE: &str = "Vehicle.Powertrain.FuelSystem.Range";
+pub const VSS_VEHICLE_POWERTRAIN_RANGE: &str = "Vehicle.Powertrain.Range";
+pub const VSS_VEHICLE_SPEED: &str = "Vehicle.Speed";
 pub const VSS_VEHICLE_VEHICLEIDENTIFICATION_VIN: &str = "Vehicle.VehicleIdentification.VIN";

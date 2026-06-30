@@ -30,6 +30,13 @@ on:
 jobs:
   lint-source-code:
     runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: /home/runner/.cargo
+      CARGO_INCREMENTAL: 0
+      CARGO_TERM_COLOR: always
+      CARGO_HTTP_MULTIPLEXING: "false"
+      CARGO_NET_RETRY: "10"
+      CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4

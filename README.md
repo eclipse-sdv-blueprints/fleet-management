@@ -56,8 +56,10 @@ docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.
 
 This will pull (or build if necessary) the container images and create and start all components.
 
+The stack includes the Jakarta EE fleet analysis backend and exposes it on `http://127.0.0.1:8082/fleet-analysis/api`.
+
 Once all services have been started, the current vehicle status can be viewed on a [Grafana dashboard](http://127.0.0.1:3000),
-using *admin*/*admin* as username and password for logging in.
+using *sdv*/*sdv* as username and password for logging in.
 
 
 The rFMS API can be used to retrieve the data, e.g.
@@ -113,6 +115,8 @@ Docker Compose file. Please refer to the Docker and/or Podman documentation for 
 setup manually.
 
 Additional information can be found in the components' corresponding subfolders.
+
+The fleet analysis backend component lives in `components/backend-fleet-analysis-java`.
 
 # Contributing
 

@@ -1,0 +1,244 @@
+openapi: 3.0.3
+info:
+  title: Fleet Analysis Backend API
+  version: 1.0.0
+  description: Fleet Analysis Backend service to analyze Fleet Management telemetry and return summary statistics
+servers:
+  - url: http://localhost:8080/fleet-analysis
+    description: Local development server
+  - url: http://localhost:8082/fleet-analysis
+    description: Docker container example
+
+paths:
+  /api/analysis/summary:
+    post:
+      summary: Compute fleet summary statistics
+      tags:
+        - Analysis
+      requestBody:
+        description: JSON payload only. YAML is not accepted by this endpoint.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/VehicleSnapshot'
+            example:
+              - {"vehicleId": "bike-001", "speedKph": 42.3, "batterySoc": 0.78, "brakeActive": false, "updatedAt": "2024-06-10T10:15:30Z"}
+              - {"vehicleId": "bike-002", "speedKph": 12.4, "batterySoc": 0.52, "brakeActive": true, "updatedAt": "2024-06-10T10:15:32Z"}
+      responses:
+        "200":
+          description: Fleet summary statistics computed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FleetSummary'
+              example:
+                vehicleCount: 2
+                averageSpeedKph: 27.35
+                minBatterySoc: 0.52
+                maxBatterySoc: 0.78
+                brakingVehicles: 1
+
+  /api/telemetry/ingest:
+    post:
+      summary: Ingest vehicle telemetry into InfluxDB
+      tags:
+        - Telemetry
+      description: >-
+        Writes header and/or snapshot measurements into InfluxDB.
+        This endpoint accepts JSON payloads only.
+      requestBody:
+        description: JSON payload only. YAML is not accepted by this endpoint.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelemetryIngest'
+            example:
+              {"vin": "truck-001", "trigger": "periodic", "createdDateTime": 1737940602000, "header": {"hrTotalVehicleDistance": 12345.6, "grossCombinationVehicleWeight": 18100.2, "totalEngineHours": 82.5, "engineTotalFuelUsed": 221.9, "driver1Id": "driver-01", "driver1IdCardIssuer": "fleet"}, "snapshot": {"latitude": 37.7749, "longitude": -122.4194, "speed": 54.2, "positionDateTime": 1737940602, "wheelBasedSpeed": 53.7, "fuelLevel1": 0.42, "parkingBrakeSwitch": false}}
+      responses:
+        "204":
+          description: Telemetry ingested successfully
+
+  /api/analysis/stats:
+    get:
+      summary: Get latest fleet statistics
+      tags:
+        - Analysis
+      description: Returns the latest stats snapshot (and triggers a refresh if none exist yet)
+      responses:
+        "200":
+          description: Latest fleet statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FleetStats'
+
+components:
+  schemas:
+    VehicleSnapshot:
+      type: object
+      required:
+        - vehicleId
+        - speedKph
+        - batterySoc
+        - brakeActive
+        - updatedAt
+      properties:
+        vehicleId:
+          type: string
+          description: Unique vehicle identifier
+        speedKph:
+          type: number
+          format: float
+          description: Current speed in kilometers per hour
+        batterySoc:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Battery state of charge (0.0 to 1.0)
+        brakeActive:
+          type: boolean
+          description: Whether the brake is currently active
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp of the snapshot
+
+    FleetSummary:
+      type: object
+      required:
+        - vehicleCount
+        - averageSpeedKph
+        - minBatterySoc
+        - maxBatterySoc
+        - brakingVehicles
+      properties:
+        vehicleCount:
+          type: integer
+          description: Total number of vehicles in the snapshot
+        averageSpeedKph:
+          type: number
+          format: float
+          description: Average speed across all vehicles
+        minBatterySoc:
+          type: number
+          format: float
+          description: Minimum battery state of charge
+        maxBatterySoc:
+          type: number
+          format: float
+          description: Maximum battery state of charge
+        brakingVehicles:
+          type: integer
+          description: Number of vehicles with active brakes
+
+    TelemetryIngest:
+      type: object
+      required:
+        - vin
+        - trigger
+        - createdDateTime
+      properties:
+        vin:
+          type: string
+          description: Vehicle identification number
+        trigger:
+          type: string
+          enum:
+            - periodic
+            - event
+          description: Type of telemetry trigger
+        createdDateTime:
+          type: integer
+          format: int64
+          description: Timestamp in milliseconds since Unix epoch
+        header:
+          $ref: '#/components/schemas/HeaderData'
+        snapshot:
+          $ref: '#/components/schemas/SnapshotData'
+
+    HeaderData:
+      type: object
+      description: Header telemetry data
+      properties:
+        hrTotalVehicleDistance:
+          type: number
+          format: float
+          description: Total vehicle distance in kilometers
+        grossCombinationVehicleWeight:
+          type: number
+          format: float
+          description: Gross combination vehicle weight in kilograms
+        totalEngineHours:
+          type: number
+          format: float
+          description: Total engine operating hours
+        engineTotalFuelUsed:
+          type: number
+          format: float
+          description: Total fuel consumed in liters
+        driver1Id:
+          type: string
+          description: Driver identification
+        driver1IdCardIssuer:
+          type: string
+          description: Issuer of the driver ID card
+
+    SnapshotData:
+      type: object
+      description: Point-in-time vehicle telemetry
+      properties:
+        latitude:
+          type: number
+          format: float
+          description: Geographic latitude
+        longitude:
+          type: number
+          format: float
+          description: Geographic longitude
+        speed:
+          type: number
+          format: float
+          description: Current vehicle speed in km/h
+        positionDateTime:
+          type: integer
+          format: int64
+          description: Timestamp of position in seconds since Unix epoch
+        wheelBasedSpeed:
+          type: number
+          format: float
+          description: Speed calculated from wheel rotation
+        fuelLevel1:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Fuel tank level (0.0 to 1.0)
+        parkingBrakeSwitch:
+          type: boolean
+          description: Parking brake status
+
+    FleetStats:
+      type: object
+      description: Computed fleet statistics from InfluxDB
+      properties:
+        vehicleCount:
+          type: integer
+          description: Unique vehicle count across all time
+        headerCount:
+          type: integer
+          description: Total number of header measurement points
+        snapshotCount:
+          type: integer
+          description: Total number of snapshot measurement points
+        totalCount:
+          type: integer
+          description: Total number of header + snapshot points
+        generatedAt:
+          type: integer
+          format: int64
+          description: Timestamp when stats were generated (ms since Unix epoch)

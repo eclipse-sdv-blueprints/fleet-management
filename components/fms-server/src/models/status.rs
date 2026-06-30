@@ -511,6 +511,21 @@ pub struct SnapshotDataObject {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parking_brake_switch: Option<bool>,
 
+    /// Indicates if left direction indicator is signaling
+    #[serde(rename = "directionIndicatorLeft")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub direction_indicator_left: Option<bool>,
+
+    /// Indicates if right direction indicator is signaling
+    #[serde(rename = "directionIndicatorRight")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub direction_indicator_right: Option<bool>,
+
+    /// Indicates if brake-light is active (INACTIVE, ACTIVE, ADAPTIVE)
+    #[serde(rename = "brakeLightStatus")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub brake_light_status: Option<String>,
+
     /// Indicates the hybrid battery pack remaining charge.  0% means no charge remaining,  100% means full charge remaining.  Is used as well for full electrical vehicles
     #[serde(rename = "hybridBatteryPackRemainingCharge")]
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -65,7 +65,7 @@ services:
     networks:
       - "fms-backend"
     ports:
-      - "127.0.0.1:8086:8086"
+      - "${FMS_INFLUXDB_BIND_HOST:-127.0.0.1}:8086:8086"
     configs:
       - source: "influxdb_init.sh"
         target: "/docker-entrypoint-initdb.d/influxdb_init.sh"
@@ -88,7 +88,7 @@ services:
     container_name: "grafana"
     cap_drop: *default-drops
     ports:
-      - "127.0.0.1:3000:3000"
+      - "${FMS_GRAFANA_BIND_HOST:-127.0.0.1}:3000:3000"
     networks:
       - "fms-backend"
     depends_on:
@@ -105,6 +105,10 @@ services:
         source: "grafana-datasources"
         target: "/etc/grafana/provisioning/datasources"
         read_only: true
+    environment:
+      - GF_SECURITY_ADMIN_USER=sdv
+      - GF_SECURITY_ADMIN_PASSWORD=sdv
+      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=500ms
 
   fms-server:
     image: "ghcr.io/eclipse-sdv-blueprints/fleet-management/fms-server:main"
@@ -116,7 +120,7 @@ services:
     networks:
       - "fms-backend"
     ports:
-      - "127.0.0.1:8081:8081"
+      - "${FMS_SERVER_BIND_HOST:-127.0.0.1}:8081:8081"
     depends_on:
       influxdb:
         condition: service_healthy
@@ -160,7 +164,7 @@ services:
     networks:
       - "fms-vehicle"
     ports:
-      - "127.0.0.1:55555:55556"
+      - "${FMS_DATABROKER_BIND_HOST:-127.0.0.1}:55555:55556"
     configs:
       - "vss_overlay.json"
     environment:
@@ -204,6 +208,29 @@ services:
         condition: service_started
     environment:
       KUKSA_DATABROKER_URI: "http://databroker:55556"
+      TIMER_INTERVAL: "${FMS_FORWARDER_TIMER_INTERVAL:-500ms}"
       RUST_LOG: "${FMS_FORWARDER_LOG_CONFIG:-info,fms_forwarder=info}"
       TRUST_STORE_PATH: "${FMS_FORWARDER_TRUST_STORE_PATH:-/etc/ssl/certs/ca-certificates.crt}"
+
+  fleet-analysis-backend:
+    build:
+      context: "./components/backend-fleet-analysis-java"
+      dockerfile: "Dockerfile"
+    container_name: "fleet-analysis-backend"
+    cap_drop: *default-drops
+    networks:
+      - "fms-backend"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    env_file: "./influxdb/fms-demo.env"
+    environment:
+      INFLUXDB_TOKEN_FILE: "/tmp/fms-demo.token"
+      INFLUXDB_STATS_INTERVAL_SECONDS: "${INFLUXDB_STATS_INTERVAL_SECONDS:-30}"
+    ports:
+      - "${FMS_FLEET_ANALYSIS_BIND_HOST:-127.0.0.1}:8082:8080"
+    volumes:
+      - type: "volume"
+        source: "influxdb-auth"
+        target: "/tmp"
 

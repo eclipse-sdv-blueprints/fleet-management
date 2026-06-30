@@ -51,6 +51,27 @@ pub fn new_vehicle_status(
             .parking_brake_engaged = bool::try_from(value).ok();
     }
 
+    if let Some(value) = data.get(vss::VSS_VEHICLE_BODY_LIGHTS_DIRECTIONINDICATOR_RIGHT_ISSIGNALING)
+    {
+        vehicle_status
+            .snapshot_data
+            .mut_or_insert_default()
+            .direction_indicator_right = bool::try_from(value).ok();
+    }
+    if let Some(value) = data.get(vss::VSS_VEHICLE_BODY_LIGHTS_DIRECTIONINDICATOR_LEFT_ISSIGNALING)
+    {
+        vehicle_status
+            .snapshot_data
+            .mut_or_insert_default()
+            .direction_indicator_left = bool::try_from(value).ok();
+    }
+    if let Some(value) = data.get(vss::VSS_VEHICLE_BODY_LIGHTS_BRAKE_ISACTIVE) {
+        vehicle_status
+            .snapshot_data
+            .mut_or_insert_default()
+            .brake_light_status = String::try_from(value).ok();
+    }
+
     if let Some(value) = data.get(vss::VSS_VEHICLE_CURRENTLOCATION_LATITUDE) {
         vehicle_status
             .snapshot_data
@@ -189,7 +210,10 @@ pub fn new_vehicle_status(
             .wheel_based_speed = f64::try_from(value).ok();
     }
 
-    if let Some(value) = data.get(vss::FMS_VEHICLE_TACHOGRAPH_DRIVER1_IDENTIFICATION) {
+    if let Some(value) = data
+        .get(vss::VSS_VEHICLE_DRIVER_IDENTIFIER_SUBJECT)
+        .or_else(|| data.get(vss::FMS_VEHICLE_TACHOGRAPH_DRIVER1_IDENTIFICATION))
+    {
         vehicle_status
             .driver1_id
             .mut_or_insert_default()
