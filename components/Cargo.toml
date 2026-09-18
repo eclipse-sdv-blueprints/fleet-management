@@ -38,26 +38,25 @@ edition = "2021"
 documentation = "https://eclipse-sdv-blueprints.github.io/blueprints-website/"
 
 [workspace.dependencies]
-async-trait = { version = "0.1.89" }
-bytes = { version = "1.11.0" }
-chrono = { version = "0.4.42", default-features = false }
-clap = { version = "4.5.53", default-features = false }
-env_logger = { version = "0.11.8", default-features = false, features = [
+async-trait = { version = "0.1.92" }
+bytes = { version = "1.12.1" }
+chrono = { version = "0.4.45", default-features = false }
+clap = { version = "4.6.7", default-features = false }
+env_logger = { version = "0.11.11", default-features = false, features = [
     "humantime",
 ] }
 fms-proto = { path = "fms-proto" }
 fms-zenoh = { path = "fms-zenoh" }
 influx-client = { path = "influx-client", default-features = false }
 influxrs = { version = "3.0.1", default-features = false }
-log = { version = "0.4.28" }
+log = { version = "0.4.34" }
 protobuf = { version = "3.7.2" }
 # tokio does not enable features by default
-tokio = { version = "1.48" }
-up-rust = { version = "0.4.0", default-features = false }
+tokio = { version = "1.53.1" }
+up-rust = { version = "0.9.0", default-features = false }
 up-transport-hono-kafka = { path = "up-transport-hono-kafka" }
 up-transport-hono-mqtt = { path = "up-transport-hono-mqtt" }
-up-transport-zenoh = { version = "0.5.0" }
-zenoh = { version = "1.2.1", default-features = false }
+up-transport-zenoh = { version = "0.9.1" }
 
 [profile.release]
 lto = true          # Link time optimization (dead code removal etc...)

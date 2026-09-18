@@ -25,4 +25,4 @@ documentation.workspace = true
 [dependencies]
 clap = { workspace = true, features = ["derive"] }
 log = { workspace = true }
-zenoh = { workspace = true, features = ["transport_tcp"] }
+up-transport-zenoh = { workspace = true }
