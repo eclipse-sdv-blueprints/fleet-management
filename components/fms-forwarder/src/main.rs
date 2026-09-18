@@ -26,10 +26,10 @@ use log::{info, warn};
 use tokio::sync::mpsc;
 use up_rust::{
     communication::{CallOptions, Publisher, SimplePublisher, UPayload},
-    LocalUriProvider, StaticUriProvider, UTransport, UUri,
+    StaticUriProvider, UTransport, UUri,
 };
 use up_transport_hono_mqtt::{HonoMqttTransport, HonoMqttTransportConfig};
-use up_transport_zenoh::UPTransportZenoh;
+use up_transport_zenoh::{zenoh_config::Config, UPTransportZenoh};
 
 mod vehicle_abstraction;
 
@@ -69,14 +69,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let transport: Arc<dyn UTransport> = match command.transport {
         TransportType::Hono(config) => HonoMqttTransport::new(&config).await.map(Arc::new)?,
         TransportType::Zenoh(config) => {
-            let zenoh_config = config.try_into()?;
-            UPTransportZenoh::new(zenoh_config, uri_provider.get_source_uri())
-                .await
-                .map(Arc::new)?
+            let builder = UPTransportZenoh::builder(command.vehicle_status_topic.authority_name())?;
+            if let Some(config_path) = &config.config_file {
+                builder
+                    .with_config_path(config_path.to_owned())
+                    .build()
+                    .await
+                    .map(Arc::new)?
+            } else {
+                builder
+                    .with_config(Config::default())
+                    .build()
+                    .await
+                    .map(Arc::new)?
+            }
         }
     };
 
-    let origin_resource_id = u16::try_from(command.vehicle_status_topic.resource_id)?;
+    let origin_resource_id = command.vehicle_status_topic.resource_id();
     let publisher = Arc::new(SimplePublisher::new(transport, uri_provider));
     info!("starting FMS forwarder");
 

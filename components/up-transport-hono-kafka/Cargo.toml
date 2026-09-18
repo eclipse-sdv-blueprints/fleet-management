@@ -29,15 +29,12 @@ fms-proto = { workspace = true }
 futures = { version = "0.3" }
 log = { workspace = true }
 protobuf = { workspace = true }
-rdkafka = { version = "0.37", default-features = false, features = [
-    "libz",
+rdkafka = { version = "0.39.0", default-features = false, features = [
+    "curl-static",
+    "libz-static",
     "tokio",
     "cmake-build",
     "ssl-vendored",
 ] }
 tokio = { workspace = true }
 up-rust = { workspace = true, features = ["cloudevents", "util"] }
-
-[build-dependencies]
-# see https://github.com/fede1024/rust-rdkafka/issues/572#issuecomment-1529316876
-openssl-src = { version = "300", features = ["force-engine"] }

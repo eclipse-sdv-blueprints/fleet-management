@@ -30,7 +30,7 @@ use log::info;
 
 use up_rust::{UListener, UMessage, UTransport, UUri};
 use up_transport_hono_kafka::{HonoKafkaTransport, HonoKafkaTransportConfig};
-use up_transport_zenoh::UPTransportZenoh;
+use up_transport_zenoh::{zenoh_config::Config, UPTransportZenoh};
 
 struct VehicleStatusListener {
     influx_writer: InfluxWriter,
@@ -90,10 +90,20 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let transport: Arc<dyn UTransport> = match command.transport {
         TransportType::Hono(config) => HonoKafkaTransport::new(config).map(Arc::new)?,
         TransportType::Zenoh(config) => {
-            let config = config.try_into()?;
-            UPTransportZenoh::new(config, command.local_uservice_uri)
-                .await
-                .map(Arc::new)?
+            let builder = UPTransportZenoh::builder(command.local_uservice_uri.authority_name())?;
+            if let Some(config_path) = &config.config_file {
+                builder
+                    .with_config_path(config_path.to_owned())
+                    .build()
+                    .await
+                    .map(Arc::new)?
+            } else {
+                builder
+                    .with_config(Config::default())
+                    .build()
+                    .await
+                    .map(Arc::new)?
+            }
         }
     };
 
