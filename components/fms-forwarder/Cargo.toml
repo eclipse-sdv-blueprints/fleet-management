@@ -56,3 +56,6 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 up-rust = { workspace = true, features = ["communication"] }
 up-transport-hono-mqtt = { workspace = true }
 up-transport-zenoh = { workspace = true }
+
+[dev-dependencies]
+test-case = { workspace = true }
