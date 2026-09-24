@@ -3988,3 +3988,15 @@ current,Vehicle.Powertrain.CombustionEngine.Speed,0,1.61968564987183
 current,Vehicle.CurrentOverallWeight,15440,0.429252147674561
 current,Vehicle.CurrentOverallWeight,6000,0.436763048171997
 current,Vehicle.CurrentOverallWeight,15440,2.56386065483093
+current,Vehicle.CurrentLocation.Latitude,48.8563482,0
+current,Vehicle.CurrentLocation.Longitude,2.3513531,0
+current,Vehicle.CurrentLocation.Altitude,35,0
+current,Vehicle.CurrentLocation.Heading,90,0
+current,Vehicle.CurrentLocation.Speed,42.5,0
+current,Vehicle.CurrentLocation.Timestamp,2026-01-01T00:00:09Z,1
+current,Vehicle.CurrentLocation.Latitude,48.8564000,0
+current,Vehicle.CurrentLocation.Longitude,2.3514000,0
+current,Vehicle.CurrentLocation.Timestamp,2026-01-01T00:00:19Z,1
+current,Vehicle.CurrentLocation.Latitude,48.8564500,0
+current,Vehicle.CurrentLocation.Longitude,2.3514500,0
+current,Vehicle.CurrentLocation.Timestamp,2026-01-01T00:00:29Z,1
