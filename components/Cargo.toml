@@ -51,6 +51,7 @@ influx-client = { path = "influx-client", default-features = false }
 influxrs = { version = "3.0.1", default-features = false }
 log = { version = "0.4.28" }
 protobuf = { version = "3.7.2" }
+test-case = { version = "3.4.0" }
 # tokio does not enable features by default
 tokio = { version = "1.48" }
 up-rust = { version = "0.4.0", default-features = false }
