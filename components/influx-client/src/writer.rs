@@ -152,7 +152,9 @@ fn build_snapshot_measurement(
             }
 
             if let Some(instant) = current_location.instant.clone().into_option() {
-                builder = builder.field(crate::FIELD_POSITION_DATE_TIME, instant.seconds);
+                let position_timestamp: i64 =
+                    instant.seconds * 1000 + i64::from(instant.nanos) / 1_000_000;
+                builder = builder.field(crate::FIELD_POSITION_DATE_TIME, position_timestamp);
             }
         }
 
@@ -240,7 +242,7 @@ impl InfluxWriter {
     ///   | field | heading         | The direction of the vehicle (0-359). |
     ///   | field | altitude        | The altitude of the vehicle. Where 0 is sea level, negative values below sealevel and positive above sealevel. Unit in meters. |
     ///   | field | speed           | The GNSS(e.g. GPS)-speed in km/h. |
-    ///   | field | positionDateTime | The time of the position data in ISO 8601 format. |
+    ///   | field | positionDateTime | The instant of time (milliseconds since UNIX epoch) of the position data. |
     ///   | field | wheelBasedSpeed | The vehicle's wheel based speed. |
     ///   | field | tachographSpeed | The Tacho speed. |
     ///   | field | engineSpeed     | The engine (Diesel/gaseous) speed in rev/min. |

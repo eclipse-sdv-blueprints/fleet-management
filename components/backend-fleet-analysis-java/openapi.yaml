@@ -57,7 +57,7 @@ paths:
             schema:
               $ref: '#/components/schemas/TelemetryIngest'
             example:
-              {"vin": "truck-001", "trigger": "periodic", "createdDateTime": 1737940602000, "header": {"hrTotalVehicleDistance": 12345.6, "grossCombinationVehicleWeight": 18100.2, "totalEngineHours": 82.5, "engineTotalFuelUsed": 221.9, "driver1Id": "driver-01", "driver1IdCardIssuer": "fleet"}, "snapshot": {"latitude": 37.7749, "longitude": -122.4194, "speed": 54.2, "positionDateTime": 1737940602, "wheelBasedSpeed": 53.7, "fuelLevel1": 0.42, "parkingBrakeSwitch": false}}
+              {"vin": "truck-001", "trigger": "periodic", "createdDateTime": 1737940602000, "header": {"hrTotalVehicleDistance": 12345.6, "grossCombinationVehicleWeight": 18100.2, "totalEngineHours": 82.5, "engineTotalFuelUsed": 221.9, "driver1Id": "driver-01", "driver1IdCardIssuer": "fleet"}, "snapshot": {"latitude": 37.7749, "longitude": -122.4194, "speed": 54.2, "positionDateTime": 1737940602000, "wheelBasedSpeed": 53.7, "fuelLevel1": 0.42, "parkingBrakeSwitch": false}}
       responses:
         "204":
           description: Telemetry ingested successfully
@@ -207,7 +207,7 @@ components:
         positionDateTime:
           type: integer
           format: int64
-          description: Timestamp of position in seconds since Unix epoch
+          description: Timestamp of position in milliseconds since Unix epoch
         wheelBasedSpeed:
           type: number
           format: float
