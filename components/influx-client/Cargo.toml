@@ -42,6 +42,9 @@ isahc = { version = "1.7", default-features = false, features = [
 ] }
 log = { workspace = true }
 
+[dev-dependencies]
+test-case = { workspace = true }
+
 [features]
 default = ["writer"]
 writer = ["dep:fms-proto", "dep:protobuf"]
