@@ -152,8 +152,7 @@ fn build_snapshot_measurement(
             }
 
             if let Some(instant) = current_location.instant.clone().into_option() {
-                let position_timestamp: i64 =
-                    instant.seconds * 1000 + i64::from(instant.nanos) / 1_000_000;
+                let position_timestamp: i64 = convert_seconds_to_milliseconds(instant);
                 builder = builder.field(crate::FIELD_POSITION_DATE_TIME, position_timestamp);
             }
         }
@@ -191,6 +190,57 @@ fn build_snapshot_measurement(
             debug!("failed to create snapshot Measurement: {e}");
             None
         }
+    }
+}
+
+/// The Protobuf specification limits a valid Timestamp like this:
+/// - nanos is between 0 and 999,999,999.
+/// - seconds is between 0001-01-01 (-62_135_596_800) and 9999-12-31 (253_402_300_799).
+/// Thus, we cannot receive a value outside this range and should be safe regarding
+/// multiply overflow.
+/// Input: A Protobuf `Timestamp`.
+/// Ouput a i64 value representing the number of milliseconds since EPOCH or 0 if the input value is outside the valid timestamp range as per the Protobuf specification
+fn convert_seconds_to_milliseconds(timestamp: Timestamp) -> i64 {
+    if timestamp.seconds >= -62_135_596_800
+        && timestamp.seconds <= 253_402_300_799
+        && timestamp.nanos >= 0
+        && timestamp.nanos <= 999_999_999
+    {
+        timestamp.seconds * 1000 + i64::from(timestamp.nanos) / 1_000_000
+    } else {
+        0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use protobuf::SpecialFields;
+    use test_case::test_case;
+
+    #[test_case(0, 0 => 0 ; "epoch")]
+    #[test_case(1, 0 => 1_000)]
+    #[test_case(1, 999_999 => 1_000; "values less than 999_999 nanoseconds are truncated")]
+    #[test_case(-1, 0 => -1_000)]
+    #[test_case(-1, 999_999 => -1_000 ; "values less than 999_999 nanoseconds are truncated")]
+    #[test_case(0, 1_000_000 => 1 ; "smallest nanoseconds value")]
+    #[test_case(0, 999_999_999 => 999 ; "largest nanoseconds value (see: Timestamp protobuf spec)")]
+    #[test_case(3_600, 0 => 3_600_000 ; "one hour")]
+    #[test_case(86_400, 0 => 86_400_000 ; "one day")]
+    #[test_case(-62_135_596_800, 0 => -62_135_596_800_000 ; "Timestamp 0001-01-01")]
+    #[test_case(253_402_300_799, 0 => 253_402_300_799_000 ; "Timestamp 9999-12-31")]
+    #[test_case(9_223_372_036_854_775, 0 => 0)]
+    #[test_case(-9_223_372_036_854_775, 0 => 0)]
+    #[test_case(9_223_372_036_854_776, 0 => 0)]
+    #[test_case(-9_223_372_036_854_776, 0 => 0)]
+    #[test_case(i64::MAX, 0 => 0)]
+    #[test_case(i64::MIN, 0=> 0)]
+    fn convert_seconds_to_milliseconds_test(seconds_to_convert: i64, nanos_to_convert: i32) -> i64 {
+        convert_seconds_to_milliseconds(Timestamp {
+            seconds: seconds_to_convert,
+            nanos: nanos_to_convert,
+            special_fields: SpecialFields::new(),
+        })
     }
 }
 
