@@ -27,25 +27,30 @@ on:
     branches:
     - main
 
+permissions:
+  contents: read # required for checkout out the repository
+
 jobs:
   lint-source-code:
     runs-on: ubuntu-latest
-    env:
-      CARGO_HOME: /home/runner/.cargo
-      CARGO_INCREMENTAL: 0
-      CARGO_TERM_COLOR: always
-      CARGO_HTTP_MULTIPLEXING: "false"
-      CARGO_NET_RETRY: "10"
-      CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
-    - name: Lint shell scripts
-      uses: bewuethr/shellcheck-action@v2
-    - uses: dtolnay/rust-toolchain@stable
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
+        persist-credentials: false
+
+    - name: Lint shell scripts
+      uses: bewuethr/shellcheck-action@80bac2daa9fcf95d648200a793d00060857e6dc4 # v2.3.0
+
+    - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
+      with:
+        toolchain: stable
         components: clippy
-    - run: |-
-        cargo fmt --manifest-path components/Cargo.toml --all --check
-        cargo clippy --manifest-path components/Cargo.toml --workspace --all-features -- -Dwarnings
-        cargo test --manifest-path components/Cargo.toml --workspace --all-features
+
+    - name: Run Rust linters and tests
+      shell: bash
+      working-directory: components
+      run: |-
+        cargo fmt --all --check
+        cargo clippy --workspace --all-features -- -Dwarnings
+        cargo test --workspace --all-features
