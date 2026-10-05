@@ -6,7 +6,7 @@ dash_url=${DASH_URL:-"https://repo.eclipse.org/service/rest/v1/search/assets/dow
 project=${PROJECT:-"automotive.uprotocol"}
 token=$1
 
-echo "creating 3rd party dependency list..."
+echo "Creating list of 3rd party crates we depend on..."
 cargo tree --manifest-path components/Cargo.toml -e no-build,no-dev --prefix none --no-dedupe --locked \
   | sed -n '2~1p' \
   | sort -u \
@@ -16,6 +16,13 @@ cargo tree --manifest-path components/Cargo.toml -e no-build,no-dev --prefix non
   | grep -v up-transport-hono \
   | sed -E 's|([^ ]+) v([^ ]+).*|crate/cratesio/-/\1/\2|' \
   > "$deps_file"
+
+echo "Creating list of 3rd party Java libraries we depend on..."
+mvn -f components/backend-fleet-analysis-java/pom.xml dependency:list \
+  | grep -Poh "\S+:(runtime|compile|provided)" \
+  | sed -e 's/^\(.*\)\:.*$/\1/' \
+  | sort -u \
+  >> "$deps_file"
 
 if [[ ! -r "$dash_jar" ]]; then
   echo "Eclipse Dash JAR file [${dash_jar}] not found, downloading latest version from Eclipse repo..."
