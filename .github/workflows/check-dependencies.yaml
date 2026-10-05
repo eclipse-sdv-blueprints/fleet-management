@@ -22,6 +22,9 @@ on:
   workflow_call:
   workflow_dispatch:
 
+permissions:
+  contents: read # required for checkout out the repository
+
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
   cancel-in-progress: true
@@ -33,9 +36,13 @@ jobs:
     env:
       DASH_SUMMARY: "DEPENDENCIES.txt"
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+
     - name: "Check 3rd party license compatibility"
       id: "run-checks"
+      shell: bash
       run: |
         if .github/scripts/check-3rd-party-licenses.sh
         then
@@ -46,12 +53,14 @@ jobs:
           echo "License information of some 3rd party dependencies could not be vetted successfully." >> $GITHUB_STEP_SUMMARY
           echo "A DEPENDENCIES file containing the vetted information has been attached to this workflow run." >> $GITHUB_STEP_SUMMARY
         fi
+
     - name: Upload DEPENDENCIES file
       if: ${{ steps.run-checks.outputs.checks-failed == '1' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: 3rd-party-dependencies
         path: ${{ env.DASH_SUMMARY }}
+
     - name: "Determine exit code"
       env:
         EXIT_CODE: ${{ steps.run-checks.outputs.checks-failed }}
