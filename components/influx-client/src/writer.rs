@@ -152,7 +152,11 @@ fn build_snapshot_measurement(
             }
 
             if let Some(instant) = current_location.instant.clone().into_option() {
-                builder = builder.field(crate::FIELD_POSITION_DATE_TIME, instant.seconds);
+                let position_timestamp: Option<i64> = convert_timestamp_to_milliseconds(instant);
+                if let Some(valid_position_timestamp) = position_timestamp {
+                    builder =
+                        builder.field(crate::FIELD_POSITION_DATE_TIME, valid_position_timestamp);
+                }
             }
         }
 
@@ -189,6 +193,29 @@ fn build_snapshot_measurement(
             debug!("failed to create snapshot Measurement: {e}");
             None
         }
+    }
+}
+
+/// Convert a Protobuf Timestamp to milliseconds since the UNIX epoch.
+///
+/// The Protobuf specification limits a valid `Timestamp`:
+///
+///   - if `nanos` is between 0 and 999,999,999, and
+///   - if `seconds` is between 0001-01-01 (-62_135_596_800) and 9999-12-31 (253_402_300_799).
+///
+/// The Wire format does not enforce these limits, so this function validates the input.
+/// This prevent an invalid Protobuf Timestamp and keeps the return value inside an `i64`.
+///
+/// Returns `None` if the input is not within the allowed range.
+fn convert_timestamp_to_milliseconds(timestamp: Timestamp) -> Option<i64> {
+    if timestamp.seconds >= -62_135_596_800
+        && timestamp.seconds <= 253_402_300_799
+        && timestamp.nanos >= 0
+        && timestamp.nanos <= 999_999_999
+    {
+        Some(timestamp.seconds * 1000 + i64::from(timestamp.nanos) / 1_000_000)
+    } else {
+        None
     }
 }
 
@@ -240,7 +267,7 @@ impl InfluxWriter {
     ///   | field | heading         | The direction of the vehicle (0-359). |
     ///   | field | altitude        | The altitude of the vehicle. Where 0 is sea level, negative values below sealevel and positive above sealevel. Unit in meters. |
     ///   | field | speed           | The GNSS(e.g. GPS)-speed in km/h. |
-    ///   | field | positionDateTime | The time of the position data in ISO 8601 format. |
+    ///   | field | positionDateTime | The instant of time (milliseconds since UNIX epoch) of the position data. |
     ///   | field | wheelBasedSpeed | The vehicle's wheel based speed. |
     ///   | field | tachographSpeed | The Tacho speed. |
     ///   | field | engineSpeed     | The engine (Diesel/gaseous) speed in rev/min. |
@@ -321,5 +348,44 @@ impl InfluxWriter {
                 warn!("failed to write data to influx: {e}");
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use protobuf::SpecialFields;
+    use test_case::test_case;
+
+    #[test_case(0, 0 => Some(0) ; "epoch")]
+    #[test_case(1, 0 => Some(1_000) ; "positive conversion")]
+    #[test_case(0, -1 => None; "negative nanosecond value")]
+    #[test_case(1, 999_999 => Some(1_000); "values less than 999_999 nanoseconds are truncated")]
+    #[test_case(-1, 0 => Some(-1_000); "negative conversion")]
+    #[test_case(-1, 999_999 => Some(-1_000) ; "values less or equal than 999_999 nanoseconds are truncated towards negative infinity")]
+    #[test_case(0, 1_000_000 => Some(1) ; "smallest nanoseconds value")]
+    #[test_case(0, 999_999_999 => Some(999) ; "largest nanoseconds value")]
+    #[test_case(0, 1_000_000_000 => None ; "One nanosecond above the upper-bound")]
+    #[test_case(3_600, 0 => Some(3_600_000) ; "one hour")]
+    #[test_case(86_400, 0 => Some(86_400_000) ; "one day")]
+    #[test_case(-62_135_596_800, 0 => Some(-62_135_596_800_000) ; "Timestamp 0001-01-01")]
+    #[test_case(-62_135_596_801, 0 => None ; "One second before the smallest timestamp")]
+    #[test_case(253_402_300_799, 0 => Some(253_402_300_799_000) ; "Timestamp 9999-12-31")]
+    #[test_case(253_402_300_800, 0 => None ; "One second after the largest timestamp")]
+    #[test_case(9_223_372_036_854_775, 0 => None)]
+    #[test_case(-9_223_372_036_854_775, 0 => None)]
+    #[test_case(9_223_372_036_854_776, 0 => None)]
+    #[test_case(-9_223_372_036_854_776, 0 => None)]
+    #[test_case(i64::MAX, 0 => None)]
+    #[test_case(i64::MIN, 0=> None)]
+    fn convert_seconds_to_milliseconds_test(
+        seconds_to_convert: i64,
+        nanos_to_convert: i32,
+    ) -> Option<i64> {
+        convert_timestamp_to_milliseconds(Timestamp {
+            seconds: seconds_to_convert,
+            nanos: nanos_to_convert,
+            special_fields: SpecialFields::new(),
+        })
     }
 }
