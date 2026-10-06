@@ -17,38 +17,45 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-FROM ghcr.io/rust-cross/rust-musl-cross:x86_64-musl AS builder-amd64
+FROM ghcr.io/rust-cross/rust-musl-cross:x86_64-musl AS chef-amd64
 ENV BUILDTARGET="x86_64-unknown-linux-musl"
 
-
-FROM ghcr.io/rust-cross/rust-musl-cross:aarch64-musl AS builder-arm64
+FROM ghcr.io/rust-cross/rust-musl-cross:aarch64-musl AS chef-arm64
 ENV BUILDTARGET="aarch64-unknown-linux-musl"
 
-FROM builder-$TARGETARCH AS builder
+FROM chef-$TARGETARCH AS chef
 ARG TARGETARCH
 RUN apt-get update && apt-get install -y ca-certificates \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # This will speed up fetching the crate.io index in the future, see
 # https://blog.rust-lang.org/2022/06/22/sparse-registry-testing.html
 ENV CARGO_UNSTABLE_SPARSE_REGISTRY=true
 # This is supposedly required for successfully building for arm64 using buildx with QEMU
 # see https://github.com/rust-lang/cargo/issues/10583
 ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
+
 RUN cargo install --locked --features cli cargo-about
-
+RUN cargo install --locked cargo-chef
+WORKDIR /home/rust
 RUN echo "Building for $TARGETARCH"
-RUN mkdir components
-COPY . components/
-WORKDIR /home/rust/src/components/fms-forwarder
 
-RUN cargo about generate -o /home/rust/licenses.html ../about.hbs
-RUN cargo build --release --target $BUILDTARGET
-RUN mv ../target/${BUILDTARGET}/release/fms-forwarder /home/rust
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+COPY --from=planner /home/rust/recipe.json recipe.json
+RUN cargo chef cook --release --target $BUILDTARGET --recipe-path recipe.json
+COPY . .
+RUN cargo build --release --target $BUILDTARGET --package fms-server
+RUN cargo about generate -o target/licenses.html about.hbs
+RUN mv target/${BUILDTARGET}/release/fms-server target/
 
 FROM scratch
 
-COPY --from=builder /home/rust/fms-forwarder /app/fms-forwarder
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /home/rust/licenses.html /app/
+COPY --from=builder /home/rust/target/fms-server /app/fms-server
+COPY --from=builder /home/rust/target/licenses.html /app/
 
-ENTRYPOINT [ "/app/fms-forwarder" ]
+EXPOSE 8081
+ENTRYPOINT [ "/app/fms-server" ]
