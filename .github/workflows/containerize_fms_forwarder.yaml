@@ -39,7 +39,9 @@ on:
       - "components/Cargo.toml"
       - "components/fms-forwarder/**"
       - "components/fms-proto/**"
+      - "components/fms-zenoh/**"
       - "components/influx-client/**"
+      - "components/up-transport-hono-mqtt/**"
       - ".github/workflows/containerize_fms_forwarder.yaml"
 
 concurrency:
