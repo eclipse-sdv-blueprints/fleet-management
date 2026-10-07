@@ -28,6 +28,26 @@ use fms_proto::fms::VehicleStatus;
 
 use super::DatabrokerError;
 
+fn rounded_f64_to_i32(value: f64) -> Option<i32> {
+    let rounded = value.round();
+
+    if rounded.is_finite() && rounded >= i32::MIN as f64 && rounded <= i32::MAX as f64 {
+        Some(rounded as i32)
+    } else {
+        None
+    }
+}
+
+fn rounded_f64_to_u32(value: f64) -> Option<u32> {
+    let rounded = value.round();
+
+    if rounded.is_finite() && rounded >= 0.0 && rounded <= u32::MAX as f64 {
+        Some(rounded as u32)
+    } else {
+        None
+    }
+}
+
 pub fn new_vehicle_status(
     data: HashMap<String, TypedValue>,
 ) -> Result<VehicleStatus, DatabrokerError> {
@@ -94,7 +114,7 @@ pub fn new_vehicle_status(
             .mut_or_insert_default()
             .gnss_position
             .mut_or_insert_default()
-            .altitude = i32::try_from(value).ok();
+            .altitude = f64::try_from(value).ok().and_then(rounded_f64_to_i32);
     }
     if let Some(value) = data.get(vss::VSS_VEHICLE_CURRENTLOCATION_HEADING) {
         vehicle_status
@@ -102,7 +122,7 @@ pub fn new_vehicle_status(
             .mut_or_insert_default()
             .gnss_position
             .mut_or_insert_default()
-            .heading = u32::try_from(value).ok();
+            .heading = f64::try_from(value).ok().and_then(rounded_f64_to_u32);
     }
     if let Some(value) = data.get(vss::FMS_VEHICLE_CURRENTLOCATION_SPEED) {
         vehicle_status
@@ -118,15 +138,24 @@ pub fn new_vehicle_status(
         let iso_date_time: String = String::try_from(value).unwrap();
         match chrono::DateTime::parse_from_rfc3339(&iso_date_time) {
             Ok(instant) => {
-                let position_instant = vehicle_status
-                    .snapshot_data
-                    .mut_or_insert_default()
-                    .gnss_position
-                    .mut_or_insert_default()
-                    .instant
-                    .mut_or_insert_default();
-                position_instant.seconds = instant.timestamp();
-                position_instant.nanos = instant.timestamp_subsec_nanos() as i32;
+                if instant.timestamp_subsec_millis() > 999 {
+                    // this means that the instant is a leap-second which is
+                    // not representable in the protobuf::Timestamp type
+                    // so we simply ignore the value
+                    debug!("ignoring leap-second timestamp value");
+                } else {
+                    let position_instant = vehicle_status
+                        .snapshot_data
+                        .mut_or_insert_default()
+                        .gnss_position
+                        .mut_or_insert_default()
+                        .instant
+                        .mut_or_insert_default();
+                    position_instant.seconds = instant.timestamp();
+                    // we already have checked that the value is at most 999,999,999 nanoseconds,
+                    // so the cast is safe
+                    position_instant.nanos = instant.timestamp_subsec_nanos() as i32;
+                }
             }
             Err(_e) => debug!("failed to parse value as ISO8601 date-time string"),
         }
@@ -244,4 +273,36 @@ pub fn new_vehicle_status(
         vehicle_status.hr_total_vehicle_distance = u64::try_from(value).ok();
     }
     Ok(vehicle_status)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test_case::test_case;
+
+    #[test_case(7.49_f64 => Some(7))]
+    #[test_case(-7.49_f64 => Some(-7))]
+    #[test_case(7.50_f64 => Some(8))]
+    #[test_case(-7.50_f64 => Some(-8))]
+    #[test_case(f64::INFINITY  => None)]
+    #[test_case(f64::NEG_INFINITY  => None)]
+    #[test_case(f64::NAN  => None)]
+    #[test_case(f64::MAX  => None)]
+    #[test_case(f64::MIN  => None)]
+    fn rounded_f64_to_i32_test(float_to_be_converted: f64) -> Option<i32> {
+        rounded_f64_to_i32(float_to_be_converted)
+    }
+
+    #[test_case(7.49_f64 => Some(7))]
+    #[test_case(-7.49_f64 => None)]
+    #[test_case(7.50_f64 => Some(8))]
+    #[test_case(-7.50_f64 => None)]
+    #[test_case(f64::INFINITY  => None)]
+    #[test_case(f64::NEG_INFINITY  => None)]
+    #[test_case(f64::NAN  => None)]
+    #[test_case(f64::MAX  => None)]
+    #[test_case(f64::MIN  => None)]
+    fn rounded_f64_to_u32_test(float_to_be_converted: f64) -> Option<u32> {
+        rounded_f64_to_u32(float_to_be_converted)
+    }
 }
