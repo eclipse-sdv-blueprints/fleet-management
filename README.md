@@ -56,10 +56,10 @@ docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.
 
 This will pull (or build if necessary) the container images and create and start all components.
 
-The stack includes the Jakarta EE fleet analysis backend and exposes it on `http://127.0.0.1:8082/fleet-analysis/api`.
-
 Once all services have been started, the current vehicle status can be viewed on a [Grafana dashboard](http://127.0.0.1:3000),
 using *sdv*/*sdv* as username and password for logging in.
+
+The deployment also contains a [Dozzle](https://dozzle.dev/guide/what-is-dozzle) container which provides [a web UI](http://127.0.0.1:8080) for viewing container logs.
 
 
 The rFMS API can be used to retrieve the data, e.g.
@@ -67,6 +67,8 @@ The rFMS API can be used to retrieve the data, e.g.
 ```sh
 curl -v -s http://127.0.0.1:8081/rfms/vehicleposition?latestOnly=true | jq
 ```
+
+The stack includes a Jakarta EE based Fleet Analysis Backend component which exposes its API endpoint at `http://127.0.0.1:8082/fleet-analysis/api`.
 
 # Eclipse Zenoh&trade; Transport
 

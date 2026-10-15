@@ -42,6 +42,16 @@ volumes:
   grafana-datasources:
 
 services:
+  dozzle: # https://dozzle.dev/guide/what-is-dozzle
+    image: amir20/dozzle:latest
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+    ports:
+      - "127.0.0.1:8080:8080"
+
   influxdb:
     image: "docker.io/library/influxdb:2.7"
     container_name: "influxDB"
@@ -158,7 +168,7 @@ services:
         read_only: true
 
   databroker:
-    image: "quay.io/eclipse-kuksa/kuksa-databroker:0.6.0"
+    image: "ghcr.io/eclipse-kuksa/kuksa-databroker:0.7.1"
     container_name: "databroker"
     cap_drop: *default-drops
     networks:
@@ -208,7 +218,7 @@ services:
         condition: service_started
     environment:
       KUKSA_DATABROKER_URI: "http://databroker:55556"
-      TIMER_INTERVAL: "${FMS_FORWARDER_TIMER_INTERVAL:-500ms}"
+      TIMER_INTERVAL: "${FMS_FORWARDER_TIMER_INTERVAL:-2000ms}"
       RUST_LOG: "${FMS_FORWARDER_LOG_CONFIG:-info,fms_forwarder=info}"
       TRUST_STORE_PATH: "${FMS_FORWARDER_TRUST_STORE_PATH:-/etc/ssl/certs/ca-certificates.crt}"
 
