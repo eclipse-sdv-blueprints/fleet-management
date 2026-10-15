@@ -22,7 +22,7 @@ services:
     command: -c /zenoh-config.json5
     environment:
       RUST_LOG: zenoh=info
-    image: eclipse/zenoh:1.1.0
+    image: eclipse/zenoh:1.10.0
     container_name: "fms-zenoh-router"
     networks:
       - "fms-backend"
