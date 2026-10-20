@@ -1,0 +1,204 @@
+{
+    "Vehicle": { 
+        "type": "branch",
+        "description": "Vehicle",
+        "children": {
+            "VehicleIdentification": {
+                "description": "Attributes that identify a vehicle.",
+                "type": "branch",
+                "children": {
+                    "Type": {
+                        "datatype": "string",
+                        "type": "attribute",
+                        "description": "The type of vehicle.",
+                        "default": "TRUCK"
+                    },
+                    "Brand": {
+                        "datatype": "string",
+                        "type": "attribute",
+                        "default": "VOLVO TRUCKS",
+                        "description": "Vehicle brand or manufacturer"
+                    },
+                    "DateVehicleFirstRegistered": {
+                        "datatype": "string",
+                        "description": "The date in ISO 8601 format of the first registration of the vehicle with the respective public authorities.",
+                        "type": "attribute",
+                        "unit": "iso8601"
+                    },
+                    "KnownVehicleDamages": {
+                        "datatype": "string",
+                        "description": "A textual description of known damages, both repaired and unrepaired.",
+                        "type": "attribute"
+                    },
+                    "LicensePlate": {
+                        "comment": "Depending on the context, this attribute might not be up to date or might be misconfigured, and therefore should be considered untrustworthy in the absence of another method of verification.",
+                        "datatype": "string",
+                        "description": "The license plate of the vehicle.",
+                        "type": "attribute"
+                    },
+                    "Model": {
+                        "datatype": "string",
+                        "description": "Vehicle model.",
+                        "type": "attribute",
+                        "default": "FMX"
+                    },
+                    "OptionalExtras": {
+                        "comment": "Allowed values are not standardized, each OEM can specify detail descriptions of array elements.",
+                        "datatype": "string[]",
+                        "description": "Optional extras refers to all car equipment options that are not installed as standard by the manufacturer.",
+                        "type": "attribute"
+                    },
+                    "ProductionDate": {
+                        "datatype": "string",
+                        "description": "The date in ISO 8601 format of production of the item, e.g. vehicle.",
+                        "type": "attribute",
+                        "unit": "iso8601",
+                        "default": "2024-01-15"
+                    },
+                    "VIN": {
+                        "datatype": "string",
+                        "default": "YV2E4C3A5VB180691",
+                        "type": "attribute",
+                        "description": "Vehicle Identification Number"
+                    },
+                    "VehicleConfiguration": {
+                        "datatype": "string",
+                        "description": "A short text indicating the configuration of the vehicle, e.g. '5dr hatchback ST 2.5 MT 225 hp' or 'limited edition'.",
+                        "type": "attribute"
+                    },
+                    "VehicleExteriorColor": {
+                        "datatype": "string",
+                        "description": "The main color of the exterior within the basic color palette (eg. red, blue, black, white, ...).",
+                        "type": "attribute"
+                    },
+                    "VehicleInteriorColor": {
+                        "datatype": "string",
+                        "description": "The color or color combination of the interior of the vehicle.",
+                        "type": "attribute"
+                    },
+                    "VehicleInteriorType": {
+                        "datatype": "string",
+                        "description": "The type or material of the interior of the vehicle (e.g. synthetic fabric, leather, wood, etc.).",
+                        "type": "attribute"
+                    },
+                    "VehicleModelDate": {
+                        "datatype": "string",
+                        "description": "The release date in ISO 8601 format of a vehicle model (often used to differentiate versions of the same make and model).",
+                        "type": "attribute",
+                        "unit": "iso8601"
+                    },
+                    "VehicleSeatingCapacity": {
+                        "datatype": "uint16",
+                        "description": "The number of passengers that can be seated in the vehicle, both in terms of the physical space available, and in terms of limitations set by law.",
+                        "type": "attribute"
+                    },
+                    "VehicleSpecialUsage": {
+                        "datatype": "string",
+                        "description": "Indicates whether the vehicle has been used for special purposes, like commercial rental, driving school.",
+                        "type": "attribute"
+                    },
+                    "WMI": {
+                        "datatype": "string",
+                        "description": "3-character World Manufacturer Identification (WMI) as defined by ISO 3780.",
+                        "type": "attribute"
+                    },
+                    "Year": {
+                        "datatype": "uint16",
+                        "description": "Model year of the vehicle.",
+                        "type": "attribute"
+                    }
+                }
+            },
+            "Tachograph": {
+                "type": "branch",
+                "description": "Tachograph related data.",
+                "children": {
+                    "Driver": {
+                        "type": "branch",
+                        "description": "Information about the driver(s) of a (commercial) vehicle.",
+                        "children": {
+                            "Driver1": {
+                                "type": "branch",
+                                "description": "Information about driver 1",
+                                "children": {
+                                    "IsCardPresent": {
+                                        "type": "attribute",
+                                        "datatype": "boolean",
+                                        "description": "Indicates the presence of a driver card",
+                                        "default": true
+                                    },
+                                    "IsLoggedIn": {
+                                        "type": "attribute",
+                                        "datatype": "boolean",
+                                        "description": "Indicates if the driver is currently logged in.",
+                                        "default": true
+                                    },
+                                    "CardIssuingMemberState": {
+                                        "type": "attribute",
+                                        "datatype": "string",
+                                        "description": "The country alpha code of the Member State having issued the card.",
+                                        "default": "DE"
+                                    },
+                                    "Identification": {
+                                        "type": "attribute",
+                                        "datatype": "string",
+                                        "description": "The unique identification of a driver in a Member State.",
+                                        "default": "DRIVER1IDxxxxxxx"
+                                    },
+                                    "AuthenticationEquipment": {
+                                        "type": "attribute",
+                                        "datatype": "string",
+                                        "description": "Code to distinguish different types of equipment for the tachograph application.",
+                                        "default": "DRIVER_CARD"
+                                    },
+                                    "CardReplacementIndex": {
+                                        "type": "attribute",
+                                        "datatype": "string",
+                                        "description": "The number of times that the driver's card has been replaced.",
+                                        "default": "1"
+                                    },
+                                    "CardRenewalIndex": {
+                                        "type": "attribute",
+                                        "datatype": "string",
+                                        "description": "The number of times that the driver's card has been renewed.",
+                                        "default": "B"
+                                    },
+                                    "WorkingState": {
+                                        "type": "attribute",
+                                        "datatype": "string",
+                                        "description": "The current working state of the driver.",
+                                        "default": "NOT_AVAILABLE"
+                                    }
+                                }
+                            },
+                            "Driver2": {
+                                "type": "branch",
+                                "description": "Information about driver 2",
+                                "children": {
+                                    "IsCardPresent": {
+                                        "type": "attribute",
+                                        "datatype": "boolean",
+                                        "description": "Indicates the presence of a driver card",
+                                        "default": false
+                                    },
+                                    "IsLoggedIn": {
+                                        "type": "attribute",
+                                        "datatype": "boolean",
+                                        "description": "Indicates if the driver is currently logged in.",
+                                        "default": false
+                                    },
+                                    "WorkingState": {
+                                        "type": "attribute",
+                                        "datatype": "string",
+                                        "description": "The current working state of the driver.",
+                                        "default": "NOT_AVAILABLE"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

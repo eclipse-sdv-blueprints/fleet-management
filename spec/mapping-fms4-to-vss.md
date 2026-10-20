@@ -19,110 +19,125 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 -->
 This document provides a mapping of data/object types used in the rFMS 4.0 OpenAPI specification
-to VSS paths that either already exist in the VSS 4.0 spec or paths that are defined in the
+to VSS paths that either already exist in the VSS 5.0 spec or paths that are defined in the
 [FMS overlay file](fms.vspec).
 
 In the tables below, if the *Impl* column contains `yes` for a property, then
-* a mapping from the underlying j1939 signal to VSS has been defined in the [FMS overlay file](fms.vspec),
-* the corresponding VSS Data Entries are getting retrieved from the Kuksa.val Databroker as part of the TIMER trigger,
+* the corresponding VSS Data Entries are getting retrieved from the Eclipse Kuksa Databroker when a trigger fires,
 * the values retrieved from the Databroker are included in the data sent by the vehicle to the back end.
+    
+# GNSSPositionObject
+
+| rFMS property                 | M/O | rFMS type | rFMS unit | VSS/FMS Overlay path                   | VSS type | VSS unit | Impl |
+| :---------------------------- | --- | :-------- | :-------- | :------------------------------------- | :------- | :------- | ---- |
+| latitude                      | M   | double    | WGS84     | VSS: Vehicle.CurrentLocation.Latitude  | double   | WGS84    | yes  |
+| longitude                     | M   | double    | WGS84     | VSS: Vehicle.CurrentLocation.Longitude | double   | WGS84    | yes  |
+| heading                       | O   | integer   | degrees   | VSS: Vehicle.CurrentLocation.Heading   | double   | degrees  | yes  |
+| altitude                      | O   | integer   | m         | VSS: Vehicle.CurrentLocation.Altitude  | double   | m        | yes  |
+| speed                         | O   | double    | km/h      | FMS: Vehicle.CurrentLocation.Speed     | double   | km/h     | yes  |
+| positionDateTime              | M   | string    | iso8601   | VSS: Vehicle.CurrentLocation.Timestamp | string   | iso8601  | yes  |
 
 # VehiclePositionObject
 
-| rFMS property                   | M/O | rFMS type   | rFMS unit | VSS/FMS Overlay path                            | VSS unit | Impl |
-| :------------------------------ | --- | :---------- | :-------- | :---------------------------------------------- | :------- | ---- |
-| vin                             |  M  | string      |           | VSS: Vehicle.VehicleIdentification.VIN          |          | yes  |
-| gnssPosition.latitude           |  M  | double      | WGS84     | VSS: Vehicle.CurrentLocation.Latitude           | WGS84    | yes  |
-| gnssPosition.longitude          |  M  | double      | WGS84     | VSS: Vehicle.CurrentLocation.Longitude          | WGS84    | yes  |
-| gnssPosition.heading            |  O  | integer     | degrees   | VSS: Vehicle.CurrentLocation.Heading            | degrees  | yes  |
-| gnssPosition.altitude           |  O  | integer     | m         | VSS: Vehicle.CurrentLocation.Altitude           | m        | yes  |
-| gnssPosition.speed              |  O  | double      | km/h      | FMS: Vehicle.CurrentLocation.Speed              | km/h     | yes  |
-| gnssPosition.positionDateTime   |  M  | date-time   |           | VSS: Vehicle.CurrentLocation.Timestamp          |          | yes  |
-| wheelBasedSpeed                 |  M  | double      | km/h      | VSS: Vehicle.Speed                              | km/h     | yes  |
-| tachographSpeed                 |  O  | double      | km/h      | FMS: Vehicle.Tachograph.VehicleSpeed            | km/h     | yes  |
+| rFMS property                   | M/O | rFMS type | rFMS unit | VSS/FMS Overlay path                                   | VSS type | VSS unit | Impl |
+| :------------------------------ | --- | :-------- | :-------- | :----------------------------------------------------- | :------- | :------- | ---- |
+| vin                             |  M  | string    |           | VSS: Vehicle.VehicleIdentification.VIN                 |          |          | yes  |
+| gnssPosition                    |  O  | [GNSSPositionObject](#gnsspositionobject) | | VSS/FMS: Vehicle.CurrentLocation |          |          | yes  |
+| wheelBasedSpeed                 |  O  | double    | km/h      | VSS: Vehicle.Speed                                     | float    | km/h     | yes  |
+| tachographSpeed                 |  O  | double    | km/h      | FMS: Vehicle.Tachograph.VehicleSpeed                   | float    | km/h     | yes  |
 
 # VehicleStatusObject
 
-| rFMS property                   | M/O | rFMS type   | rFMS unit | VSS/FMS Overlay path                                              | VSS unit | Impl |
-| :------------------------------ | --- | :---------- | :-------- | :---------------------------------------------------------------- | :------- | ---- |
-| vin                             |  M  | string      |           | VSS: Vehicle.VehicleIdentification.VIN                            |          | yes  |
-| hrTotalVehicleDistance          |  M  | int64       | m         | FMS: Vehicle.TraveledDistanceHighRes                              | m        | yes  |
-| totalEngineHours                | M/O | double      | h         | VSS: Vehicle.Powertrain.CombustionEngine.EngineHours              | h        | yes  |
-| totalElectricMotorHours         | M/O | double      | h         | FMS: Vehicle.Powertrain.ElectricMotor.MotorHours                  | h        | no   |
-| engineTotalFuelUsed             | M/O | int64       | ml        | FMS: Vehicle.Powertrain.FuelSystem.AccumulatedConsumption         | ml       | yes  |
-| totalFuelUsedGaseous            | M/O | int64       | kg        |                                                                   |          | no   |
-| totalElectricEnergyUsed         | M/O | int64       | Wh        | VSS: Vehicle.Powertrain.TractionBattery.AccumulatedConsumedEnergy | kWh      | no   |
-| grossCombinationVehicleWeight   |  O  | integer     | kg        | VSS: Vehicle.CurrentOverallWeight                                 | kg       | yes  |
-| driver1Id                       |  M  | [DriverIdObject](#driveridobject) | | FMS: Vehicle.Tachograph.Driver.Driver1                |          | yes  |
-| accumulatedData                 |  O  | [AccumulatedDataObject](#accumulateddataobject) | |                                         |          | no   |
-| snapshotData                    |  O  | [SnapshotDataObject](#snapshotdataobject) | |                                               |          | yes  |
-| uptimeData                      |  O  | [UptimeDataObject](#uptimedataobject) | |                                                   |          | no   |
-| status2OfDoors                  | M(B)| string      | |                                                                             |          | no   |
-| doorStatus                      |  O  | array       | |                                                                             |          | no   |
+| rFMS property                   | M/O | rFMS type | rFMS unit | VSS/FMS Overlay path                                              | VSS type | VSS unit | Impl |
+| :------------------------------ | --- | :-------- | :-------- | :---------------------------------------------------------------- | :------- | :------- | ---- |
+| vin                             |  M  | string    |           | VSS: Vehicle.VehicleIdentification.VIN                            | string   |          | yes  |
+| hrTotalVehicleDistance          |  M  | int64     | m         | FMS: Vehicle.TraveledDistanceHighRes                              | uint64   | m        | yes  |
+| totalEngineHours                | M/O | double    | h         | VSS: Vehicle.Powertrain.CombustionEngine.EngineHours              | float    | h        | yes  |
+| totalElectricMotorHours         | M/O | double    | h         | VSS: Vehicle.Powertrain.ElectricMotor.TimeInUse                   | float    | h        | no   |
+| engineTotalFuelUsed             | M/O | int64     | ml        | FMS: Vehicle.Powertrain.FuelSystem.AccumulatedConsumption         | uint64   | ml       | yes  |
+| totalFuelUsedGaseous            | M/O | int64     | kg        |                                                                   |          |          | no   |
+| totalElectricEnergyUsed         | M/O | int64     | Wh        | VSS: Vehicle.Powertrain.TractionBattery.AccumulatedConsumedEnergy | float    | kWh      | no   |
+| grossCombinationVehicleWeight   |  O  | integer   | kg        | VSS: Vehicle.CurrentOverallWeight                                 | uint16   | kg       | yes  |
+| driver1Id                       |  M  | [DriverIdObject](#driveridobject) | | FMS: Vehicle.Tachograph.Driver.Driver1              |          |          | yes  |
+| accumulatedData                 |  O  | [AccumulatedDataObject](#accumulateddataobject) | |                                       |          |          | no   |
+| snapshotData                    |  O  | [SnapshotDataObject](#snapshotdataobject) | |                                             |          |          | yes  |
+| uptimeData                      |  O  | [UptimeDataObject](#uptimedataobject) | |                                                 |          |          | no   |
+| status2OfDoors                  | M(B)| string    |           |                                                                   |          |          | no   |
+| doorStatus                      |  O  | array     |           |                                                                   |          |          | no   |
 
 # AccumulatedDataObject
 
-| rFMS property                   | M/O | rFMS format | rFMS unit | VSS/FMS Overlay path                   | VSS unit | Impl |
-| :------------------------------ | --- | :---------- | :-------- | :------------------------------------- | :------- | ---- |
-| durationWheelbasedSpeedOverZero |  M  |             |           |                                        |          | no   |
+| rFMS property                   | M/O | rFMS type | rFMS unit | VSS/FMS Overlay path                   | VSS type | VSS unit | Impl |
+| :------------------------------ | --- | :-------- | :-------- | :------------------------------------- | :------- | :------- | ---- |
+| durationWheelbasedSpeedOverZero |  M  |           |           |                                        |          |          | no   |
 
 TBD
 
 # SnapshotDataObject
 
-| rFMS property                             | M/O | rFMS format | rFMS unit | VSS/FMS Overlay path                     | VSS unit | Impl |
-| :---------------------------------------- | --- | :---------- | :-------- | :--------------------------------------- | :------- | ---- |
-| gnssPosition.latitude                     |  M  | double      | WGS84     | VSS: Vehicle.CurrentLocation.Latitude    | WGS84    | yes  |
-| gnssPosition.longitude                    |  M  | double      | WGS84     | VSS: Vehicle.CurrentLocation.Longitude   | WGS84    | yes  |
-| gnssPosition.heading                      |  O  | integer     | degrees   | VSS: Vehicle.CurrentLocation.Heading     | degrees  | yes  |
-| gnssPosition.altitude                     |  O  | integer     | m         | VSS: Vehicle.CurrentLocation.Altitude    | m        | yes  |
-| gnssPosition.speed                        |  O  | double      | km/h      | FMS: Vehicle.CurrentLocation.Speed       | km/h     | yes  |
-| gnssPosition.positionDateTime             |  M  | date-time   |           | VSS: Vehicle.CurrentLocation.Timestamp   |          | yes  |
-| wheelBasedSpeed                           |  M  | double      | km/h      | VSS: Vehicle.Speed                       | km/h     | yes  |
-| tachographSpeed                           |  O  | double      | km/h      | FMS: Vehicle.Tachograph.VehicleSpeed     | km/h     | yes  |
-| engineSpeed                               |  O  | double      | rpm       | VSS: Vehicle.Powertrain.CombustionEngine.Speed | rpm | yes  |
-| electricMotorSpeed                        |  O  | double      | rpm       | VSS: Vehicle.Powertrain.ElectricMotor.Speed | rpm   | no   |
-| fuelType                                  |  O  | string      |           | FMS: Vehicle.Powertrain.CurrentFuelType  | enum     | no   |
-| fuelLevel1                                |  M  | double      | %         | FMS: Vehicle.Powertrain.FuelSystem.Tank.First.RelativeLevel  | % | yes  |
-| fuelLevel2                                |  O  | double      | %         | FMS: Vehicle.Powertrain.FuelSystem.Tank.Second.RelativeLevel | % | yes  |
-| catalystFuelLevel                         |  O  | double      | %         | VSS: Vehicle.Powertrain.CombustionEngine.DieselExhaustFluid.Level | % | yes  |
-| driver1WorkingState                       |  O  | string      |           | FMS: Vehicle.Tachograph.Driver.Driver1.WorkingState | | yes  |
-| driver2Id                                 |  O  | [DriverIdObject](#driveridobject) | | FMS: Vehicle.Tachograph.Driver.Driver2  | | no   |
-| driver2WorkingState                       |  O  | string      |           | FMS: Vehicle.Tachograph.Driver.Driver2.WorkingState | | yes  |
-| ambientAirTemperature                     |  O  | double      | celsius   | VSS: Vehicle.Exterior.AirTemperature     | celsius  | yes  |
-| parkingBrakeSwitch                        |  O  | boolean     |           | VSS: Vehicle.Chassis.ParkingBrake.IsEngaged | | yes  |
-| hybridBatteryPackRemainingCharge          |  O  | double      | %         | VSS: Vehicle.Powertrain.TractionBattery.StateOfCharge.Current | % | no   |
-| batteryPackChargingStatus                 |  O  | string      | enum      | VSS: Vehicle.Powertrain.TractionBattery.Charging.IsCharging | | no   |
-| batteryPackChargingConnectionStatus       |  O  | string      | enum      | VSS: Vehicle.Powertrain.TractionBattery.Charging.IsChargingCableConnected | | no   |
-| batteryPackChargingDevice                 |  O  | string      | enum      | | | no   |
-| batteryPackChargingPower                  |  O  | double      | W         | VSS: Vehicle.Powertrain.TractionBattery.Charging.ChargeCurrent.DC | A | no   |
-|                                           |     |             |           | VSS: Vehicle.Powertrain.TractionBattery.Charging.ChargeVoltage.DC | V | no   |
-| estimatedTimeBatteryPackChargingCompleted |  O  | date-time   |           | VSS: Vehicle.Powertrain.TractionBattery.Charging.TimeToComplete | s | no   |
-| estimatedDistanceToEmpty.total            |  M  | int64       | m         | VSS: Vehicle.Powertrain.Range                 | m        | yes  |
-| estimatedDistanceToEmpty.fuel             |  O  | int64       | m         | VSS: Vehicle.Powertrain.FuelSystem.Range      | m        | yes  |
-| estimatedDistanceToEmpty.gas              |  O  |             |           |                                               |          | no   |
-| estimatedDistanceToEmpty.batteryPack      |  O  | int64       | m         | VSS: Vehicle.Powertrain.TractionBattery.Range | m        | no   |
-| vehicleAxles                              |  O  | array       |           |                                               |          | no   |
-| trailers                                  |  O  | array       |           |                                               |          | no   |
+| rFMS property                             | M/O | rFMS type | rFMS unit | VSS/FMS Overlay path                                              | VSS type | VSS unit | Impl |
+| :---------------------------------------- | --- | :-------- | :-------- | :---------------------------------------------------------------- | :------- | :------- | ---- |
+| gnssPosition                              |  O  | [GNSSPositionObject](#gnsspositionobject) | | VSS/FMS: Vehicle.CurrentLocation            |          |          | yes  |
+| wheelBasedSpeed                           |  O  | double    | km/h      | VSS: Vehicle.Speed                                                | float    | km/h     | yes  |
+| tachographSpeed                           |  O  | double    | km/h      | FMS: Vehicle.Tachograph.VehicleSpeed                              | float    | km/h     | yes  |
+| engineSpeed                               |  O  | double    | rpm       | VSS: Vehicle.Powertrain.CombustionEngine.Speed                    | uint16   | rpm      | yes  |
+| electricMotorSpeed                        |  O  | double    | rpm       | VSS: Vehicle.Powertrain.ElectricMotor.Speed                       | int32    | rpm      | no   |
+| fuelType                                  |  O  | string    |           | FMS: Vehicle.Powertrain.CurrentFuelType                           | string   | enum     | yes  |
+| fuelLevel1                                |  M  | double    | percent   | FMS: Vehicle.Powertrain.FuelSystem.Tank.First.RelativeLevel       | float    | percent  | yes  |
+| fuelLevel2                                |  O  | double    | percent   | FMS: Vehicle.Powertrain.FuelSystem.Tank.Second.RelativeLevel      | float    | percent  | yes  |
+| catalystFuelLevel                         |  O  | double    | percent   | VSS: Vehicle.Powertrain.CombustionEngine.DieselExhaustFluid.Level | uint8    | percent  | yes  |
+| driver1WorkingState                       |  O  | string    | enum      | FMS: Vehicle.Tachograph.Driver.Driver1.WorkingState               | string   | enum     | yes  |
+| driver2Id                                 |  O  | [DriverIdObject](#driveridobject) | | FMS: Vehicle.Tachograph.Driver.Driver2              |          |          | no   |
+| driver2WorkingState                       |  O  | string    | enum      | FMS: Vehicle.Tachograph.Driver.Driver2.WorkingState               | string   | enum     | yes  |
+| ambientAirTemperature                     |  O  | double    | celsius   | VSS: Vehicle.Exterior.AirTemperature                              | float    | celsius  | yes  |
+| parkingBrakeSwitch                        |  O  | boolean   |           | VSS: Vehicle.Chassis.ParkingBrake.IsEngaged                       | boolean  |          | yes  |
+| hybridBatteryPackRemainingCharge          |  O  | double    | percent   | VSS: Vehicle.Powertrain.TractionBattery.StateOfCharge.Current     | float    | percent  | no   |
+| batteryPackChargingStatus                 |  O  | string    | enum      | VSS: Vehicle.Powertrain.TractionBattery.Charging.IsCharging       | boolean  |          | no   |
+| batteryPackChargingConnectionStatus       |  O  | string    | enum      | VSS: Vehicle.Powertrain.TractionBattery.Charging.ChargingPort.*.IsChargingCableConnected | boolean | | no   |
+| batteryPackChargingDevice                 |  O  | string    | enum      |                                                                   |          |          | no   |
+| batteryPackChargingPower                  |  O  | double    | W         | VSS: Vehicle.Powertrain.TractionBattery.Charging.ChargeCurrent.DC | float    | A        | no   |
+|                                           |     |           |           | VSS: Vehicle.Powertrain.TractionBattery.Charging.ChargeVoltage.DC | float    | V        | no   |
+| estimatedTimeBatteryPackChargingCompleted |  O  | string    | iso8601   | VSS: Vehicle.Powertrain.TractionBattery.Charging.TimeToComplete   | uint32   | s        | no   |
+| estimatedDistanceToEmpty.total            |  M  | int64     | m         | VSS: Vehicle.Powertrain.Range                                     | uint32   | m        | yes  |
+| estimatedDistanceToEmpty.fuel             |  O  | int64     | m         | VSS: Vehicle.Powertrain.FuelSystem.Range                          | uint32   | m        | yes  |
+| estimatedDistanceToEmpty.gas              |  O  |           |           |                                                                   |          |          | no   |
+| estimatedDistanceToEmpty.batteryPack      |  O  | int64     | m         | VSS: Vehicle.Powertrain.TractionBattery.Range                     | uint32   | m        | no   |
+| vehicleAxles                              |  O  | [VehicleAxleObject](#vehicleaxleobject)[] | | VSS/FMS: Vehicle.Chassis.Axle               |          |          | no   |
+| trailers                                  |  O  | array     |           |                                                                   |          |          | no   |
+
+# VehicleAxleObject
+
+| rFMS property       | M/O | rFMS type | rFMS unit | VSS/FMS Overlay path           | VSS type | VSS unit | Impl |
+| :------------------ | --- | :-------- | :-------- | :----------------------------- | :------- | :------- | ---- |
+| vehicleAxlePosition |  O  | integer   |           | VSS: Vehicle.Chassis.Axle      |          |          | no   |
+| vehicleAxleLoad     |  O  | number    | kg        | FMS: Vehicle.Chassis.Axle.Load | float    | kg       | no   |
 
 # UptimeDataObject
 
-| rFMS property                   | M/O | rFMS format | rFMS unit | VSS/FMS Overlay path                                        | VSS unit | Impl |
-| :------------------------------ | --- | :---------- | :-------- | :---------------------------------------------------------- | :------- | ---- |
-| tellTaleInfo                    |  M  | array       |           | FMS: Vehicle.Cabin.Telltale.*                               | enum     | no   |
-| serviceDistance                 |  O  | int64       | m         | VSS: Vehicle.Service.DistanceToService                      | km       | no   |
-| engineCoolantTemperature        |  O  | double      | celsius   | VSS: Vehicle.Powertrain.CombustionEngine.ECT                | celsius  | no   |
-| hvessOutletCoolantTemperature   |  O  | double      | celsius   | FMS: Vehicle.Powertrain.TractionBattery.CoolantTemperature  | celsius  | no   |
-| hvessTemperature                |  O  | double      | celsius   | VSS: Vehicle.Powertrain.TractionBattery.Temperature.Average | celsius  | no   |
-| serviceBrakeAirPressureCircuit1 |  O  | int64       | pascal    | FMS: Vehicle.Chassis.Brake.Circuit1.AirPressure             | pascal   | no   |
-| serviceBrakeAirPressureCircuit2 |  O  | int64       | pascal    | FMS: Vehicle.Chassis.Brake.Circuit2.AirPressure             | pascal   | no   |
-| durationAtLeastOneDoorOpen      |  O  | | | | | no   |
-| alternatorInfo.alternatorStatus | M(B)| | | | | no   |
-| alternatorInfo.alternatorNumber | M(B)| | | | | no   |
-| bellowPressureFrontAxleLeft     |  O  | | | | | no   |
-| bellowPressureFrontAxleRight    |  O  | | | | | no   |
-| bellowPressureRearAxleLeft      |  O  | | | | | no   |
-| bellowPressureRearAxleRight     |  O  | | | | | no   |
+| rFMS property                   | M/O | rFMS type | rFMS unit | VSS/FMS Overlay path                                               | VSS type | VSS unit | Impl |
+| :------------------------------ | --- | :-------- | :-------- | :----------------------------------------------------------------- | :------- | :------- | ---- |
+| tellTaleInfo                    |  M  | [TellTaleObject](#telltaleobject)[] | | FMS: Vehicle.Cabin.Telltale                        |          |          | no   |
+| serviceDistance                 |  O  | int64     | m         | VSS: Vehicle.Service.DistanceToService                             | float    | km       | no   |
+| engineCoolantTemperature        |  O  | double    | celsius   | VSS: Vehicle.Powertrain.CombustionEngine.EngineCoolant.Temperature | float    | celsius  | no   |
+| hvessOutletCoolantTemperature   |  O  | double    | celsius   | FMS: Vehicle.Powertrain.TractionBattery.CoolantTemperature         | float    | celsius  | no   |
+| hvessTemperature                |  O  | double    | celsius   | VSS: Vehicle.Powertrain.TractionBattery.Temperature.Average        | float    | celsius  | no   |
+| serviceBrakeAirPressureCircuit1 |  O  | int64     | pascal    | FMS: Vehicle.Chassis.Brake.AirPressureCircuit1                     | uint32   | pascal   | no   |
+| serviceBrakeAirPressureCircuit2 |  O  | int64     | pascal    | FMS: Vehicle.Chassis.Brake.AirPressureCircuit2                     | uint32   | pascal   | no   |
+| durationAtLeastOneDoorOpen      |  O  |           |           |                                                                    |          |          | no   |
+| alternatorInfo.alternatorStatus | M(B)|           |           |                                                                    |          |          | no   |
+| alternatorInfo.alternatorNumber | M(B)|           |           |                                                                    |          |          | no   |
+| bellowPressureFrontAxleLeft     |  O  |           |           |                                                                    |          |          | no   |
+| bellowPressureFrontAxleRight    |  O  |           |           |                                                                    |          |          | no   |
+| bellowPressureRearAxleLeft      |  O  |           |           |                                                                    |          |          | no   |
+| bellowPressureRearAxleRight     |  O  |           |           |                                                                    |          |          | no   |
+
+# TellTaleObject
+
+| rFMS property  | M/O | rFMS type | rFMS unit | VSS/FMS Overlay path               | VSS type | VSS unit | Impl |
+| :------------- | --- | :-------- | :-------- | :--------------------------------- | :------- | :------- | ---- |
+| tellTale       | M   | string    | enum      | FMS: Vehicle.Cabin.Telltale.*      |          |          | no   |
+| state          | M   | string    | enum      | FMS: Vehicle.Cabin.Telltale.Status | string   | enum     | no   |
+| oemTellTale    | O   | string    |           |                                    | string   |          | no   |
 
 # DriverIdObject
 

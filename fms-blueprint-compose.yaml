@@ -33,7 +33,9 @@ configs:
   grafana_fms_dashboard.json:
     file: "./grafana/dashboards/FMS-Fleet.json"
   vss_overlay.json:
-    file: "./spec/overlay/vss.json"
+    file: "./databroker/vss.json"
+  truck1_attributes.json:
+    file: "./databroker/truck1_attributes.json"
 
 volumes:
   influxdb-data:
@@ -177,10 +179,11 @@ services:
       - "${FMS_DATABROKER_BIND_HOST:-127.0.0.1}:55555:55556"
     configs:
       - "vss_overlay.json"
+      - "truck1_attributes.json"
     environment:
       KUKSA_DATABROKER_ADDR: "0.0.0.0"
       KUKSA_DATABROKER_PORT: "55556"
-      KUKSA_DATABROKER_METADATA_FILE: "/vss_overlay.json"
+      KUKSA_DATABROKER_METADATA_FILE: "/vss_overlay.json,/truck1_attributes.json"
       RUST_LOG: "info"
     # for the time being, we do not use TLS secured connections to Databroker
     command: "--insecure"

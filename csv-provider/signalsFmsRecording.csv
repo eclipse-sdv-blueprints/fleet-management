@@ -1,9 +1,6 @@
 field,signal,value,delay
-current,Vehicle.VehicleIdentification.VIN,YV2E4C3A5VB180691,0.5
 current,Vehicle.Tachograph.Driver.Driver1.WorkingState,REST,0.002
 current,Vehicle.Tachograph.Driver.Driver2.WorkingState,REST,0.000465631484985
-current,Vehicle.Tachograph.Driver.Driver1.IsCardPresent,False,0.002532958984375
-current,Vehicle.Tachograph.Driver.Driver2.IsCardPresent,False,0.00171971321106
 current,Vehicle.Tachograph.VehicleSpeed,0,0.002374410629272
 current,Vehicle.Powertrain.FuelSystem.Tank.First.RelativeLevel,1.20000004768372,0.50137734413147
 current,Vehicle.TraveledDistanceHighRes,54054555,0.01157808303833
@@ -3985,9 +3982,6 @@ current,Vehicle.CurrentOverallWeight,6000,0.438025236129761
 current,Vehicle.Powertrain.CombustionEngine.Speed,16,0.121886491775513
 current,Vehicle.Exterior.AirTemperature,13,0.391458988189697
 current,Vehicle.Powertrain.CombustionEngine.Speed,0,1.61968564987183
-current,Vehicle.CurrentOverallWeight,15440,0.429252147674561
-current,Vehicle.CurrentOverallWeight,6000,0.436763048171997
-current,Vehicle.CurrentOverallWeight,15440,2.56386065483093
 current,Vehicle.CurrentLocation.Latitude,48.8563482,0
 current,Vehicle.CurrentLocation.Longitude,2.3513531,0
 current,Vehicle.CurrentLocation.Altitude,35,0
