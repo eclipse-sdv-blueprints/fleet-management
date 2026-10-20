@@ -24,28 +24,25 @@ file that can be downloaded from the [FMS website](https://www.fms-standard.com)
 
 The [mapping-fms4-to-vss.md file](mapping-fms4-to-vss.md) defines a mapping of the data required by FMS to VSS Data Entries.
 The [overlay folder](overlay) contains a VSS overlay that defines additional VSS Data Entries for those FMS data points for
-which no standard VSS Data Entry exist (yet). The folder also contains a [pre-compiled JSON model file](spec/overlay/vss.json) that
+which no standard VSS Data Entry exist (yet). The project also contains a [pre-compiled JSON model file](../databroker/vss.json) that
 contains all of the definitions from both the standard VSS as well as the overlay vspec files.
-This model file can then be read in by the kuksa.val Databroker during startup using the `--metadata` switch.
+This model file is read in by the kuksa.val Databroker during startup using the `--metadata` switch.
 
 Please refer to the [VSS documentation](https://covesa.github.io/vehicle_signal_specification/rule_set/overlay/) for details regarding VSS overlays.
 
 ## Creating the JSON Model File
 
-The `vspec2json.py` program from the [COVESA VSS tools project](https://github.com/COVESA/vss-tools) can be used to (re-)create the JSON model file that
+The `vspec` program from the [COVESA VSS tools project](https://github.com/COVESA/vss-tools) can be used to (re-)create the JSON model file that
 contains all of the standard VSS Data Entries plus the ones from the FMS overlay file.
 
-1. Clone the COVESA VSS Signal Specification repository as described in its
-   [Getting Started guide](https://github.com/COVESA/vehicle_signal_specification#contribute-to-vss). It is important to include the
-   `--recurse-submodules` in order to initialize the submodule that contains the VSS Tools.
-2. Check out the `v4.0` tag:
+1. Clone the COVESA VSS Signal Specification repository into a dedicated folder (outside of the FMS blueprint workspace):
    ```sh
-   git checkout --recurse-submodules v4.0
+   git clone --branch v5.0 git@github.com:COVESA/vehicle_signal_specification.git ${PATH_TO_CLONED_VSS_REPO}
    ```
-3. Follow the instructions given in the *Basic Setup* section of the `vss-tools/README.md` file.
-4. Run the following command to create the JSON file:
-   
+2. Follow the steps from the [VSS Tools README](https://github.com/COVESA/vss-tools/blob/master/README.md#installation))
+   to create a Python virtual environment (within the FMS blueprint workspace) and install the VSS Tools.
+3. Run the following command to (re-)create the JSON file:
    ```sh
-   # in folder spec
-   ${PATH_TO_CLONED_VSS_REPO}/vss-tools/vspec2json.py --strict --json-pretty -e dbc -o overlay/fms.vspec ${PATH_TO_CLONED_VSS_REPO}/spec/VehicleSignalSpecification.vspec overlay/vss.json
+   # from the root folder of the FMS blueprint workspace
+   vspec export json --strict --pretty --overlays spec/overlay/fms.vspec --vspec ${PATH_TO_CLONED_VSS_REPO}/spec/VehicleSignalSpecification.vspec --output databroker/vss.json
    ```
