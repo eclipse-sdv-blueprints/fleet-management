@@ -20,7 +20,7 @@
 //! An abstraction of a vehicle's (current) status based on
 //! [Eclipse kuksa.val Databroker](https://github.com/eclipse/kuksa.val).
 //!
-use std::{collections::HashMap, error::Error, fmt::Display, time::Duration};
+use std::{error::Error, fmt::Display, time::Duration};
 
 use clap::Args;
 use http::Uri;
@@ -31,7 +31,19 @@ use log::{debug, error, info, warn};
 use protobuf::MessageField;
 use tokio::sync::mpsc::Sender;
 
-use fms_proto::fms::{TellTaleInfo, Trigger, VehicleStatus};
+use fms_proto::fms::{TellTaleInfo, Trigger, VehicleMetadata, VehicleStatus};
+use up_rust::communication::UPayload;
+use up_rust::UMessageError;
+
+use crate::vehicle_abstraction::kuksa::VssData;
+
+const METADATA_VSS_PATHS: &[&str] = &[
+    vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_BRAND,
+    vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_MODEL,
+    vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_PRODUCTIONDATE,
+    vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_TYPE,
+    vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_VIN,
+];
 
 const SNAPSHOT_VSS_PATHS: &[&str] = &[
     vss::VSS_VEHICLE_BODY_LIGHTS_DIRECTIONINDICATOR_RIGHT_ISSIGNALING,
@@ -101,6 +113,22 @@ const PARAM_TIMER_INTERVAL: &str = "timer-interval";
 
 mod kuksa;
 mod vss;
+
+pub enum FmsMessage {
+    Status(VehicleStatus),
+    Metadata(VehicleMetadata),
+}
+
+impl TryFrom<FmsMessage> for UPayload {
+    type Error = UMessageError;
+
+    fn try_from(value: FmsMessage) -> Result<Self, Self::Error> {
+        match value {
+            FmsMessage::Status(status) => UPayload::try_from_protobuf(status),
+            FmsMessage::Metadata(metadata) => UPayload::try_from_protobuf(metadata),
+        }
+    }
+}
 
 #[derive(Args)]
 pub struct KuksaDatabrokerClientConfig {
@@ -298,17 +326,15 @@ impl KuksaValDatabroker {
             })
     }
 
-    pub async fn get_vehicle_status(&mut self) -> Result<VehicleStatus, DatabrokerError> {
-        let paths = SNAPSHOT_VSS_PATHS.iter().map(|v| v.to_string()).collect();
-
-        match self.client.get_values(paths).await {
+    async fn get_datapoints(&mut self, paths: Vec<String>) -> Result<VssData, DatabrokerError> {
+        match self.client.get_values(paths.clone()).await {
             Err(kuksa_rust_sdk::kuksa::common::ClientError::Connection(msg)) => {
-                warn!("failed to retrieve snapshot data points from Databroker: {msg}");
+                warn!("failed to retrieve data points from Databroker: {msg}");
                 Err(DatabrokerError { description: msg })
             }
             Err(kuksa_rust_sdk::kuksa::common::ClientError::Status(status)) => {
                 warn!(
-                    "failed to retrieve snapshot data points from Databroker: {}",
+                    "failed to retrieve data points from Databroker: {}",
                     status.message()
                 );
                 Err(DatabrokerError {
@@ -317,18 +343,18 @@ impl KuksaValDatabroker {
             }
             Err(kuksa_rust_sdk::kuksa::common::ClientError::Function(errors)) => {
                 errors.iter().for_each(|error| {
-                    warn!("failed to retrieve snapshot data points from Databroker: {error:?}");
+                    warn!("failed to retrieve data points from Databroker: {error:?}");
                 });
                 Err(DatabrokerError {
-                    description: "multiple errors while retrieving snapshot data".to_string(),
+                    description: "multiple errors while retrieving data points".to_string(),
                 })
             }
             Ok(get_response) => {
-                let mut vss_data = HashMap::new();
+                let mut vss_data = VssData::new();
                 let mut idx = 0usize;
                 get_response.iter().for_each(|data_entry| {
-                    if let (name, Some(value)) = (
-                        SNAPSHOT_VSS_PATHS[idx],
+                    if let (Some(name), Some(value)) = (
+                        paths.get(idx),
                         data_entry
                             .value
                             .as_ref()
@@ -339,9 +365,21 @@ impl KuksaValDatabroker {
                     }
                     idx += 1;
                 });
-                kuksa::new_vehicle_status(vss_data)
+                Ok(vss_data)
             }
         }
+    }
+
+    pub async fn get_vehicle_metadata(&mut self) -> Result<VehicleMetadata, DatabrokerError> {
+        let paths = METADATA_VSS_PATHS.iter().map(|v| v.to_string()).collect();
+        let metadata = self.get_datapoints(paths).await?;
+        kuksa::new_vehicle_metadata(metadata)
+    }
+
+    pub async fn get_vehicle_status(&mut self) -> Result<VehicleStatus, DatabrokerError> {
+        let paths = SNAPSHOT_VSS_PATHS.iter().map(|v| v.to_string()).collect();
+        let snapshot = self.get_datapoints(paths).await?;
+        kuksa::new_vehicle_status(snapshot)
     }
 
     pub async fn register_triggers(
@@ -385,11 +423,32 @@ impl KuksaValDatabroker {
     }
 }
 
+async fn send_metadata(
+    databroker: &mut KuksaValDatabroker,
+    status_publisher: &Sender<FmsMessage>,
+    trigger: Trigger,
+) {
+    match databroker.get_vehicle_metadata().await {
+        Ok(mut vehicle_metadata) => {
+            vehicle_metadata.trigger = MessageField::some(trigger);
+            if let Err(e) = status_publisher
+                .send(FmsMessage::Metadata(vehicle_metadata))
+                .await
+            {
+                warn!("failed to send new vehicle metadata via channel: {e}");
+            };
+        }
+        Err(e) => {
+            warn!("failed to retrieve vehicle metadata: {e}");
+        }
+    }
+}
+
 /// Sets up a connection to the Databroker and registers callbacks for
 /// signals that trigger the reporting of the vehicle's current status.
 pub async fn init(
     config: &KuksaDatabrokerClientConfig,
-    status_publisher: Sender<VehicleStatus>,
+    status_publisher: Sender<FmsMessage>,
 ) -> Result<(), DatabrokerError> {
     let timer_interval = config.timer_interval.to_owned();
 
@@ -457,9 +516,13 @@ pub async fn init(
                         }
                         FmsTrigger::EngineOn => {
                             info!("engine has been started");
+                            send_metadata(&mut databroker, &status_publisher, trigger.clone())
+                                .await;
                         }
                         FmsTrigger::EngineOff => {
                             info!("engine has been stopped");
+                            send_metadata(&mut databroker, &status_publisher, trigger.clone())
+                                .await;
                         }
                         FmsTrigger::ParkingBreakSwitchChanged(is_engaged) => {
                             info!("parking brake engaged: {}", is_engaged);
@@ -475,11 +538,11 @@ pub async fn init(
                         }
                     }
                     new_vehicle_status.trigger = MessageField::some(trigger);
-                    match status_publisher.send(new_vehicle_status).await {
-                        Ok(_) => {}
-                        Err(e) => {
-                            warn!("failed to send new vehicle status via channel: {}", e);
-                        }
+                    if let Err(e) = status_publisher
+                        .send(FmsMessage::Status(new_vehicle_status))
+                        .await
+                    {
+                        warn!("failed to send new vehicle status via channel: {e}");
                     };
                 }
             }

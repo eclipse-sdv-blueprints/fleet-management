@@ -19,10 +19,9 @@
 
 use std::str::FromStr;
 use std::sync::Arc;
-use std::thread;
 
 use clap::{Parser, Subcommand};
-use fms_proto::fms::VehicleStatus;
+use fms_proto::fms::{VehicleMetadata, VehicleStatus};
 use fms_zenoh::ZenohTransportConfig;
 use influx_client::connection::InfluxConnectionConfig;
 use influx_client::writer::InfluxWriter;
@@ -33,7 +32,7 @@ use up_transport_hono_kafka::{HonoKafkaTransport, HonoKafkaTransportConfig};
 use up_transport_zenoh::{zenoh_config::Config, UPTransportZenoh};
 
 struct VehicleStatusListener {
-    influx_writer: InfluxWriter,
+    influx_writer: Arc<InfluxWriter>,
 }
 
 #[async_trait::async_trait]
@@ -49,14 +48,35 @@ impl UListener for VehicleStatusListener {
     }
 }
 
+struct VehicleMetadataListener {
+    influx_writer: Arc<InfluxWriter>,
+}
+
+#[async_trait::async_trait]
+impl UListener for VehicleMetadataListener {
+    async fn on_receive(&self, msg: UMessage) {
+        if let Ok(vehicle_metadata) = msg.extract_protobuf::<VehicleMetadata>() {
+            self.influx_writer
+                .write_vehicle_metadata(&vehicle_metadata)
+                .await;
+        } else {
+            info!("ignoring event with invalid/unknown payload");
+        }
+    }
+}
+
 /// Receives FMS related VSS data points via Hono's Kafka based Telemetry API or Eclipse Zenoh instance
 /// and writes them to an InfluxDB server.
 #[derive(Parser)]
 #[command(version, about, long_about = None, arg_required_else_help = true)]
 struct FmsConsumerCommand {
     /// The topic URI pattern to use for consuming vehicle status events.
-    #[arg(long = "topic-filter", value_name = "URI", env = "TOPIC_FILTER", default_value = "up://*/D100/1/D100", value_parser = up_rust::UUri::from_str )]
+    #[arg(long = "status-topic-filter", value_name = "URI", env = "STATUS_TOPIC_FILTER", default_value = "up://*/D100/1/D100", value_parser = up_rust::UUri::from_str )]
     vehicle_status_topic_filter: UUri,
+
+    /// The topic URI pattern to use for consuming vehicle metadata events.
+    #[arg(long = "metadata-topic-filter", value_name = "URI", env = "METADATA_TOPIC_FILTER", default_value = "up://*/D100/1/D101", value_parser = up_rust::UUri::from_str )]
+    vehicle_metadata_topic_filter: UUri,
 
     /// The local uService address.
     #[arg(long = "uservice-uri", value_name = "URI", env = "USERVICE_URI", default_value = "up://fms-consumer/D101/1/0", value_parser = up_rust::UUri::from_str )]
@@ -107,19 +127,33 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let influx_writer = InfluxWriter::new(&command.influxdb_connection)?;
-    let listener = Arc::new(VehicleStatusListener { influx_writer });
+    let influx_writer = InfluxWriter::new(&command.influxdb_connection).map(Arc::new)?;
+    let status_listener = Arc::new(VehicleStatusListener {
+        influx_writer: influx_writer.clone(),
+    });
     info!(
         "Registering listener for vehicle status events [source filter: {}]",
         command.vehicle_status_topic_filter.to_uri(false)
     );
     transport
-        .register_listener(&command.vehicle_status_topic_filter, None, listener)
+        .register_listener(&command.vehicle_status_topic_filter, None, status_listener)
         .await
         .map_err(Box::new)?;
-    // do not let the Notifier that we use to receive and process
-    // Vehicle status notifications go out of scope
-    thread::park();
 
-    Ok(())
+    let metadata_listener = Arc::new(VehicleMetadataListener { influx_writer });
+    info!(
+        "Registering listener for vehicle metadata events [source filter: {}]",
+        command.vehicle_metadata_topic_filter.to_uri(false)
+    );
+    transport
+        .register_listener(
+            &command.vehicle_metadata_topic_filter,
+            None,
+            metadata_listener,
+        )
+        .await
+        .map_err(Box::new)?;
+    // do not let the transport that we use to receive and process
+    // Vehicle events go out of scope
+    Ok(tokio::signal::ctrl_c().await?)
 }

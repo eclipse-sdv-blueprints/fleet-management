@@ -19,18 +19,66 @@
 
 //! Provides means to write a Vehicle's current status properties
 //! to an InfluxDB as Influx *measurements*.
-use fms_proto::fms::VehicleStatus;
+use fms_proto::fms::{Trigger, VehicleMetadata, VehicleStatus};
 use influxrs::Measurement;
 use log::{debug, warn};
 use protobuf::well_known_types::timestamp::Timestamp;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::connection::{InfluxConnection, InfluxConnectionConfig};
+
+fn trigger_from_message(trigger: Option<&Trigger>) -> Option<String> {
+    trigger.and_then(|t| match t.context.as_str() {
+        "RFMS" => Some(t.type_.clone()),
+        _ => {
+            debug!(
+                "ignoring vehicle event with unsupported trigger context [{}]",
+                t.context
+            );
+            None
+        }
+    })
+}
+
+fn build_metadata_measurement(
+    vin: &str,
+    trigger: &str,
+    created_date_time: i64,
+    vehicle_metadata: &VehicleMetadata,
+) -> Option<Measurement> {
+    let mut builder = Measurement::builder(crate::MEASUREMENT_METADATA)
+        .tag(crate::TAG_TRIGGER, trigger)
+        .tag(crate::TAG_VIN, vin)
+        .field(crate::FIELD_CREATED_DATE_TIME, created_date_time);
+
+    if let Some(value) = vehicle_metadata.brand.as_ref() {
+        builder = builder.field(crate::FIELD_METADATA_BRAND, value.to_owned());
+    }
+
+    if let Some(value) = vehicle_metadata.model.as_ref() {
+        builder = builder.field(crate::FIELD_METADATA_MODEL, value.to_owned());
+    }
+
+    if let Some(value) = vehicle_metadata
+        .production_date
+        .as_ref()
+        .and_then(convert_timestamp_to_milliseconds)
+    {
+        builder = builder.field(crate::FIELD_METADATA_PRODUCTION_DATE, value);
+    }
+
+    if let Some(value) = vehicle_metadata.vehicle_type.as_ref() {
+        builder = builder.field(crate::FIELD_METADATA_VEHICLE_TYPE, value.to_owned());
+    }
+    builder
+        .build()
+        .inspect_err(|e| debug!("failed to create metadata Measurement: {e}"))
+        .ok()
+}
 
 fn build_header_measurement(
     vin: &str,
     trigger: &str,
-    created_date_time: u128,
+    created_date_time: i64,
     vehicle_status: &VehicleStatus,
 ) -> Option<Measurement> {
     let mut builder = Measurement::builder(crate::MEASUREMENT_HEADER)
@@ -70,19 +118,16 @@ fn build_header_measurement(
         );
     }
 
-    match builder.build() {
-        Ok(measurement) => Some(measurement),
-        Err(e) => {
-            debug!("failed to create header Measurement: {e}");
-            None
-        }
-    }
+    builder
+        .build()
+        .inspect_err(|e| debug!("failed to create header Measurement: {e}"))
+        .ok()
 }
 
 fn build_snapshot_measurement(
     vin: &str,
     trigger: &str,
-    created_date_time: u128,
+    created_date_time: i64,
     vehicle_status: &VehicleStatus,
 ) -> Option<Measurement> {
     let mut builder = Measurement::builder(crate::MEASUREMENT_SNAPSHOT)
@@ -151,12 +196,12 @@ fn build_snapshot_measurement(
                 builder = builder.field(crate::FIELD_SPEED, value);
             }
 
-            if let Some(instant) = current_location.instant.clone().into_option() {
-                let position_timestamp: Option<i64> = convert_timestamp_to_milliseconds(instant);
-                if let Some(valid_position_timestamp) = position_timestamp {
-                    builder =
-                        builder.field(crate::FIELD_POSITION_DATE_TIME, valid_position_timestamp);
-                }
+            if let Some(position_timestamp) = current_location
+                .instant
+                .as_ref()
+                .and_then(convert_timestamp_to_milliseconds)
+            {
+                builder = builder.field(crate::FIELD_POSITION_DATE_TIME, position_timestamp);
             }
         }
 
@@ -198,7 +243,7 @@ fn build_snapshot_measurement(
 
 /// Convert a Protobuf Timestamp to milliseconds since the UNIX epoch.
 ///
-/// The Protobuf specification limits a valid `Timestamp`:
+/// We only accept timestamps within the following range:
 ///
 ///   - if `nanos` is between 0 and 999,999,999, and
 ///   - if `seconds` is between 0001-01-01 (-62_135_596_800) and 9999-12-31 (253_402_300_799).
@@ -207,7 +252,7 @@ fn build_snapshot_measurement(
 /// This prevent an invalid Protobuf Timestamp and keeps the return value inside an `i64`.
 ///
 /// Returns `None` if the input is not within the allowed range.
-fn convert_timestamp_to_milliseconds(timestamp: Timestamp) -> Option<i64> {
+fn convert_timestamp_to_milliseconds(timestamp: &Timestamp) -> Option<i64> {
     if timestamp.seconds >= -62_135_596_800
         && timestamp.seconds <= 253_402_300_799
         && timestamp.nanos >= 0
@@ -288,64 +333,84 @@ impl InfluxWriter {
             debug!("ignoring vehicle status without VIN ...");
             return;
         }
-        let created_timestamp: u128 = match vehicle_status.created.clone().into_option() {
-            Some(ts) => <Timestamp as Into<SystemTime>>::into(ts)
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis(),
-            None => {
-                debug!("ignoring vehicle status without created timestamp");
-                return;
-            }
+        let Some(created_timestamp) = vehicle_status
+            .created
+            .as_ref()
+            .and_then(convert_timestamp_to_milliseconds)
+        else {
+            debug!("ignoring vehicle status without created timestamp ...");
+            return;
         };
-        let trigger = match vehicle_status.trigger.clone().into_option() {
-            Some(t) => match t.context.as_str() {
-                "RFMS" => t.type_.clone(),
-                _ => {
-                    debug!(
-                        "ignoring vehicle status with unsupported trigger context [{}]",
-                        t.context
-                    );
-                    return;
-                }
-            },
-            None => {
-                debug!("ignoring vehicle status without trigger");
-                return;
-            }
+        let Some(trigger) = trigger_from_message(vehicle_status.trigger.as_ref()) else {
+            debug!("ignoring vehicle status without trigger ...");
+            return;
         };
 
-        let mut measurements: Vec<Measurement> = Vec::new();
-        if let Some(measurement) = build_header_measurement(
+        let Some(header_measurement) = build_header_measurement(
             vehicle_status.vin.as_str(),
             &trigger,
             created_timestamp,
             vehicle_status,
-        ) {
-            debug!("writing header measurement to influxdb");
-            measurements.push(measurement);
-        }
-        if let Some(measurement) = build_snapshot_measurement(
+        ) else {
+            return;
+        };
+        let Some(snapshot_measurement) = build_snapshot_measurement(
             vehicle_status.vin.as_str(),
             &trigger,
             created_timestamp,
             vehicle_status,
-        ) {
-            debug!("writing snapshot measurement to influxdb");
-            measurements.push(measurement);
-        }
+        ) else {
+            return;
+        };
 
-        if !measurements.is_empty() {
+        if let Err(e) = self
+            .influx_con
+            .client
+            .write(
+                self.influx_con.bucket.as_str(),
+                &[header_measurement, snapshot_measurement],
+            )
+            .await
+        {
+            warn!("failed to write data to influx: {e}");
+        } else {
+            debug!("successfully wrote header and snapshot measurements to influxdb");
+        }
+    }
+
+    pub async fn write_vehicle_metadata(&self, vehicle_metadata: &VehicleMetadata) {
+        if vehicle_metadata.vin.is_empty() {
+            debug!("ignoring vehicle metadata without VIN ...");
+            return;
+        }
+        let Some(created_timestamp) = vehicle_metadata
+            .created
+            .as_ref()
+            .and_then(convert_timestamp_to_milliseconds)
+        else {
+            debug!("ignoring vehicle metadata without created timestamp ...");
+            return;
+        };
+        let Some(trigger) = trigger_from_message(vehicle_metadata.trigger.as_ref()) else {
+            debug!("ignoring vehicle metadata without trigger ...");
+            return;
+        };
+
+        if let Some(measurement) = build_metadata_measurement(
+            vehicle_metadata.vin.as_str(),
+            &trigger,
+            created_timestamp,
+            vehicle_metadata,
+        ) {
             if let Err(e) = self
                 .influx_con
                 .client
-                .write(
-                    self.influx_con.bucket.as_str(),
-                    measurements[..].try_into().unwrap(),
-                )
+                .write(self.influx_con.bucket.as_str(), &[measurement])
                 .await
             {
                 warn!("failed to write data to influx: {e}");
+            } else {
+                debug!("successfully wrote metadata measurement to influxdb");
             }
         }
     }
@@ -354,7 +419,6 @@ impl InfluxWriter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use protobuf::SpecialFields;
     use test_case::test_case;
 
     #[test_case(0, 0 => Some(0) ; "epoch")]
@@ -378,14 +442,12 @@ mod tests {
     #[test_case(-9_223_372_036_854_776, 0 => None)]
     #[test_case(i64::MAX, 0 => None)]
     #[test_case(i64::MIN, 0=> None)]
-    fn convert_seconds_to_milliseconds_test(
-        seconds_to_convert: i64,
-        nanos_to_convert: i32,
-    ) -> Option<i64> {
-        convert_timestamp_to_milliseconds(Timestamp {
-            seconds: seconds_to_convert,
-            nanos: nanos_to_convert,
-            special_fields: SpecialFields::new(),
-        })
+    fn convert_seconds_to_milliseconds_test(seconds: i64, nanos: i32) -> Option<i64> {
+        let ts = Timestamp {
+            seconds,
+            nanos,
+            ..Default::default()
+        };
+        convert_timestamp_to_milliseconds(&ts)
     }
 }

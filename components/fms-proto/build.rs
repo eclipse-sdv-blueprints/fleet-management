@@ -18,6 +18,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // re-run this build script if any proto file changes
+    println!("cargo::rerun-if-changed=proto/");
     protobuf_codegen::Codegen::new()
         .protoc()
         // use vendored protoc instead of relying on user provided protobuf installation
