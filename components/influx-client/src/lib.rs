@@ -55,7 +55,13 @@ pub const FIELD_TOTAL_ELECTRIC_MOTOR_HOURS: &str = "totalElectricMotorHours";
 pub const FIELD_TOTAL_ENGINE_HOURS: &str = "totalEngineHours";
 pub const FIELD_WHEEL_BASED_SPEED: &str = "wheelBasedSpeed";
 
+pub const FIELD_METADATA_BRAND: &str = "brand";
+pub const FIELD_METADATA_MODEL: &str = "model";
+pub const FIELD_METADATA_PRODUCTION_DATE: &str = "productionDate";
+pub const FIELD_METADATA_VEHICLE_TYPE: &str = "vehicleType";
+
 pub const MEASUREMENT_HEADER: &str = "header";
+pub const MEASUREMENT_METADATA: &str = "metadata";
 pub const MEASUREMENT_SNAPSHOT: &str = "snapshot";
 
 pub const TAG_TRIGGER: &str = "trigger";

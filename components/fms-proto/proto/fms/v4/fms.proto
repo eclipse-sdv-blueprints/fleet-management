@@ -329,3 +329,37 @@ message VehicleStatus {
   SnapshotData snapshot_data = 15;
   UptimeData uptime_data = 16;
 }
+
+message PossibleFuelTypes {
+    repeated uint32 fuel_type = 1;
+}
+
+message DoorConfiguration {
+    repeated uint32 door_configuration = 1;
+}
+
+message VehicleMetadata {
+    // The vehicle identification number.
+    string vin = 1;
+    // The trigger event for the metadata.
+    Trigger trigger = 2;
+    // The creation timestamp of the metadata.
+    google.protobuf.Timestamp created = 3;
+    optional string brand = 4;
+    optional google.protobuf.Timestamp production_date = 5;
+    optional string vehicle_type = 6;
+    optional string model = 7;
+    optional PossibleFuelTypes possible_fuel_types = 8;
+    optional string emission_level = 9;
+    optional string tell_tale_code = 10;
+    optional string chassis_type = 11;
+    optional uint32 number_of_axles = 12;
+    optional uint32 total_fuel_tank_volume = 13;
+    optional uint32 total_fuel_tank_capacity_gaseous = 14;
+    optional uint32 total_battery_pack_capacity = 15;
+    optional string tachograph_type = 16;
+    optional string gearbox_type = 17;
+    optional string body_type = 18;
+    optional DoorConfiguration door_configuration = 19;
+    optional bool has_ramp_or_lift = 20;
+}

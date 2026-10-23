@@ -24,9 +24,11 @@ use protobuf::{well_known_types::timestamp::Timestamp, MessageField};
 use std::collections::HashMap;
 
 use crate::vehicle_abstraction::vss;
-use fms_proto::fms::VehicleStatus;
+use fms_proto::fms::{VehicleMetadata, VehicleStatus};
 
 use super::DatabrokerError;
+
+pub type VssData = HashMap<String, TypedValue>;
 
 fn rounded_f64_to_i32(value: f64) -> Option<i32> {
     let rounded = value.round();
@@ -48,9 +50,55 @@ fn rounded_f64_to_u32(value: f64) -> Option<u32> {
     }
 }
 
-pub fn new_vehicle_status(
-    data: HashMap<String, TypedValue>,
-) -> Result<VehicleStatus, DatabrokerError> {
+fn timestamp_from_iso8601_date(iso_date: &str) -> Option<Timestamp> {
+    match chrono::NaiveDate::parse_from_str(iso_date, "%Y-%m-%d") {
+        Ok(date) => {
+            let mut timestamp = Timestamp::new();
+            timestamp.seconds = date.and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp();
+            timestamp.nanos = 0;
+            Some(timestamp)
+        }
+        Err(e) => {
+            debug!("failed to parse value as ISO8601 date string: {e}");
+            None
+        }
+    }
+}
+
+pub fn new_vehicle_metadata(data: VssData) -> Result<VehicleMetadata, DatabrokerError> {
+    let Some(vin) = data
+        .get(vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_VIN)
+        .and_then(|v| String::try_from(v).ok())
+    else {
+        return Err(DatabrokerError {
+            description: "Databroker does not contain VIN (yet)".to_string(),
+        });
+    };
+    let mut vehicle_metadata = VehicleMetadata::new();
+    vehicle_metadata.created = MessageField::some(Timestamp::now());
+    vehicle_metadata.vin = vin;
+
+    if let Some(value) = data.get(vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_BRAND) {
+        vehicle_metadata.brand = String::try_from(value).ok();
+    }
+    if let Some(value) = data.get(vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_MODEL) {
+        vehicle_metadata.model = String::try_from(value).ok();
+    }
+    if let Some(value) = data.get(vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_PRODUCTIONDATE) {
+        // this will succeed because we know that the Databroker will only accept a String as
+        // this VSS Data Entry's value
+        vehicle_metadata.production_date = String::try_from(value)
+            .ok()
+            .and_then(|v| timestamp_from_iso8601_date(&v))
+            .into();
+    }
+    if let Some(value) = data.get(vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_TYPE) {
+        vehicle_metadata.vehicle_type = String::try_from(value).ok();
+    }
+    Ok(vehicle_metadata)
+}
+
+pub fn new_vehicle_status(data: VssData) -> Result<VehicleStatus, DatabrokerError> {
     let Some(vin) = data
         .get(vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_VIN)
         .and_then(|v| String::try_from(v).ok())
@@ -304,5 +352,28 @@ mod tests {
     #[test_case(f64::MIN  => None)]
     fn rounded_f64_to_u32_test(float_to_be_converted: f64) -> Option<u32> {
         rounded_f64_to_u32(float_to_be_converted)
+    }
+
+    #[test]
+    fn new_vehicle_metadata_accepts_iso8601_production_date() {
+        let mut data = VssData::new();
+        data.insert(
+            vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_VIN.to_string(),
+            TypedValue::String("YV2E4C3A5VB180691".to_string()),
+        );
+        // same value as in databroker/truck1_attributes.json
+        data.insert(
+            vss::VSS_VEHICLE_VEHICLEIDENTIFICATION_PRODUCTIONDATE.to_string(),
+            TypedValue::String("2024-01-15".to_string()),
+        );
+
+        let metadata = new_vehicle_metadata(data).expect("failed to create vehicle metadata");
+
+        let production_date = metadata
+            .production_date
+            .into_option()
+            .expect("production date must be set");
+        // 2024-01-15T00:00:00Z
+        assert_eq!(production_date.seconds, 1_705_276_800);
     }
 }

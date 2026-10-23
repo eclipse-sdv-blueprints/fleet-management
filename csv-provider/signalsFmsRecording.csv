@@ -1,4 +1,5 @@
 field,signal,value,delay
+current,Vehicle.Powertrain.CombustionEngine.IsRunning,False,0.1
 current,Vehicle.Tachograph.Driver.Driver1.WorkingState,REST,0.002
 current,Vehicle.Tachograph.Driver.Driver2.WorkingState,REST,0.000465631484985
 current,Vehicle.Tachograph.VehicleSpeed,0,0.002374410629272
@@ -33,6 +34,7 @@ current,Vehicle.Powertrain.FuelSystem.Tank.First.RelativeLevel,96.8000030517578,
 current,Vehicle.Exterior.AirTemperature,10.8125,0.681430578231812
 current,Vehicle.Exterior.AirTemperature,10.84375,6.00075769424439
 current,Vehicle.Powertrain.FuelSystem.Tank.First.RelativeLevel,96.4000015258789,8.31914854049683
+current,Vehicle.Powertrain.CombustionEngine.IsRunning,True,0.5
 current,Vehicle.Powertrain.CombustionEngine.Speed,621,0.808561563491821
 current,Vehicle.Powertrain.CombustionEngine.Speed,742,1.00947690010071
 current,Vehicle.Powertrain.CombustionEngine.Speed,708,1.00007271766663

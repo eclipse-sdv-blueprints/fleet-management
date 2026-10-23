@@ -20,7 +20,6 @@
 use std::{str::FromStr, sync::Arc};
 
 use clap::{Parser, Subcommand};
-use fms_proto::fms::VehicleStatus;
 use fms_zenoh::ZenohTransportConfig;
 use log::{info, warn};
 use tokio::sync::mpsc;
@@ -31,6 +30,8 @@ use up_rust::{
 use up_transport_hono_mqtt::{HonoMqttTransport, HonoMqttTransportConfig};
 use up_transport_zenoh::{zenoh_config::Config, UPTransportZenoh};
 
+use crate::vehicle_abstraction::FmsMessage;
+
 mod vehicle_abstraction;
 
 /// Forwards FMS related VSS data points to a back end system using uProtocol.
@@ -38,8 +39,12 @@ mod vehicle_abstraction;
 #[command(version, about, long_about = None, arg_required_else_help = true)]
 struct FmsForwarderCommand {
     /// The topic to publish vehicle status events to.
-    #[arg(long = "topic", value_name = "URI", env = "TOPIC", default_value = "up://fms-forwarder/D100/1/D100", value_parser = up_rust::UUri::from_str )]
+    #[arg(long = "topic", value_name = "URI", env = "STATUS_TOPIC", default_value = "up://fms-forwarder/D100/1/D100", value_parser = up_rust::UUri::from_str )]
     vehicle_status_topic: UUri,
+
+    /// The topic to publish vehicle metadata events to.
+    #[arg(long = "metadata-topic", value_name = "URI", env = "METADATA_TOPIC", default_value = "up://fms-forwarder/D100/1/D101", value_parser = up_rust::UUri::from_str )]
+    vehicle_metadata_topic: UUri,
 
     #[command(flatten)]
     databroker_connection: vehicle_abstraction::KuksaDatabrokerClientConfig,
@@ -86,15 +91,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let origin_resource_id = command.vehicle_status_topic.resource_id();
     let publisher = Arc::new(SimplePublisher::new(transport, uri_provider));
     info!("starting FMS forwarder");
 
-    let (tx, mut rx) = mpsc::channel::<VehicleStatus>(30);
+    let (tx, mut rx) = mpsc::channel::<FmsMessage>(30);
     vehicle_abstraction::init(&command.databroker_connection, tx).await?;
 
-    while let Some(vehicle_status) = rx.recv().await {
-        match UPayload::try_from_protobuf(vehicle_status) {
+    while let Some(message) = rx.recv().await {
+        let origin_resource_id = match message {
+            FmsMessage::Status(_) => command.vehicle_status_topic.resource_id(),
+            FmsMessage::Metadata(_) => command.vehicle_metadata_topic.resource_id(),
+        };
+        match UPayload::try_from(message) {
             Ok(payload) => {
                 if let Err(e) = publisher
                     .publish(
@@ -104,11 +112,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     )
                     .await
                 {
-                    warn!("failed to publish vehicle status event: {}", e);
+                    warn!("failed to publish vehicle event: {e}");
                 }
             }
             Err(e) => {
-                warn!("failed to serialize vehicle status: {}", e);
+                warn!("failed to serialize vehicle status: {e}");
             }
         }
     }
