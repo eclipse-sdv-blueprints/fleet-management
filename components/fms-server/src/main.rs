@@ -29,17 +29,13 @@ struct FmsServerArgs {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
-    // let mut parser = Command::new("rFMS server")
-    //     .about("Exposes data from an InfluxDB via an rFMS API endpoint.");
-    // parser = fms_server::add_command_line_args(parser);
-    // let args = parser.get_matches();
     let args = FmsServerArgs::parse();
-    let router = fms_server::app(&args.influx_connection);
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8081").await.unwrap();
+    let router = fms_server::app(&args.influx_connection)?;
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8081").await?;
     axum::serve::serve(listener, router.into_make_service())
         .await
-        .unwrap();
+        .map_err(Box::from)
 }

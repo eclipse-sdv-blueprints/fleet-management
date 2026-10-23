@@ -159,14 +159,18 @@ pub struct VehicleObjectProductionDate {
 }
 
 impl VehicleObject {
-    pub fn new(vin: String) -> VehicleObject {
+    pub fn for_metadata(
+        vin: String,
+        model: Option<String>,
+        brand: Option<String>,
+    ) -> VehicleObject {
         VehicleObject {
             vin,
             customer_vehicle_name: None,
-            brand: None,
+            brand,
             production_date: None,
             r#type: None,
-            model: None,
+            model,
             possible_fuel_type: None,
             emission_level: None,
             tell_tale_code: None,
