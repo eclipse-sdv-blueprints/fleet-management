@@ -141,10 +141,13 @@ impl GetVehicleStatuses for super::InfluxReader {
         // if the client has specified the lastOnly parameter, we return the latest entry for
         // each vehicle only, sorted by VIN in ascending order
         if parameters.is_latest_only() {
-            read_query = read_query.then("last()").then(format!(
-                r#"sort(columns: ["{}"], desc: false)"#,
-                influx_client::TAG_VIN
-            ));
+            read_query = read_query
+                .then(r#"sort(columns: ["_time"])"#)
+                .then("last()")
+                .then(format!(
+                    r#"sort(columns: ["{}"], desc: false)"#,
+                    influx_client::TAG_VIN
+                ));
         } else {
             // if the client has not specified the latestOnly parameter, we return all snapshot data
             // for all vehicles, sorted by time and trigger in ascending order (least recent values first)
@@ -154,7 +157,7 @@ impl GetVehicleStatuses for super::InfluxReader {
             ));
         }
         read_query = read_query
-            .then(super::PIVOT_ROW_KEY_TIME_TRIGGER)
+            .then(super::PIVOT_ROW_KEY_TIME_VIN_TRIGGER)
             // apply the page size limit
             // we use page_size + 1 to allow the client to determine if
             // there are more results available

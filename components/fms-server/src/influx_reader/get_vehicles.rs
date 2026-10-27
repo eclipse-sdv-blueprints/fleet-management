@@ -30,6 +30,11 @@ const FILTER_MEASUREMENT_METADATA: &str = formatcp!(
     influx_client::MEASUREMENT_METADATA,
 );
 
+const PIVOT_ROW_KEY_VIN: &str = const_format::formatcp!(
+    r#"pivot(rowKey: ["{}"], columnKey: ["_field"], valueColumn: "_value")"#,
+    influx_client::TAG_VIN
+);
+
 impl VehiclesQueryParameters {
     pub fn vin_filter(&self) -> Option<String> {
         self.last_vin.as_ref().map(|vin| {
@@ -60,7 +65,8 @@ impl GetVehicles for super::InfluxReader {
 
         read_query = read_query
             .then(format!(
-                r#"filter(fn: (r) => contains(value: r._field, set: ["{}", "{}"]))"#,
+                r#"filter(fn: (r) => r._field == "{}" or r._field == "{}" or r._field == "{}")"#,
+                influx_client::FIELD_CREATED_DATE_TIME,
                 influx_client::FIELD_METADATA_BRAND,
                 influx_client::FIELD_METADATA_MODEL
             ))
@@ -68,9 +74,10 @@ impl GetVehicles for super::InfluxReader {
                 r#"group(columns: ["_field", "{}"])"#,
                 influx_client::TAG_VIN
             ))
+            .then(r#"sort(columns: ["_time"])"#)
             .then(r#"last()"#)
             .then(format!(r#"sort(columns: ["{}"])"#, influx_client::TAG_VIN))
-            .then(super::PIVOT_ROW_KEY_TIME_TRIGGER)
+            .then(PIVOT_ROW_KEY_VIN)
             // apply the page size limit
             // we use page_size + 1 to allow the client to determine if
             // there are more results available

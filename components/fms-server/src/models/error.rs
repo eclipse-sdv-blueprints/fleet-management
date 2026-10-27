@@ -21,7 +21,7 @@ use axum::response::IntoResponse;
 use axum_extra::extract::QueryRejection;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq)]
 pub enum FmsError {
     #[error("{0}")]
     ParameterValidationError(String),

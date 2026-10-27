@@ -26,8 +26,9 @@ mod get_vehicle_positions;
 mod get_vehicle_statuses;
 mod get_vehicles;
 
-const PIVOT_ROW_KEY_TIME_TRIGGER: &str = const_format::formatcp!(
-    r#"pivot(rowKey: ["_time", "{}"], columnKey: ["_field"], valueColumn: "_value")"#,
+const PIVOT_ROW_KEY_TIME_VIN_TRIGGER: &str = const_format::formatcp!(
+    r#"pivot(rowKey: ["_time", "{}", "{}"], columnKey: ["_field"], valueColumn: "_value")"#,
+    influx_client::TAG_VIN,
     influx_client::TAG_TRIGGER
 );
 

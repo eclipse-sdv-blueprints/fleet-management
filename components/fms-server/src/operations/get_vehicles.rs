@@ -38,11 +38,18 @@ use crate::{
 const CONTENT_TYPE_VEHICLES: HeaderValue =
     HeaderValue::from_static("application/json; rfms=vehicles.v4.0");
 
+impl VehiclesQueryParameters {
+    pub fn validate(&self) -> Result<(), FmsError> {
+        self.validate_last_vin_param()
+    }
+}
+
 pub(crate) async fn get_vehicles(
     State(data_access): State<Arc<dyn DataAccess>>,
     WithRejection(Query(query_params), _): WithRejection<Query<VehiclesQueryParameters>, FmsError>,
     OriginalUri(uri): OriginalUri,
 ) -> Result<(HeaderMap, Json<VehicleResponseObject>), FmsError> {
+    query_params.validate()?;
     debug!("get_vehicles called with query_params: {:?}", query_params);
 
     data_access

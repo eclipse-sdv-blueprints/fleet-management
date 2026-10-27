@@ -25,7 +25,7 @@ use axum::{
     Json,
 };
 use axum_extra::extract::{Query, WithRejection};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeDelta, Utc};
 use log::debug;
 use serde_qs::Config;
 
@@ -44,6 +44,12 @@ const CONTENT_TYPE_VEHICLEPOSITIONS: HeaderValue =
 
 impl PositionsQueryParameters {
     pub fn validate(&self) -> Result<(), FmsError> {
+        self.common.validate_vin_param()?;
+        self.common.basic.validate_last_vin_param()?;
+        if let Some(trigger) = &self.trigger_filter {
+            crate::data_access::validate_trigger(trigger)?;
+        }
+
         if self.common.date_type == DateType::Created {
             return Err(FmsError::ParameterValidationError(
                 "server does not support 'created' datetype (yet)".to_string(),
@@ -89,17 +95,26 @@ impl PositionsQueryParameters {
 
 fn next_positions_page_query_params(
     request_params: &PositionsQueryParameters,
-    most_recent_received_date_time: &DateTime<Utc>,
+    last_received_date_time_from_result_set: &DateTime<Utc>,
     last_vin_from_result_set: &str,
 ) -> Result<String, FmsError> {
     let mut new_params = request_params.clone();
 
-    if request_params.common.latest_only.is_some() {
+    if request_params.common.latest_only.is_some_and(|v| v) {
         // use last VIN to mark next page start
         new_params.common.basic.last_vin = Some(last_vin_from_result_set.to_string());
     } else {
         // client wants to scroll through historical data
-        new_params.common.start_time = Some(*most_recent_received_date_time);
+        // new starttime according to OpenAPI specification for pagination is
+        // last received data + 1 second
+        let new_start_time = last_received_date_time_from_result_set
+            .checked_add_signed(TimeDelta::seconds(1))
+            .ok_or_else(|| {
+                FmsError::ParameterValidationError(
+                    "Failed to create new startime for pagination".to_string(),
+                )
+            })?;
+        new_params.common.start_time = Some(new_start_time);
     }
     Config::new()
         .array_format(serde_qs::ArrayFormat::Unindexed)
@@ -158,4 +173,32 @@ pub(crate) async fn get_vehicle_positions(
             );
             Ok((headers, Json(result)))
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+
+    #[tokio::test]
+    async fn test_next_positions_page_query_params_creates_new_starttime() {
+        let last_received_date_time_from_result_set =
+            DateTime::<Utc>::from(DateTime::parse_from_rfc3339("2024-06-05T12:34:56Z").unwrap());
+        let last_vin_from_result_set = "VIN123";
+
+        let request_params = PositionsQueryParameters {
+            common: Default::default(),
+            trigger_filter: Some("ENGINE_ON".to_string()),
+        };
+
+        let result = next_positions_page_query_params(
+            &request_params,
+            &last_received_date_time_from_result_set,
+            last_vin_from_result_set,
+        );
+        assert!(result.is_ok_and(|query| {
+            query.contains("starttime=2024-06-05T12:34:57Z")
+                && query.contains("triggerFilter=ENGINE_ON")
+        }));
+    }
 }
