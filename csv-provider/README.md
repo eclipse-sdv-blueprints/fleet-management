@@ -20,12 +20,22 @@ SPDX-License-Identifier: Apache-2.0
 -->
 # Using the CSV-Provider
 
-With the CSV-provider one can replay signals from a CSV-file to an instance of the Kuksa.val data broker. More details are
-available in the [upstream repository](https://github.com/eclipse/kuksa.val.feeders/tree/main/csv_provider).
-The CSV-provider is started by default when using the Docker Compose setup.
+With the CSV-Provider one can replay signals from a CSV-file to an instance of the Eclipse Kuksa Databroker. More details are
+available in the [CSV-Provider repository](https://github.com/eclipse-kuksa/kuksa-csv-provider).
+The CSV-Provider is started by default when using the Docker Compose setup.
+
+## Generating a CSV File
+
+The [generate_csv.py](./generate_csv.py) Python script can be used to generate a CSV file that will contain random (but mostly consistent) VSS data points:
+
+```bash
+python3 generate_csv.py -o truck1_signals.csv
+```
+
+The generated file can then be used with the CSV-Provider to apply the signal updates to the Kuksa Databroker.
 
 ## Recording
 
-You can perform your own recording for other traces by using the
-[CSV recorder from the Kuksa.val.feeders repository](https://github.com/eclipse/kuksa.val.feeders/tree/main/csv_provider).
+Alternatively, a CSV file can be recorded from a running Kuksa Databroker using Kuksa's
+[CSV-Recorder](https://github.com/eclipse-kuksa/kuksa-csv-provider/blob/main/README.md#recorder).
 The script in [run_recorderFMS.sh](run_recorderFMS.sh) contains the signals to record for this use case.

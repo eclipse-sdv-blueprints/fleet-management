@@ -34,8 +34,6 @@ configs:
     file: "./grafana/dashboards/FMS-Fleet.json"
   vss_overlay.json:
     file: "./databroker/vss.json"
-  truck1_attributes.json:
-    file: "./databroker/truck1_attributes.json"
 
 volumes:
   influxdb-data:
@@ -56,7 +54,6 @@ services:
 
   influxdb:
     image: "docker.io/library/influxdb:2.7"
-    container_name: "influxDB"
     healthcheck:
       test: ["CMD-SHELL", "influx ping"]
       interval: 5s
@@ -97,7 +94,6 @@ services:
 
   grafana:
     image: "docker.io/grafana/grafana:9.5.14"
-    container_name: "grafana"
     cap_drop: *default-drops
     ports:
       - "${FMS_GRAFANA_BIND_HOST:-127.0.0.1}:3000:3000"
@@ -127,7 +123,6 @@ services:
     build:
       context: "./components"
       dockerfile: "./fms-server/Dockerfile"
-    container_name: "fms-server"
     cap_drop: *default-drops
     networks:
       - "fms-backend"
@@ -151,7 +146,6 @@ services:
     build:
       context: "./components"
       dockerfile: "./fms-consumer/Dockerfile"
-    container_name: "fms-consumer"
     cap_drop: *default-drops
     networks:
       - "fms-backend"
@@ -171,7 +165,6 @@ services:
 
   databroker:
     image: "ghcr.io/eclipse-kuksa/kuksa-databroker:0.7.1"
-    container_name: "databroker"
     cap_drop: *default-drops
     networks:
       - "fms-vehicle"
@@ -179,26 +172,36 @@ services:
       - "${FMS_DATABROKER_BIND_HOST:-127.0.0.1}:55555:55556"
     configs:
       - "vss_overlay.json"
-      - "truck1_attributes.json"
     environment:
       KUKSA_DATABROKER_ADDR: "0.0.0.0"
       KUKSA_DATABROKER_PORT: "55556"
-      KUKSA_DATABROKER_METADATA_FILE: "/vss_overlay.json,/truck1_attributes.json"
+      KUKSA_DATABROKER_METADATA_FILE: "/vss_overlay.json"
       RUST_LOG: "info"
     # for the time being, we do not use TLS secured connections to Databroker
     command: "--insecure"
 
+  wait-for-databroker:
+    image: drevops/docker-wait-for-dependencies:26.10.0
+    networks:
+      - "fms-vehicle"
+    depends_on:
+      - databroker
+    environment:
+      SLEEP_LENGTH: "1"
+      TIMEOUT_LENGTH: "60"
+    command: "databroker:55556"
+    restart: "no"
+
   csv-provider:
-    image: "quay.io/eclipse-kuksa/csv-provider:0.4.5"
-    container_name: "csv-provider"
+    image: "ghcr.io/eclipse-kuksa/kuksa-csv-provider/csv-provider:0.4.6"
     cap_drop: *default-drops
     networks:
       - "fms-vehicle"
     depends_on:
-      databroker:
-        condition: service_started
+      wait-for-databroker:
+        condition: service_completed_successfully
     volumes:
-      - "./csv-provider/signalsFmsRecording.csv:/dist/signals.csv"
+      - "./csv-provider/truck1_signals.csv:/dist/signals.csv"
     environment:
       PROVIDER_INFINITE: 1
       PROVIDER_LOG_LEVEL: "INFO"
@@ -210,7 +213,6 @@ services:
     build:
       context: "./components"
       dockerfile: "./fms-forwarder/Dockerfile"
-    container_name: "fms-forwarder"
     cap_drop: *default-drops
     networks:
       - "fms-backend"
@@ -229,7 +231,6 @@ services:
     build:
       context: "./components/backend-fleet-analysis-java"
       dockerfile: "Dockerfile"
-    container_name: "fleet-analysis-backend"
     cap_drop: *default-drops
     networks:
       - "fms-backend"

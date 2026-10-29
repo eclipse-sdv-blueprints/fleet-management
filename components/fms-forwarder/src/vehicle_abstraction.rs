@@ -20,6 +20,7 @@
 //! An abstraction of a vehicle's (current) status based on
 //! [Eclipse kuksa.val Databroker](https://github.com/eclipse/kuksa.val).
 //!
+use std::sync::atomic::{AtomicU8, Ordering};
 use std::{error::Error, fmt::Display, time::Duration};
 
 use clap::Args;
@@ -458,6 +459,7 @@ pub async fn init(
 
     tokio::task::spawn(async move {
         let mut current_status = VehicleStatus::new();
+        let timer_trigger_count = AtomicU8::new(0);
 
         while let Some(fms_trigger) = rx.recv().await {
             match databroker.get_vehicle_status().await {
@@ -515,12 +517,12 @@ pub async fn init(
                                 .clone();
                         }
                         FmsTrigger::EngineOn => {
-                            info!("engine has been started");
+                            info!("engine has been started, sending vehicle metadata");
                             send_metadata(&mut databroker, &status_publisher, trigger.clone())
                                 .await;
                         }
                         FmsTrigger::EngineOff => {
-                            info!("engine has been stopped");
+                            info!("engine has been stopped, sending vehicle metadata");
                             send_metadata(&mut databroker, &status_publisher, trigger.clone())
                                 .await;
                         }
@@ -535,6 +537,12 @@ pub async fn init(
                         }
                         FmsTrigger::Timer => {
                             info!("timer has fired");
+                            if timer_trigger_count.fetch_add(1, Ordering::Acquire) == 4 {
+                                info!("sending vehicle metadata triggered by timer");
+                                send_metadata(&mut databroker, &status_publisher, trigger.clone())
+                                    .await;
+                                timer_trigger_count.store(0, Ordering::Release);
+                            }
                         }
                     }
                     new_vehicle_status.trigger = MessageField::some(trigger);
