@@ -1646,10 +1646,10 @@ dependencies = [
 name = "influx-client"
 version = "0.1.0-SNAPSHOT"
 dependencies = [
+ "chrono",
  "clap",
  "fms-proto",
  "influxrs",
- "isahc",
  "log",
  "protobuf",
  "test-case",
