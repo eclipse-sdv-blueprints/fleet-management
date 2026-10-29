@@ -19,6 +19,7 @@
 
 //! Provides means to write a Vehicle's current status properties
 //! to an InfluxDB as Influx *measurements*.
+use chrono::Utc;
 use fms_proto::fms::{Trigger, VehicleMetadata, VehicleStatus};
 use influxrs::Measurement;
 use log::{debug, warn};
@@ -42,13 +43,15 @@ fn trigger_from_message(trigger: Option<&Trigger>) -> Option<String> {
 fn build_metadata_measurement(
     vin: &str,
     trigger: &str,
-    created_date_time: i64,
+    created_date_time_ms: i64,
+    received_date_time_ms: i64,
     vehicle_metadata: &VehicleMetadata,
 ) -> Option<Measurement> {
     let mut builder = Measurement::builder(crate::MEASUREMENT_METADATA)
+        .timestamp_ms(received_date_time_ms as i128)
         .tag(crate::TAG_TRIGGER, trigger)
         .tag(crate::TAG_VIN, vin)
-        .field(crate::FIELD_CREATED_DATE_TIME, created_date_time);
+        .field(crate::FIELD_CREATED_DATE_TIME, created_date_time_ms);
 
     if let Some(value) = vehicle_metadata.brand.as_ref() {
         builder = builder.field(crate::FIELD_METADATA_BRAND, value.to_owned());
@@ -78,13 +81,15 @@ fn build_metadata_measurement(
 fn build_header_measurement(
     vin: &str,
     trigger: &str,
-    created_date_time: i64,
+    created_date_time_ms: i64,
+    received_date_time_ms: i64,
     vehicle_status: &VehicleStatus,
 ) -> Option<Measurement> {
     let mut builder = Measurement::builder(crate::MEASUREMENT_HEADER)
+        .timestamp_ms(received_date_time_ms as i128)
         .tag(crate::TAG_TRIGGER, trigger)
         .tag(crate::TAG_VIN, vin)
-        .field(crate::FIELD_CREATED_DATE_TIME, created_date_time);
+        .field(crate::FIELD_CREATED_DATE_TIME, created_date_time_ms);
 
     if let Some(value) = vehicle_status.hr_total_vehicle_distance {
         builder = builder.field(crate::FIELD_HR_TOTAL_VEHICLE_DISTANCE, value);
@@ -127,23 +132,25 @@ fn build_header_measurement(
 fn build_snapshot_measurement(
     vin: &str,
     trigger: &str,
-    created_date_time: i64,
+    created_date_time_ms: i64,
+    received_date_time_ms: i64,
     vehicle_status: &VehicleStatus,
 ) -> Option<Measurement> {
     let mut builder = Measurement::builder(crate::MEASUREMENT_SNAPSHOT)
+        .timestamp_ms(received_date_time_ms as i128)
         .tag(crate::TAG_TRIGGER, trigger)
         .tag(crate::TAG_VIN, vin)
-        .field(crate::FIELD_CREATED_DATE_TIME, created_date_time);
+        .field(crate::FIELD_CREATED_DATE_TIME, created_date_time_ms);
 
-    if let Some(snapshot_data) = vehicle_status.snapshot_data.clone().into_option() {
+    if let Some(snapshot_data) = vehicle_status.snapshot_data.as_ref() {
         if let Some(value) = snapshot_data.wheel_based_speed {
             builder = builder.field(crate::FIELD_WHEEL_BASED_SPEED, value);
         }
         if let Some(value) = snapshot_data.tachograph_speed {
             builder = builder.field(crate::FIELD_TACHOGRAPH_SPEED, value);
         }
-        if let Some(value) = snapshot_data.fuel_type {
-            builder = builder.field(crate::FIELD_FUEL_TYPE, value);
+        if let Some(value) = snapshot_data.fuel_type.as_ref() {
+            builder = builder.field(crate::FIELD_FUEL_TYPE, value.to_owned());
         }
         if let Some(value) = snapshot_data.engine_speed {
             builder = builder.field(crate::FIELD_ENGINE_SPEED, value);
@@ -157,11 +164,11 @@ fn build_snapshot_measurement(
         if let Some(value) = snapshot_data.fuel_level2 {
             builder = builder.field(crate::FIELD_FUEL_LEVEL2, value);
         }
-        if let Some(value) = snapshot_data.driver1_working_state {
-            builder = builder.field(crate::FIELD_DRIVER1_WORKING_STATE, value);
+        if let Some(value) = snapshot_data.driver1_working_state.as_ref() {
+            builder = builder.field(crate::FIELD_DRIVER1_WORKING_STATE, value.to_owned());
         }
-        if let Some(value) = snapshot_data.driver2_working_state {
-            builder = builder.field(crate::FIELD_DRIVER2_WORKING_STATE, value);
+        if let Some(value) = snapshot_data.driver2_working_state.as_ref() {
+            builder = builder.field(crate::FIELD_DRIVER2_WORKING_STATE, value.to_owned());
         }
         if let Some(value) = snapshot_data.ambient_air_temperature {
             builder = builder.field(crate::FIELD_AMBIENT_AIR_TEMP, value);
@@ -175,12 +182,19 @@ fn build_snapshot_measurement(
         if let Some(value) = snapshot_data.direction_indicator_right {
             builder = builder.field(crate::FIELD_DIRECTION_INDICATOR_RIGHT, value);
         }
-        if let Some(value) = snapshot_data.brake_light_status {
-            builder = builder.field(crate::FIELD_BRAKE_LIGHT_STATUS, value);
+        if let Some(value) = snapshot_data.brake_light_status.as_ref() {
+            builder = builder.field(crate::FIELD_BRAKE_LIGHT_STATUS, value.to_owned());
         }
 
-        if let Some(current_location) = snapshot_data.gnss_position.into_option() {
+        if let Some(current_location) = snapshot_data.gnss_position.as_ref() {
+            // we fall back to using the created_date_time if the GNSS instant is not available
+            let position_timestamp = current_location
+                .instant
+                .as_ref()
+                .and_then(convert_timestamp_to_milliseconds)
+                .unwrap_or(created_date_time_ms);
             builder = builder
+                .field(crate::FIELD_POSITION_DATE_TIME, position_timestamp)
                 .field(crate::FIELD_LATITUDE, current_location.latitude)
                 .field(crate::FIELD_LONGITUDE, current_location.longitude);
 
@@ -195,17 +209,9 @@ fn build_snapshot_measurement(
             if let Some(value) = current_location.speed {
                 builder = builder.field(crate::FIELD_SPEED, value);
             }
-
-            if let Some(position_timestamp) = current_location
-                .instant
-                .as_ref()
-                .and_then(convert_timestamp_to_milliseconds)
-            {
-                builder = builder.field(crate::FIELD_POSITION_DATE_TIME, position_timestamp);
-            }
         }
 
-        if let Some(distance_to_empty) = snapshot_data.estimated_distance_to_empty.into_option() {
+        if let Some(distance_to_empty) = snapshot_data.estimated_distance_to_empty.as_ref() {
             if let Some(value) = distance_to_empty.fuel {
                 builder = builder.field(crate::FIELD_ESTIMATED_DIST_TO_EMPTY_FUEL, value);
             }
@@ -333,7 +339,7 @@ impl InfluxWriter {
             debug!("ignoring vehicle status without VIN ...");
             return;
         }
-        let Some(created_timestamp) = vehicle_status
+        let Some(created_timestamp_ms) = vehicle_status
             .created
             .as_ref()
             .and_then(convert_timestamp_to_milliseconds)
@@ -346,10 +352,12 @@ impl InfluxWriter {
             return;
         };
 
+        let received_timestamp_ms = Utc::now().timestamp_millis();
         let Some(header_measurement) = build_header_measurement(
             vehicle_status.vin.as_str(),
             &trigger,
-            created_timestamp,
+            created_timestamp_ms,
+            received_timestamp_ms,
             vehicle_status,
         ) else {
             return;
@@ -357,7 +365,8 @@ impl InfluxWriter {
         let Some(snapshot_measurement) = build_snapshot_measurement(
             vehicle_status.vin.as_str(),
             &trigger,
-            created_timestamp,
+            created_timestamp_ms,
+            received_timestamp_ms,
             vehicle_status,
         ) else {
             return;
@@ -383,7 +392,7 @@ impl InfluxWriter {
             debug!("ignoring vehicle metadata without VIN ...");
             return;
         }
-        let Some(created_timestamp) = vehicle_metadata
+        let Some(created_timestamp_ms) = vehicle_metadata
             .created
             .as_ref()
             .and_then(convert_timestamp_to_milliseconds)
@@ -396,10 +405,12 @@ impl InfluxWriter {
             return;
         };
 
+        let received_timestamp_ms = Utc::now().timestamp_millis();
         if let Some(measurement) = build_metadata_measurement(
             vehicle_metadata.vin.as_str(),
             &trigger,
-            created_timestamp,
+            created_timestamp_ms,
+            received_timestamp_ms,
             vehicle_metadata,
         ) {
             if let Err(e) = self
