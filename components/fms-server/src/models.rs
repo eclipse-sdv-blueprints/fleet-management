@@ -17,8 +17,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::models;
-
+pub mod error;
 pub mod position;
 pub mod status;
 pub mod vehicle;
@@ -81,11 +80,11 @@ impl TriggerObject {
 pub struct DriverIdObject {
     #[serde(rename = "tachoDriverIdentification")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub tacho_driver_identification: Option<models::DriverIdObjectTachoDriverIdentification>,
+    pub tacho_driver_identification: Option<DriverIdObjectTachoDriverIdentification>,
 
     #[serde(rename = "oemDriverIdentification")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub oem_driver_identification: Option<models::DriverIdObjectOemDriverIdentification>,
+    pub oem_driver_identification: Option<DriverIdObjectOemDriverIdentification>,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
